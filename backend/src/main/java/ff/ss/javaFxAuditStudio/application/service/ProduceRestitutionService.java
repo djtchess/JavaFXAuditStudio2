@@ -2,9 +2,11 @@ package ff.ss.javaFxAuditStudio.application.service;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import ff.ss.javaFxAuditStudio.application.ports.in.ProduceRestitutionUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.out.RestitutionFormatterPort;
+import ff.ss.javaFxAuditStudio.application.ports.out.RestitutionPersistencePort;
 import ff.ss.javaFxAuditStudio.domain.restitution.ConfidenceLevel;
 import ff.ss.javaFxAuditStudio.domain.restitution.RestitutionReport;
 import ff.ss.javaFxAuditStudio.domain.restitution.RestitutionSummary;
@@ -20,20 +22,27 @@ public final class ProduceRestitutionService implements ProduceRestitutionUseCas
     private static final String STUB_FINDING = "Restitution stub - moteur non encore connecte";
 
     private final RestitutionFormatterPort restitutionFormatterPort;
+    private final RestitutionPersistencePort restitutionPersistencePort;
 
-    public ProduceRestitutionService(final RestitutionFormatterPort restitutionFormatterPort) {
-        Objects.requireNonNull(restitutionFormatterPort, "restitutionFormatterPort must not be null");
-        this.restitutionFormatterPort = restitutionFormatterPort;
+    public ProduceRestitutionService(
+            final RestitutionFormatterPort restitutionFormatterPort,
+            final RestitutionPersistencePort restitutionPersistencePort) {
+        this.restitutionFormatterPort = Objects.requireNonNull(
+                restitutionFormatterPort, "restitutionFormatterPort must not be null");
+        this.restitutionPersistencePort = Objects.requireNonNull(
+                restitutionPersistencePort, "restitutionPersistencePort must not be null");
     }
 
     @Override
-    public RestitutionReport handle(final String controllerRef) {
+    public RestitutionReport handle(final String sessionId, final String controllerRef) {
         Objects.requireNonNull(controllerRef, "controllerRef must not be null");
 
-        RestitutionSummary summary;
-        RestitutionReport report;
+        Optional<RestitutionReport> cached = restitutionPersistencePort.findBySessionId(sessionId);
+        if (cached.isPresent()) {
+            return cached.get();
+        }
 
-        summary = new RestitutionSummary(
+        RestitutionSummary summary = new RestitutionSummary(
                 controllerRef,
                 0,
                 0,
@@ -42,12 +51,13 @@ public final class ProduceRestitutionService implements ProduceRestitutionUseCas
                 ConfidenceLevel.INSUFFICIENT,
                 false);
 
-        report = new RestitutionReport(
+        RestitutionReport report = new RestitutionReport(
                 summary,
                 List.of(),
                 List.of(),
                 List.of(STUB_FINDING));
 
+        restitutionPersistencePort.save(sessionId, report);
         return report;
     }
 }

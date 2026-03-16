@@ -9,74 +9,34 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
+@Deprecated(forRemoval = true) // Suppression prevue JAS-301
 @Profile("stub")
 @Component
 public class StubMigrationPlannerAdapter implements MigrationPlannerPort {
 
     private static final RegressionRisk GENERIC_LOW_RISK = new RegressionRisk(
-            "Risque générique de régression à valider lors de l'intégration",
+            "Risque generique de regression a valider lors de l'integration",
             RiskLevel.LOW,
             "Couverture par tests unitaires avant merge"
     );
 
     @Override
-    public List<PlannedLot> plan(final String controllerRef) {
+    public List<PlannedLot> plan(
+            final String controllerRef,
+            final int handlerCount,
+            final int ruleCount,
+            final int complexityScore) {
         return List.of(
-                buildLot1(),
-                buildLot2(),
-                buildLot3(),
-                buildLot4(),
-                buildLot5()
-        );
-    }
-
-    private PlannedLot buildLot1() {
-        return new PlannedLot(
-                1,
-                "Diagnostic",
-                "Identifier les responsabilités mélangées et les dépendances directes dans le controller",
-                List.of("Extraction des appels directs à la couche service"),
-                List.of(GENERIC_LOW_RISK)
-        );
-    }
-
-    private PlannedLot buildLot2() {
-        return new PlannedLot(
-                2,
-                "Socle applicatif",
-                "Créer les ports entrants et sortants, le service applicatif et la configuration Spring",
-                List.of("Interfaces UseCase", "Interfaces Port sortant"),
-                List.of(GENERIC_LOW_RISK)
-        );
-    }
-
-    private PlannedLot buildLot3() {
-        return new PlannedLot(
-                3,
-                "Flux majeurs",
-                "Migrer les flux métier principaux vers les use cases applicatifs",
-                List.of("Logique métier centrale du controller"),
-                List.of(GENERIC_LOW_RISK)
-        );
-    }
-
-    private PlannedLot buildLot4() {
-        return new PlannedLot(
-                4,
-                "Adaptateurs Spring",
-                "Remplacer les dépendances Spring directes par des adapters dédiés",
-                List.of("Appels @Autowired directs", "Accès aux beans Spring dans le controller"),
-                List.of(GENERIC_LOW_RISK)
-        );
-    }
-
-    private PlannedLot buildLot5() {
-        return new PlannedLot(
-                5,
-                "Assemblers et stratégies",
-                "Introduire les assemblers de mapping et les stratégies pour finaliser l'hexagone",
-                List.of("Logique de mapping DTO/Domain", "Stratégies de sélection de comportement"),
-                List.of(GENERIC_LOW_RISK)
+                new PlannedLot(1, "Diagnostic", "Stub diagnostic",
+                        List.of("Stub"), List.of(GENERIC_LOW_RISK)),
+                new PlannedLot(2, "Socle", "Stub socle",
+                        List.of("Stub"), List.of(GENERIC_LOW_RISK)),
+                new PlannedLot(3, "Migration", "Stub migration",
+                        List.of("Stub"), List.of(GENERIC_LOW_RISK)),
+                new PlannedLot(4, "Adaptateurs", "Stub adaptateurs",
+                        List.of("Stub"), List.of(GENERIC_LOW_RISK)),
+                new PlannedLot(5, "Finalisation", "Stub finalisation",
+                        List.of("Stub"), List.of(GENERIC_LOW_RISK))
         );
     }
 }

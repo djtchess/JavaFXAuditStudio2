@@ -2,6 +2,7 @@ package ff.ss.javaFxAuditStudio.configuration;
 
 import ff.ss.javaFxAuditStudio.adapters.out.analysis.RealMigrationPlannerAdapter;
 import ff.ss.javaFxAuditStudio.application.ports.in.ProduceMigrationPlanUseCase;
+import ff.ss.javaFxAuditStudio.application.ports.out.MigrationPlanPersistencePort;
 import ff.ss.javaFxAuditStudio.application.ports.out.MigrationPlannerPort;
 import ff.ss.javaFxAuditStudio.application.service.ProduceMigrationPlanService;
 import org.springframework.context.annotation.Bean;
@@ -16,7 +17,9 @@ public class MigrationPlanConfiguration {
     }
 
     @Bean
-    public ProduceMigrationPlanUseCase produceMigrationPlanUseCase(final MigrationPlannerPort migrationPlannerPort) {
-        return new ProduceMigrationPlanService(migrationPlannerPort);
+    public ProduceMigrationPlanUseCase produceMigrationPlanUseCase(
+            final MigrationPlannerPort migrationPlannerPort,
+            final MigrationPlanPersistencePort migrationPlanPersistencePort) {
+        return new ProduceMigrationPlanService(migrationPlannerPort, migrationPlanPersistencePort);
     }
 }

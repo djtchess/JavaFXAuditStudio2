@@ -1,4 +1,3 @@
-import { JsonPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
@@ -8,8 +7,15 @@ import {
   ClassificationResponse,
   MigrationPlanResponse,
   ArtifactsResponse,
-  RestitutionReportResponse
+  RestitutionReportResponse,
+  OrchestratedAnalysisResultResponse
 } from '../../core/models/analysis.model';
+
+import { CartographyViewComponent } from './components/cartography-view.component';
+import { ClassificationViewComponent } from './components/classification-view.component';
+import { MigrationPlanViewComponent } from './components/migration-plan-view.component';
+import { ArtifactsViewComponent } from './components/artifacts-view.component';
+import { ReportViewComponent } from './components/report-view.component';
 
 interface StepState<T> {
   isLoading: boolean;
@@ -23,7 +29,13 @@ function emptyStep<T>(): StepState<T> {
 
 @Component({
   selector: 'jas-analysis-detail',
-  imports: [JsonPipe],
+  imports: [
+    CartographyViewComponent,
+    ClassificationViewComponent,
+    MigrationPlanViewComponent,
+    ArtifactsViewComponent,
+    ReportViewComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     .page-shell {
@@ -49,10 +61,76 @@ function emptyStep<T>(): StepState<T> {
     }
 
     .session-id {
-      margin: 0 0 2rem;
+      margin: 0 0 1.2rem;
       font-size: 0.82rem;
       color: var(--ink-soft);
       font-family: monospace;
+    }
+
+    .pipeline-bar {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      padding: 1rem 1.25rem;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.75);
+      box-shadow: var(--shadow);
+      flex-wrap: wrap;
+    }
+
+    .pipeline-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.6rem 1.4rem;
+      border: none;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--slate), #2d4a6f);
+      color: white;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      flex-shrink: 0;
+    }
+
+    .pipeline-btn:hover:not(:disabled) {
+      opacity: 0.85;
+    }
+
+    .pipeline-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .pipeline-progress {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      color: var(--ink-soft);
+    }
+
+    .progress-bar-track {
+      width: 180px;
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(18, 35, 56, 0.08);
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: var(--slate);
+      transition: width 0.3s ease;
+    }
+
+    .pipeline-error {
+      font-size: 0.82rem;
+      color: #b94517;
     }
 
     .steps-grid {
@@ -149,28 +227,36 @@ function emptyStep<T>(): StepState<T> {
       color: #b94517;
       font-size: 0.9rem;
     }
-
-    .result-block {
-      padding: 1rem;
-      border-radius: 12px;
-      background: rgba(247, 244, 235, 0.84);
-      border: 1px solid rgba(18, 35, 56, 0.08);
-      overflow-x: auto;
-    }
-
-    .result-block pre {
-      margin: 0;
-      font-size: 0.82rem;
-      line-height: 1.55;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
   `,
   template: `
     <main class="page-shell">
       <p class="eyebrow">Analyse</p>
       <h1>Detail de la session</h1>
       <p class="session-id">Session : {{ sessionId }}</p>
+
+      <!-- Pipeline complet -->
+      <div class="pipeline-bar">
+        <button
+          class="pipeline-btn"
+          [disabled]="pipelineRunning()"
+          (click)="runFullPipeline()"
+        >
+          @if (pipelineRunning()) { Pipeline en cours... } @else { Executer le pipeline complet }
+        </button>
+
+        @if (pipelineRunning()) {
+          <div class="pipeline-progress">
+            <div class="progress-bar-track">
+              <div class="progress-bar-fill" [style.width.%]="pipelineProgressPercent()"></div>
+            </div>
+            <span>Etape {{ pipelineStep() }}/5 en cours...</span>
+          </div>
+        }
+
+        @if (pipelineError()) {
+          <span class="pipeline-error">{{ pipelineError() }}</span>
+        }
+      </div>
 
       <div class="steps-grid">
 
@@ -196,7 +282,7 @@ function emptyStep<T>(): StepState<T> {
               } @else if (cartography().error) {
                 <div class="status-error">{{ cartography().error }}</div>
               } @else if (cartography().data) {
-                <div class="result-block"><pre>{{ cartography().data | json }}</pre></div>
+                <jas-cartography-view [data]="cartography().data!" />
               }
             </div>
           }
@@ -224,7 +310,7 @@ function emptyStep<T>(): StepState<T> {
               } @else if (classification().error) {
                 <div class="status-error">{{ classification().error }}</div>
               } @else if (classification().data) {
-                <div class="result-block"><pre>{{ classification().data | json }}</pre></div>
+                <jas-classification-view [data]="classification().data!" />
               }
             </div>
           }
@@ -252,7 +338,7 @@ function emptyStep<T>(): StepState<T> {
               } @else if (migrationPlan().error) {
                 <div class="status-error">{{ migrationPlan().error }}</div>
               } @else if (migrationPlan().data) {
-                <div class="result-block"><pre>{{ migrationPlan().data | json }}</pre></div>
+                <jas-migration-plan-view [data]="migrationPlan().data!" />
               }
             </div>
           }
@@ -280,7 +366,7 @@ function emptyStep<T>(): StepState<T> {
               } @else if (artifacts().error) {
                 <div class="status-error">{{ artifacts().error }}</div>
               } @else if (artifacts().data) {
-                <div class="result-block"><pre>{{ artifacts().data | json }}</pre></div>
+                <jas-artifacts-view [data]="artifacts().data!" />
               }
             </div>
           }
@@ -308,7 +394,7 @@ function emptyStep<T>(): StepState<T> {
               } @else if (report().error) {
                 <div class="status-error">{{ report().error }}</div>
               } @else if (report().data) {
-                <div class="result-block"><pre>{{ report().data | json }}</pre></div>
+                <jas-report-view [data]="report().data!" />
               }
             </div>
           }
@@ -329,6 +415,90 @@ export class AnalysisDetailComponent {
   protected readonly migrationPlan = signal<StepState<MigrationPlanResponse>>(emptyStep());
   protected readonly artifacts = signal<StepState<ArtifactsResponse>>(emptyStep());
   protected readonly report = signal<StepState<RestitutionReportResponse>>(emptyStep());
+
+  protected readonly pipelineRunning = signal(false);
+  protected readonly pipelineStep = signal(0);
+  protected readonly pipelineProgressPercent = signal(0);
+  protected readonly pipelineError = signal<string | null>(null);
+
+  protected runFullPipeline(): void {
+    this.pipelineRunning.set(true);
+    this.pipelineStep.set(1);
+    this.pipelineProgressPercent.set(10);
+    this.pipelineError.set(null);
+
+    // Set all steps to loading
+    this.cartography.set({ isLoading: true, error: null, data: null });
+    this.classification.set({ isLoading: true, error: null, data: null });
+    this.migrationPlan.set({ isLoading: true, error: null, data: null });
+    this.artifacts.set({ isLoading: true, error: null, data: null });
+    this.report.set({ isLoading: true, error: null, data: null });
+
+    // Simulate step progress while waiting for the single API call
+    const progressInterval = setInterval(() => {
+      const current = this.pipelineStep();
+      if (current < 5) {
+        this.pipelineStep.set(current + 1);
+        this.pipelineProgressPercent.set(Math.min(90, (current + 1) * 18));
+      }
+    }, 2000);
+
+    this.analysisApi.runFullPipeline(this.sessionId).subscribe({
+      next: (result: OrchestratedAnalysisResultResponse) => {
+        clearInterval(progressInterval);
+        this.pipelineStep.set(5);
+        this.pipelineProgressPercent.set(100);
+
+        this.cartography.set({
+          isLoading: false,
+          error: null,
+          data: result.cartography,
+        });
+        this.classification.set({
+          isLoading: false,
+          error: null,
+          data: result.classification,
+        });
+        this.migrationPlan.set({
+          isLoading: false,
+          error: null,
+          data: result.migrationPlan,
+        });
+        this.artifacts.set({
+          isLoading: false,
+          error: null,
+          data: result.generationResult,
+        });
+        this.report.set({
+          isLoading: false,
+          error: null,
+          data: result.restitutionReport,
+        });
+
+        this.pipelineRunning.set(false);
+
+        if (result.errors && result.errors.length > 0) {
+          this.pipelineError.set(
+            'Pipeline termine avec erreurs : ' + result.errors.join(' | ')
+          );
+        }
+      },
+      error: (err) => {
+        clearInterval(progressInterval);
+        this.pipelineRunning.set(false);
+        this.pipelineError.set(
+          err?.error?.message ?? 'Erreur lors de l\'execution du pipeline complet.'
+        );
+
+        // Reset all loading states
+        this.cartography.set(emptyStep());
+        this.classification.set(emptyStep());
+        this.migrationPlan.set(emptyStep());
+        this.artifacts.set(emptyStep());
+        this.report.set(emptyStep());
+      },
+    });
+  }
 
   protected runCartography(): void {
     this.cartography.set({ isLoading: true, error: null, data: null });

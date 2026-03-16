@@ -1,11 +1,12 @@
 {
   "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(mvn compile:*)"
+    ],
     "additionalDirectories": [
       "e:\\JavaFXAuditStudio\\JavaFXAuditStudio2\\frontend\\src\\app\\core",
       "e:\\JavaFXAuditStudio\\JavaFXAuditStudio2\\frontend\\src\\app\\features"
-    ],
-    "allow": [
-      "Bash(npm install:*)"
     ]
   }
 }

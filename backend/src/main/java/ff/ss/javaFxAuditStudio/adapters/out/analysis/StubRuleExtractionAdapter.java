@@ -12,6 +12,7 @@ import java.util.List;
  * Retourne une liste vide en attendant le parsing effectif prévu dans les stories suivantes de JAS-40.
  * Actif uniquement avec le profil Spring "stub".
  */
+@Deprecated(forRemoval = true) // Suppression prevue JAS-301
 @Profile("stub")
 @Component
 public class StubRuleExtractionAdapter implements RuleExtractionPort {

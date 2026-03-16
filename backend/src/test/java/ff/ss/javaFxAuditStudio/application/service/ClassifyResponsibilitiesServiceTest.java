@@ -1,5 +1,6 @@
 package ff.ss.javaFxAuditStudio.application.service;
 
+import ff.ss.javaFxAuditStudio.application.ports.out.ClassificationPersistencePort;
 import ff.ss.javaFxAuditStudio.application.ports.out.RuleExtractionPort;
 import ff.ss.javaFxAuditStudio.domain.rules.BusinessRule;
 import ff.ss.javaFxAuditStudio.domain.rules.ClassificationResult;
@@ -8,6 +9,7 @@ import ff.ss.javaFxAuditStudio.domain.rules.ResponsibilityClass;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -24,6 +26,18 @@ class ClassifyResponsibilitiesServiceTest {
                 uncertain);
     }
 
+    private static final ClassificationPersistencePort NO_OP_PERSISTENCE = new ClassificationPersistencePort() {
+        @Override
+        public ClassificationResult save(String sessionId, ClassificationResult result) {
+            return result;
+        }
+
+        @Override
+        public Optional<ClassificationResult> findBySessionId(String sessionId) {
+            return Optional.empty();
+        }
+    };
+
     @Test
     void handle_returnsEmptyClassification_whenPortReturnsNothing() {
         RuleExtractionPort port;
@@ -31,9 +45,9 @@ class ClassifyResponsibilitiesServiceTest {
         ClassificationResult result;
 
         port = (controllerRef, javaContent) -> List.of();
-        service = new ClassifyResponsibilitiesService(port);
+        service = new ClassifyResponsibilitiesService(port, NO_OP_PERSISTENCE);
 
-        result = service.handle("com/example/MyController.java");
+        result = service.handle("session-1", "com/example/MyController.java");
 
         assertThat(result.rules()).isEmpty();
         assertThat(result.uncertainRules()).isEmpty();
@@ -54,9 +68,9 @@ class ClassifyResponsibilitiesServiceTest {
         uncertainRule2 = buildRule("RG-003", true);
 
         port = (controllerRef, javaContent) -> List.of(certainRule, uncertainRule1, uncertainRule2);
-        service = new ClassifyResponsibilitiesService(port);
+        service = new ClassifyResponsibilitiesService(port, NO_OP_PERSISTENCE);
 
-        result = service.handle("com/example/MyController.java");
+        result = service.handle("session-1", "com/example/MyController.java");
 
         assertThat(result.rules()).hasSize(1);
         assertThat(result.rules()).extracting(BusinessRule::ruleId).containsExactly("RG-001");

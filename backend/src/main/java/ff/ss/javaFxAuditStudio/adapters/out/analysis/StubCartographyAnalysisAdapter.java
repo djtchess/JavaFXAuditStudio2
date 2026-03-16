@@ -16,6 +16,7 @@ import java.util.List;
  * aux bibliothèques d'analyse appropriées.
  * Actif uniquement sous le profil Spring "stub".
  */
+@Deprecated(forRemoval = true) // Suppression prevue JAS-301
 @Profile("stub")
 @Component
 public class StubCartographyAnalysisAdapter implements CartographyAnalysisPort {

@@ -101,23 +101,23 @@ public final class AnalysisOrchestrationService implements AnalysisOrchestration
             String resolvedControllerRef = ingestionResult.inputs().isEmpty()
                     ? controllerRef
                     : ingestionResult.inputs().get(0).ref();
-            ControllerCartography cartography = cartographyUseCase.handle(resolvedControllerRef, "");
+            ControllerCartography cartography = cartographyUseCase.handle(sessionId, resolvedControllerRef, "");
 
             // Etape 5 : classification
             log.debug("Etape classification demarree");
-            ClassificationResult classification = classifyResponsibilitiesUseCase.handle(cartography.controllerRef());
+            ClassificationResult classification = classifyResponsibilitiesUseCase.handle(sessionId, cartography.controllerRef());
 
             // Etape 6 : plan de migration
             log.debug("Etape plan de migration demarree");
-            MigrationPlan migrationPlan = produceMigrationPlanUseCase.handle(classification.controllerRef());
+            MigrationPlan migrationPlan = produceMigrationPlanUseCase.handle(sessionId, classification.controllerRef());
 
             // Etape 7 : generation
             log.debug("Etape generation demarree");
-            GenerationResult generationResult = generateArtifactsUseCase.handle(migrationPlan.controllerRef());
+            GenerationResult generationResult = generateArtifactsUseCase.handle(sessionId, migrationPlan.controllerRef());
 
             // Etape 8 : restitution
             log.debug("Etape restitution demarree");
-            RestitutionReport restitutionReport = produceRestitutionUseCase.handle(generationResult.controllerRef());
+            RestitutionReport restitutionReport = produceRestitutionUseCase.handle(sessionId, generationResult.controllerRef());
 
             // Etape 9 : COMPLETED
             AnalysisSession sessionCompleted = new AnalysisSession(

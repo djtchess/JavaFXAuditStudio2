@@ -19,23 +19,31 @@ class RealMigrationPlannerAdapterTest {
     }
 
     @Test
-    void shouldAlwaysReturn5Lots() {
-        List<PlannedLot> lots = adapter.plan("SampleController");
+    void shouldReturn3LotsForLowComplexity() {
+        List<PlannedLot> lots = adapter.plan("SampleController", 2, 3, 5);
 
-        assertThat(lots).hasSize(5);
+        assertThat(lots).hasSize(3);
     }
 
     @Test
-    void shouldHaveLotNumbersFrom1To5() {
-        List<PlannedLot> lots = adapter.plan("SampleController");
+    void shouldReturn4LotsForMediumComplexity() {
+        List<PlannedLot> lots = adapter.plan("SampleController", 5, 10, 20);
 
+        assertThat(lots).hasSize(4);
+    }
+
+    @Test
+    void shouldReturn5LotsForHighComplexity() {
+        List<PlannedLot> lots = adapter.plan("SampleController", 10, 20, 40);
+
+        assertThat(lots).hasSize(5);
         List<Integer> lotNumbers = lots.stream().map(PlannedLot::lotNumber).toList();
         assertThat(lotNumbers).containsExactly(1, 2, 3, 4, 5);
     }
 
     @Test
     void shouldHaveNonEmptyObjectives() {
-        List<PlannedLot> lots = adapter.plan("SampleController");
+        List<PlannedLot> lots = adapter.plan("SampleController", 5, 10, 25);
 
         assertThat(lots).allSatisfy(lot -> assertThat(lot.objective()).isNotBlank());
     }
@@ -43,8 +51,24 @@ class RealMigrationPlannerAdapterTest {
     @Test
     void shouldHandleNullControllerRef() {
         assertThatNoException().isThrownBy(() -> {
-            List<PlannedLot> lots = adapter.plan(null);
-            assertThat(lots).hasSize(5);
+            List<PlannedLot> lots = adapter.plan(null, 0, 0, 0);
+            assertThat(lots).hasSize(3);
         });
+    }
+
+    @Test
+    void shouldReturnHighRiskForHighComplexity() {
+        List<PlannedLot> lots = adapter.plan("SampleController", 10, 20, 25);
+
+        assertThat(lots).allSatisfy(lot ->
+                assertThat(lot.risks()).isNotEmpty()
+        );
+    }
+
+    @Test
+    void shouldReturnDefaultLotsViaBackwardCompatMethod() {
+        List<PlannedLot> lots = adapter.plan("SampleController");
+
+        assertThat(lots).hasSize(3);
     }
 }

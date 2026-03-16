@@ -12,8 +12,9 @@ public interface ProduceRestitutionUseCase {
     /**
      * Produit le rapport de restitution pour le controller reference.
      *
+     * @param sessionId     identifiant de la session d'analyse
      * @param controllerRef reference non nulle du controller a restituer
      * @return rapport complet, jamais null
      */
-    RestitutionReport handle(String controllerRef);
+    RestitutionReport handle(String sessionId, String controllerRef);
 }

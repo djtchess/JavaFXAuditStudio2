@@ -4,5 +4,5 @@ import ff.ss.javaFxAuditStudio.domain.generation.GenerationResult;
 
 public interface GenerateArtifactsUseCase {
 
-    GenerationResult handle(String controllerRef);
+    GenerationResult handle(String sessionId, String controllerRef);
 }

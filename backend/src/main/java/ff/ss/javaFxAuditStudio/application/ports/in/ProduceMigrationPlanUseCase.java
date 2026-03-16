@@ -4,5 +4,5 @@ import ff.ss.javaFxAuditStudio.domain.migration.MigrationPlan;
 
 public interface ProduceMigrationPlanUseCase {
 
-    MigrationPlan handle(String controllerRef);
+    MigrationPlan handle(String sessionId, String controllerRef);
 }

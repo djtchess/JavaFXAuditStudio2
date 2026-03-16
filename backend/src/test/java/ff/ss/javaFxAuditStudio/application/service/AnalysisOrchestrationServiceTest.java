@@ -141,11 +141,11 @@ class AnalysisOrchestrationServiceTest {
         when(analysisSessionPort.findById(sessionId)).thenReturn(Optional.of(session));
         when(analysisSessionPort.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(ingestSourcesUseCase.handle(any())).thenReturn(ingestionResult);
-        when(cartographyUseCase.handle(anyString(), anyString())).thenReturn(cartography);
-        when(classifyResponsibilitiesUseCase.handle(anyString())).thenReturn(classification);
-        when(produceMigrationPlanUseCase.handle(anyString())).thenReturn(migrationPlan);
-        when(generateArtifactsUseCase.handle(anyString())).thenReturn(generationResult);
-        when(produceRestitutionUseCase.handle(anyString())).thenReturn(restitutionReport);
+        when(cartographyUseCase.handle(anyString(), anyString(), anyString())).thenReturn(cartography);
+        when(classifyResponsibilitiesUseCase.handle(anyString(), anyString())).thenReturn(classification);
+        when(produceMigrationPlanUseCase.handle(anyString(), anyString())).thenReturn(migrationPlan);
+        when(generateArtifactsUseCase.handle(anyString(), anyString())).thenReturn(generationResult);
+        when(produceRestitutionUseCase.handle(anyString(), anyString())).thenReturn(restitutionReport);
 
         result = service.orchestrate(sessionId);
 

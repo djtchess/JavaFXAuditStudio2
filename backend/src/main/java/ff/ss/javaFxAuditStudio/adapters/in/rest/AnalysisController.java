@@ -105,31 +105,31 @@ public class AnalysisController {
     @GetMapping("/sessions/{sessionId}/cartography")
     public CartographyResponse getCartography(@PathVariable final String sessionId) {
         return cartographyResponseMapper.toResponse(
-                cartographyUseCase.handle(sessionId, ""));
+                cartographyUseCase.handle(sessionId, sessionId, ""));
     }
 
     @GetMapping("/sessions/{sessionId}/classification")
     public ClassificationResponse getClassification(@PathVariable final String sessionId) {
         return classificationResponseMapper.toResponse(
-                classifyResponsibilitiesUseCase.handle(sessionId));
+                classifyResponsibilitiesUseCase.handle(sessionId, sessionId));
     }
 
     @GetMapping("/sessions/{sessionId}/plan")
     public MigrationPlanResponse getMigrationPlan(@PathVariable final String sessionId) {
         return migrationPlanResponseMapper.toResponse(
-                produceMigrationPlanUseCase.handle(sessionId));
+                produceMigrationPlanUseCase.handle(sessionId, sessionId));
     }
 
     @GetMapping("/sessions/{sessionId}/artifacts")
     public ArtifactsResponse getArtifacts(@PathVariable final String sessionId) {
         return artifactsResponseMapper.toResponse(
-                generateArtifactsUseCase.handle(sessionId));
+                generateArtifactsUseCase.handle(sessionId, sessionId));
     }
 
     @GetMapping("/sessions/{sessionId}/report")
     public RestitutionReportResponse getReport(@PathVariable final String sessionId) {
         return restitutionReportResponseMapper.toResponse(
-                produceRestitutionUseCase.handle(sessionId));
+                produceRestitutionUseCase.handle(sessionId, sessionId));
     }
 
     /**

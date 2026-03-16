@@ -1,0 +1,7 @@
+interface:
+  display_name: "JavaFX Report Writer"
+  short_description: "Assemble un rapport final exploitable"
+  default_prompt: "Use $javafx-report-writer to assemble a final refactoring report from multiple JavaFX analysis outputs."
+
+policy:
+  allow_implicit_invocation: true

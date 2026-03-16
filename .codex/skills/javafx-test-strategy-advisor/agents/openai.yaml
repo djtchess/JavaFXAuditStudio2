@@ -1,0 +1,7 @@
+interface:
+  display_name: "Test Strategy Advisor"
+  short_description: "Priorise les tests de migration"
+  default_prompt: "Use $javafx-test-strategy-advisor to define the most valuable tests for a progressive JavaFX refactoring."
+
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,7 @@
+interface:
+  display_name: "Business Rules Extractor"
+  short_description: "Extrait les regles metier implicites"
+  default_prompt: "Use $javafx-business-rules-extractor to extract business rules from JavaFX code for the refactoring application."
+
+policy:
+  allow_implicit_invocation: true

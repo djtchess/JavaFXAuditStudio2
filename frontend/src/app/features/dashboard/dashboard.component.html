@@ -1,0 +1,91 @@
+@if (viewModel$ | async; as viewModel) {
+  <main class="page-shell">
+    <section class="hero-panel">
+      <div class="hero-copy">
+        <p class="eyebrow">JavaFX Audit Studio</p>
+        <h1>Refactoring cockpit for overloaded JavaFX controllers</h1>
+        <p class="lead">
+          Le frontend Angular pilote l'analyse, le backend Spring Boot orchestre les use cases,
+          et les agents specialistes isolent progressivement ViewModel, UseCases, Policies,
+          Gateways, Assemblers et Strategies.
+        </p>
+      </div>
+
+      <div class="hero-stack">
+        <span>Angular 21.2.x</span>
+        <span>Spring Boot 4.0.3</span>
+        <span>JDK 21</span>
+      </div>
+    </section>
+
+    @if (viewModel.isLoading) {
+      <section class="status-panel loading">
+        <p>Chargement du workbench...</p>
+      </section>
+    } @else if (viewModel.errorMessage) {
+      <section class="status-panel error">
+        <p>{{ viewModel.errorMessage }}</p>
+      </section>
+    } @else if (viewModel.overview; as overview) {
+      <section class="summary-grid">
+        <article class="summary-card highlight">
+          <p class="card-label">Produit</p>
+          <h2>{{ overview.productName }}</h2>
+          <p>{{ overview.summary }}</p>
+        </article>
+
+        <article class="summary-card">
+          <p class="card-label">Frontend cible</p>
+          <h2>{{ overview.frontendTarget }}</h2>
+        </article>
+
+        <article class="summary-card">
+          <p class="card-label">Backend cible</p>
+          <h2>{{ overview.backendTarget }}</h2>
+        </article>
+      </section>
+
+      <section class="content-grid">
+        <article class="panel">
+          <div class="panel-heading">
+            <p class="card-label">Lots de migration</p>
+            <h2>Trajectoire progressive</h2>
+          </div>
+
+          <div class="lot-list">
+            @for (lot of overview.lots; track lot.number) {
+              <article class="lot-card">
+                <div class="lot-number">{{ lot.number }}</div>
+                <div>
+                  <h3>{{ lot.title }}</h3>
+                  <p>{{ lot.objective }}</p>
+                  <span>{{ lot.primaryOutcome }}</span>
+                </div>
+              </article>
+            }
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-heading">
+            <p class="card-label">Agents actifs</p>
+            <h2>Pilotage et execution</h2>
+          </div>
+
+          <div class="agent-list">
+            @for (agent of overview.agents; track agent.id) {
+              <article class="agent-card">
+                <div class="agent-topline">
+                  <h3>{{ agent.label }}</h3>
+                  <span>{{ agent.preferredModel }}</span>
+                </div>
+                <p>{{ agent.responsibility }}</p>
+                <small>{{ agent.id }}</small>
+              </article>
+            }
+          </div>
+        </article>
+      </section>
+    }
+  </main>
+}

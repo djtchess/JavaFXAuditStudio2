@@ -1,0 +1,7 @@
+interface:
+  display_name: "JavaFX Orchestrator"
+  short_description: "Orchestre l'analyse pour le produit cible"
+  default_prompt: "Use $javafx-orchestrator to consolidate a JavaFX screen/controller analysis for the refactoring application."
+
+policy:
+  allow_implicit_invocation: true

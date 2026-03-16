@@ -1,0 +1,7 @@
+interface:
+  display_name: "Controller Flow Analyzer"
+  short_description: "Trace les flux et extractions controller"
+  default_prompt: "Use $javafx-controller-flow-analyzer to reconstruct controller flows and identify extraction candidates."
+
+policy:
+  allow_implicit_invocation: true

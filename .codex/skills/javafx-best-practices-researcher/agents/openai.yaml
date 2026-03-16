@@ -1,0 +1,7 @@
+interface:
+  display_name: "Best Practices Researcher"
+  short_description: "Compare au cadre JavaFX/JDK21/SB4"
+  default_prompt: "Use $javafx-best-practices-researcher to compare JavaFX code with JDK 21 and Spring Boot 4.0.3 practices."
+
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: javafx_audit_db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: javafx_audit
+      POSTGRES_USER: javafx_audit
+      POSTGRES_PASSWORD: changeme
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U javafx_audit -d javafx_audit"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:

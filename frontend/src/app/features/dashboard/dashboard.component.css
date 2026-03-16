@@ -1,0 +1,194 @@
+.page-shell {
+  width: min(1180px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 2rem 0 4rem;
+}
+
+.hero-panel {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr);
+  padding: 2rem;
+  border: 1px solid var(--line);
+  border-radius: 28px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.72), rgba(255, 247, 236, 0.92)),
+    linear-gradient(180deg, rgba(14, 139, 114, 0.08), rgba(217, 95, 51, 0.08));
+  box-shadow: var(--shadow);
+}
+
+.eyebrow,
+.card-label {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+}
+
+.hero-copy h1,
+.summary-card h2,
+.panel-heading h2,
+.lot-card h3,
+.agent-card h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+}
+
+.hero-copy h1 {
+  margin-top: 0.4rem;
+  font-size: clamp(2.3rem, 5vw, 4.5rem);
+  line-height: 0.95;
+  max-width: 12ch;
+}
+
+.lead {
+  max-width: 60ch;
+  margin: 1rem 0 0;
+  color: var(--ink-soft);
+  font-size: 1.05rem;
+  line-height: 1.7;
+}
+
+.hero-stack {
+  display: grid;
+  gap: 0.75rem;
+  align-content: start;
+}
+
+.hero-stack span,
+.lot-card span,
+.agent-topline span {
+  display: inline-flex;
+  width: fit-content;
+  padding: 0.45rem 0.8rem;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--slate);
+  font-weight: 600;
+}
+
+.status-panel,
+.summary-card,
+.panel {
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.75);
+  box-shadow: var(--shadow);
+}
+
+.status-panel {
+  margin-top: 1.5rem;
+  padding: 1rem 1.25rem;
+}
+
+.status-panel.loading {
+  border-color: rgba(14, 139, 114, 0.28);
+}
+
+.status-panel.error {
+  border-color: rgba(217, 95, 51, 0.32);
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.summary-card {
+  padding: 1.35rem;
+}
+
+.summary-card.highlight {
+  background:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.88), rgba(251, 240, 224, 0.94)),
+    linear-gradient(120deg, rgba(217, 95, 51, 0.12), rgba(14, 139, 114, 0.08));
+}
+
+.summary-card h2 {
+  margin-top: 0.5rem;
+  font-size: 1.8rem;
+}
+
+.summary-card p:last-child {
+  margin-bottom: 0;
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
+
+.content-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.panel {
+  padding: 1.5rem;
+}
+
+.panel-heading {
+  margin-bottom: 1rem;
+}
+
+.lot-list,
+.agent-list {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.lot-card,
+.agent-card {
+  display: grid;
+  gap: 0.6rem;
+  padding: 1rem;
+  border-radius: 20px;
+  background: rgba(247, 244, 235, 0.84);
+  border: 1px solid rgba(18, 35, 56, 0.08);
+}
+
+.lot-card {
+  grid-template-columns: 3rem minmax(0, 1fr);
+  align-items: start;
+}
+
+.lot-number {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: var(--slate);
+  color: white;
+  font-weight: 700;
+}
+
+.lot-card p,
+.agent-card p {
+  margin: 0;
+  color: var(--ink-soft);
+  line-height: 1.55;
+}
+
+.agent-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.agent-card small {
+  color: var(--ink-soft);
+  letter-spacing: 0.05em;
+}
+
+@media (max-width: 960px) {
+  .hero-panel,
+  .content-grid,
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+}

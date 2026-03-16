@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.ChoiceBox?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressIndicator?>
+<?import javafx.scene.control.RadioButton?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.ToggleGroup?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Priority?>
+<?import javafx.scene.layout.VBox?>
+
+<AnchorPane fx:controller="app.ui.customer.CustomerCaseReviewController"
+            prefHeight="920.0"
+            prefWidth="1380.0"
+            xmlns:fx="http://javafx.com/fxml/1">
+    <children>
+        <VBox fx:id="rootContainer" spacing="14.0" AnchorPane.bottomAnchor="12.0" AnchorPane.leftAnchor="12.0" AnchorPane.rightAnchor="12.0" AnchorPane.topAnchor="12.0">
+            <padding>
+                <Insets top="16.0" right="16.0" bottom="16.0" left="16.0"/>
+            </padding>
+
+            <HBox spacing="12.0">
+                <VBox spacing="4.0" HBox.hgrow="ALWAYS">
+                    <Label text="Revue de dossier client"/>
+                    <Label text="Recherche, qualification, validation et export documentaire"/>
+                </VBox>
+                <ProgressIndicator fx:id="loadingIndicator" maxHeight="34.0" maxWidth="34.0" progress="-1.0" visible="false"/>
+            </HBox>
+
+            <GridPane hgap="10.0" vgap="10.0">
+                <Label text="Numero dossier" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                <TextField fx:id="caseNumberField" promptText="CASE-2026-001" onKeyReleased="#onSearchCriteriaChanged" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+
+                <Label text="Code client" GridPane.columnIndex="2" GridPane.rowIndex="0"/>
+                <TextField fx:id="customerCodeField" promptText="CUST-0192" onKeyReleased="#onSearchCriteriaChanged" GridPane.columnIndex="3" GridPane.rowIndex="0"/>
+
+                <Label text="Periode de debut" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                <DatePicker fx:id="startDatePicker" onAction="#onSearchCriteriaChanged" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+
+                <Label text="Periode de fin" GridPane.columnIndex="2" GridPane.rowIndex="1"/>
+                <DatePicker fx:id="endDatePicker" onAction="#onSearchCriteriaChanged" GridPane.columnIndex="3" GridPane.rowIndex="1"/>
+
+                <Label text="Type de dossier" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+                <ComboBox fx:id="caseTypeComboBox" onAction="#onCaseTypeChanged" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+
+                <Label text="Segment client" GridPane.columnIndex="2" GridPane.rowIndex="2"/>
+                <ChoiceBox fx:id="customerSegmentChoiceBox" GridPane.columnIndex="3" GridPane.rowIndex="2"/>
+
+                <Label text="Mode de traitement" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+                <HBox spacing="10.0" GridPane.columnIndex="1" GridPane.rowIndex="3" GridPane.columnSpan="3">
+                    <children>
+                        <RadioButton fx:id="standardModeRadio" selected="true" text="Standard">
+                            <toggleGroup>
+                                <ToggleGroup fx:id="processingModeGroup"/>
+                            </toggleGroup>
+                        </RadioButton>
+                        <RadioButton fx:id="expressModeRadio" text="Express" toggleGroup="$processingModeGroup"/>
+                        <RadioButton fx:id="manualReviewRadio" text="Revue manuelle" toggleGroup="$processingModeGroup"/>
+                    </children>
+                </HBox>
+            </GridPane>
+
+            <HBox spacing="10.0">
+                <Button fx:id="searchButton" text="Rechercher" onAction="#onSearch"/>
+                <Button fx:id="resetButton" text="Reinitialiser" onAction="#onReset"/>
+                <Button fx:id="loadPremiumButton" text="Verifier eligibilite premium" onAction="#onLoadPremiumEligibility"/>
+                <CheckBox fx:id="includeArchivedCheckBox" mnemonicParsing="false" onAction="#onSearchCriteriaChanged" text="Inclure archives"/>
+            </HBox>
+
+            <Separator/>
+
+            <TabPane fx:id="mainTabPane" tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
+                <tabs>
+                    <Tab fx:id="overviewTab" text="Vue globale">
+                        <content>
+                            <VBox spacing="12.0">
+                                <GridPane hgap="10.0" vgap="10.0">
+                                    <Label text="Statut dossier" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                                    <ComboBox fx:id="caseStatusComboBox" onAction="#onStatusChanged" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+
+                                    <Label text="Priorite" GridPane.columnIndex="2" GridPane.rowIndex="0"/>
+                                    <ComboBox fx:id="priorityComboBox" onAction="#onPriorityChanged" GridPane.columnIndex="3" GridPane.rowIndex="0"/>
+
+                                    <Label text="Montant demande" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                                    <TextField fx:id="requestedAmountField" promptText="12500.00" onKeyReleased="#onAmountChanged" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+
+                                    <Label text="Budget restant" GridPane.columnIndex="2" GridPane.rowIndex="1"/>
+                                    <TextField fx:id="remainingBudgetField" editable="false" GridPane.columnIndex="3" GridPane.rowIndex="1"/>
+                                </GridPane>
+
+                                <Label text="Commentaires analyste"/>
+                                <TextArea fx:id="analystCommentArea" prefRowCount="4"/>
+
+                                <VBox fx:id="premiumSection" managed="false" spacing="8.0" visible="false">
+                                    <Label text="Section premium"/>
+                                    <TextField fx:id="premiumApprovalCodeField" promptText="Code d'approbation premium"/>
+                                    <CheckBox fx:id="premiumCustomerCheckBox" mnemonicParsing="false" text="Client premium confirme"/>
+                                </VBox>
+
+                                <VBox fx:id="manualReviewSection" managed="false" spacing="8.0" visible="false">
+                                    <Label text="Section revue manuelle"/>
+                                    <TextArea fx:id="manualReviewReasonArea" prefRowCount="3" promptText="Justification obligatoire"/>
+                                </VBox>
+                            </VBox>
+                        </content>
+                    </Tab>
+
+                    <Tab fx:id="riskTab" text="Risques et controles">
+                        <content>
+                            <VBox spacing="10.0">
+                                <CheckBox fx:id="kycCompletedCheckBox" mnemonicParsing="false" onAction="#onRiskFlagsChanged" text="KYC complet"/>
+                                <CheckBox fx:id="documentsCompleteCheckBox" mnemonicParsing="false" onAction="#onRiskFlagsChanged" text="Documents complets"/>
+                                <CheckBox fx:id="fraudAlertCheckBox" mnemonicParsing="false" onAction="#onRiskFlagsChanged" text="Alerte fraude"/>
+                                <CheckBox fx:id="complianceBlockCheckBox" mnemonicParsing="false" onAction="#onRiskFlagsChanged" text="Blocage conformite"/>
+                                <TextArea fx:id="riskExplanationArea" prefRowCount="5" promptText="Explication des risques et derogations"/>
+                            </VBox>
+                        </content>
+                    </Tab>
+
+                    <Tab fx:id="documentsTab" text="Documents">
+                        <content>
+                            <VBox spacing="10.0">
+                                <HBox spacing="10.0">
+                                    <Button fx:id="generateSummaryPdfButton" text="Generer PDF de synthese" onAction="#onGenerateSummaryPdf"/>
+                                    <Button fx:id="generateDecisionPdfButton" text="Generer PDF de decision" onAction="#onGenerateDecisionPdf"/>
+                                    <Button fx:id="openDocumentHistoryButton" text="Historique documentaire" onAction="#onOpenDocumentHistory"/>
+                                </HBox>
+                                <Label fx:id="documentStatusLabel" text="Aucun document genere"/>
+                            </VBox>
+                        </content>
+                    </Tab>
+
+                    <Tab fx:id="historyTab" text="Historique">
+                        <content>
+                            <VBox spacing="10.0">
+                                <TableView fx:id="eventHistoryTable" VBox.vgrow="ALWAYS">
+                                    <columns>
+                                        <TableColumn fx:id="eventDateColumn" prefWidth="150.0" text="Date"/>
+                                        <TableColumn fx:id="eventTypeColumn" prefWidth="180.0" text="Type"/>
+                                        <TableColumn fx:id="eventActorColumn" prefWidth="180.0" text="Acteur"/>
+                                        <TableColumn fx:id="eventDetailsColumn" prefWidth="540.0" text="Detail"/>
+                                    </columns>
+                                </TableView>
+                            </VBox>
+                        </content>
+                    </Tab>
+                </tabs>
+            </TabPane>
+
+            <HBox spacing="10.0">
+                <Button fx:id="saveDraftButton" text="Enregistrer brouillon" onAction="#onSaveDraft"/>
+                <Button fx:id="validateCaseButton" text="Valider dossier" onAction="#onValidateCase"/>
+                <Button fx:id="rejectCaseButton" text="Rejeter dossier" onAction="#onRejectCase"/>
+                <Button fx:id="openCustomerDialogButton" text="Ouvrir fiche client" onAction="#onOpenCustomerDialog"/>
+                <Button fx:id="createFollowUpButton" text="Creer suivi" onAction="#onCreateFollowUp"/>
+            </HBox>
+
+            <Label fx:id="globalMessageLabel" text="Pret pour une analyse statique de demonstration."/>
+        </VBox>
+    </children>
+</AnchorPane>

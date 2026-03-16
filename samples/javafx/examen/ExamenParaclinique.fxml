@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.net.URL?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.*?>
+<?import .view.production.examen.components.ExamensRealisesTableView?>
+<?import .view.production.examen.components.ExamensRealisesGridPane?>
+
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="647.0"
+            prefWidth="930.0" style="-fx-background-color: #fff;"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller=".view.production.examen.ExamenParacliniqueController">
+    <children>
+        <HBox prefHeight="647.0" prefWidth="950.0" spacing="3.0" AnchorPane.bottomAnchor="0.0"
+              AnchorPane.leftAnchor="0.0"
+              AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+            <children>
+                <fx:include fx:id="menuFeuilleDeRoute" source="../fragment/MenuFeuilleDeRoute.fxml"/>
+                <VBox fx:id="mainContentVBox" spacing="3.0" HBox.hgrow="ALWAYS">
+                    <children>
+                        <VBox prefHeight="647.0" spacing="3.0" style="-fx-background-color: #fff;" VBox.vgrow="ALWAYS">
+                            <children>
+                                <fx:include fx:id="bandeauIdentificationPrestation"
+                                            source="../fragment/BandeauIdentificationPrestation.fxml"/>
+                                <ExamensRealisesTableView fx:id="epcListeExamensRealisesTableView" minHeight="75.0" prefHeight="75.0"
+                                           prefWidth="930" VBox.vgrow="NEVER"
+                                           styleClass="table-view-sstitre-mobile,table-view-selectable">
+                                    <placeholder>
+                                        <Label text="Aucun examen de ce type réalisé"/>
+                                    </placeholder>
+                                    <columns>
+                                        <TableColumn fx:id="epcExamenCol"/>
+                                    </columns>
+                                </ExamensRealisesTableView>
+                                <HBox style="-fx-background-color: #04819E;-fx-alignment:center;" prefHeight="25"
+                                      minHeight="25" maxHeight="25" VBox.vgrow="NEVER">
+                                    <children>
+                                        <Label text="Vous êtes dans la salle " styleClass="label-titre-gras-blanc"/>
+                                        <Label fx:id="lblNomSalle" styleClass="label-titre-gras-blanc"/>
+                                    </children>
+                                </HBox>
+                                <ScrollPane fitToWidth="true" fitToHeight="true" VBox.vgrow="ALWAYS">
+                                    <content>
+                                        <VBox>
+                                            <children>
+				                                <GridPane fx:id="lecturePrerequiseGridPane" visible="false" gridLinesVisible="false" style="-fx-background-color:#E0F1F5">
+													<columnConstraints>
+														<ColumnConstraints minWidth="300" maxWidth="300" />
+														<ColumnConstraints minWidth="300" maxWidth="300" />
+														<ColumnConstraints minWidth="300" maxWidth="300" />
+														<ColumnConstraints hgrow="ALWAYS" />
+													</columnConstraints>
+													<rowConstraints>
+														<RowConstraints maxHeight="15" minHeight="15" prefHeight="15" vgrow="NEVER" />
+														<RowConstraints maxHeight="30" minHeight="30" prefHeight="30" vgrow="NEVER" />
+														<RowConstraints maxHeight="15" minHeight="15" prefHeight="15" vgrow="NEVER" />
+													</rowConstraints>
+													<children>
+														 <HBox alignment="CENTER_RIGHT" GridPane.columnIndex="3" GridPane.rowIndex="1" spacing="10.0">
+                                                         	<children>
+                                                         		<Label fx:id="lecturePrerequiseLbl"  text="Interprétation pré-requise" styleClass="lecture-prerequise-label" />
+				                                        		<CheckBox fx:id="lecturePrerequiseChcbx" />
+                                                            </children>
+                                                       	</HBox>
+													</children>
+													<padding>
+                                                        <Insets left="10" right="10"/>
+                                                    </padding>
+												</GridPane>				
+                                                <VBox VBox.vgrow="ALWAYS" style="-fx-background-color:#E0F1F5"
+                                                      alignment="TOP_CENTER">
+                                                    <ExamensRealisesGridPane fx:id="examenGridPane" gridLinesVisible="false"
+                                                              style="-fx-background-color:#E0F1F5;">
+                                                        <columnConstraints>
+                                                            <ColumnConstraints minWidth="300" maxWidth="300"/>
+                                                            <ColumnConstraints minWidth="300" maxWidth="300"/>
+                                                            <ColumnConstraints minWidth="300" maxWidth="300"/>
+                                                            <ColumnConstraints hgrow="ALWAYS"/>
+                                                        </columnConstraints>
+                                                    </ExamensRealisesGridPane>
+                                                </VBox>
+
+                                                <HBox fx:id="piecesJointesContainerHBox"
+                                                      style="-fx-background-color:#F1F1F1" alignment="CENTER_LEFT"
+                                                      spacing="10.0" maxHeight="30.0" minHeight="30.0" prefHeight="30.0"
+                                                      VBox.vgrow="NEVER" managed="false" visible="true">
+                                                    <padding>
+                                                        <Insets left="10"/>
+                                                    </padding>
+                                                    <children>
+                                                        <Button fx:id="epcAjoutManuelPJBtn"
+                                                                styleClass="button-picto-ajouter" minWidth="5.0"
+                                                                prefWidth="5.0" maxWidth="5.0" mnemonicParsing="false"
+                                                                onAction="#ajoutManuelPj"/>
+                                                        <Label styleClass="label-libelle" text="Pièce(s) jointe(s): "
+                                                               GridPane.halignment="RIGHT"/>
+                                                        <HBox fx:id="piecesJointesHb" alignment="CENTER_LEFT"
+                                                              spacing="10.0"/>
+                                                        <ImageView fitHeight="20.0" fitWidth="20.0" pickOnBounds="true"
+                                                                   preserveRatio="true" styleClass="image-link-picto-pictosymbole-pictopiecejointegene" />
+                                                    </children>
+                                                </HBox>
+                                                <GridPane fx:id="interpretationGridPane" gridLinesVisible="false" style="-fx-background-color:#E0F1F5" visible="false">
+                                                    <columnConstraints>
+                                                        <ColumnConstraints minWidth="300" maxWidth="300"/>
+                                                        <ColumnConstraints minWidth="300" maxWidth="300"/>
+                                                        <ColumnConstraints minWidth="300" maxWidth="300"/>
+                                                        <ColumnConstraints hgrow="ALWAYS"/>
+                                                    </columnConstraints>
+                                                </GridPane>
+
+                                            </children>
+                                        </VBox>
+                                    </content>
+                                </ScrollPane>
+                                <HBox HBox.hgrow="ALWAYS">
+                                    <children>
+                                        <HBox alignment="TOP_LEFT" prefHeight="30.0" spacing="5.0" HBox.hgrow="ALWAYS"
+                                              style="float:left;-fx-background-color:#F1F1F1;">
+                                            <padding>
+                                                <Insets left="15" top="5"/>
+                                            </padding>
+                                            <children>
+                                                <Button fx:id="epcImprimerExamenBtn" onAction="#epcImprimerExamen"
+                                                        mnemonicParsing="false" styleClass="button-imprimer"
+                                                        text="Imprimer"/>
+                                            </children>
+                                        </HBox>
+                                        <VBox VBox.vgrow="NEVER" spacing="10"
+                                              style="float:right;-fx-background-color:#F1F1F1;-fx-alignement:right;">
+                                            <children>
+                                                <HBox alignment="CENTER_RIGHT" prefHeight="30.0" spacing="5.0"
+                                                      VBox.vgrow="NEVER">
+                                                    <padding>
+                                                        <Insets left="15" right="15" top="5"/>
+                                                    </padding>
+                                                    <children>
+                                                        <Button fx:id="epcSupprimerExamenBtn"
+                                                                onAction="#epcSupprimerExamen" disable="true"
+                                                                mnemonicParsing="false"
+                                                                styleClass="button-supprimer" text="Supprimer"/>
+                                                        <Button fx:id="epcAnnulerExamenBtn" onAction="#epcAnnulerExamen"
+                                                                disable="false" mnemonicParsing="false"
+                                                                styleClass="button-annuler" text="Annuler"/>
+                                                        <Button fx:id="epcModifierExamenBtn"
+                                                                onAction="#epcModifierExamen" disable="true"
+                                                                mnemonicParsing="false"
+                                                                styleClass="button-modifier" text="Modifier"/>
+                                                        <Button fx:id="epcEnregistrerExamenBtn"
+                                                                onAction="#epcEnregistrer" disable="false"
+                                                                mnemonicParsing="false"
+                                                                styleClass="button-enregistrer" text="Enregistrer"/>
+                                                    </children>
+                                                </HBox>
+                                                <HBox alignment="CENTER_RIGHT" prefHeight="30.0" spacing="5.0"
+                                                      VBox.vgrow="NEVER">
+                                                    <padding>
+                                                        <Insets left="15" right="15" bottom="5"/>
+                                                    </padding>
+                                                    <children>
+                                                        <Button fx:id="epcNouvelExamenBtn" onAction="#epcNouvelExamen"
+                                                                mnemonicParsing="false" disable="true"
+                                                                styleClass="button-ajouter-large" text="Nouvel examen"/>
+                                                        <Button fx:id="epcInterpreterBtn"
+                                                                onAction="#epcSaisirInterpretation" disable="true"
+                                                                mnemonicParsing="false"
+                                                                styleClass="button-general-long"
+                                                                text="Saisir interprétation"/>
+                                                        <Button fx:id="epcAcquisitionResultatsBtn"
+                                                                onAction="#epcAcquisitionResultats" disable="true"
+                                                                mnemonicParsing="false"
+                                                                styleClass="button-general-long"
+                                                                text="Acquisition résultats"/>
+                                                        <Button fx:id="epcLancerExamenBtn" onAction="#epcLancerExamen"
+                                                                disable="true" mnemonicParsing="false"
+                                                                styleClass="button-general" text="Lancer examen"/>
+                                                    </children>
+                                                </HBox>
+                                            </children>
+                                        </VBox>
+                                    </children>
+                                </HBox>
+                            </children>
+                        </VBox>
+                        <fx:include fx:id="bandeauLiensPrestation" source="../fragment/BandeauLiensPrestation.fxml"/>
+                    </children>
+                </VBox>
+            </children>
+        </HBox>
+    </children>
+</AnchorPane>

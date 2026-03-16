@@ -1,0 +1,7 @@
+interface:
+  display_name: "Screen Cartographer"
+  short_description: "Cartographie structurelle du FXML"
+  default_prompt: "Use $javafx-screen-cartographer to map the structure and functional zones of a JavaFX FXML screen."
+
+policy:
+  allow_implicit_invocation: true

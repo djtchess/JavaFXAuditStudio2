@@ -1,0 +1,7 @@
+interface:
+  display_name: "Refactoring Planner"
+  short_description: "Planifie la migration progressive"
+  default_prompt: "Use $javafx-refactoring-planner to produce a 5-lot migration plan for a JavaFX controller."
+
+policy:
+  allow_implicit_invocation: true

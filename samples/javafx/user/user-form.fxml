@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Text?>
+
+<ScrollPane fitToWidth="true"
+            xmlns="http://javafx.com/javafx/11"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.example.user.controller.UserFormController"
+            stylesheets="@../css/user-form.css">
+
+    <content>
+        <VBox styleClass="root-container" spacing="20">
+            <padding>
+                <Insets top="30" right="40" bottom="30" left="40"/>
+            </padding>
+
+            <!-- ===== TITRE ===== -->
+            <Label text="Création d'un utilisateur" styleClass="form-title"/>
+            <Separator/>
+
+            <!-- ===== SECTION : IDENTITÉ ===== -->
+            <TitledPane text="Identité" collapsible="false" styleClass="section-pane">
+                <GridPane hgap="15" vgap="12">
+                    <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
+
+                    <columnConstraints>
+                        <ColumnConstraints minWidth="140" prefWidth="160"/>
+                        <ColumnConstraints hgrow="ALWAYS"/>
+                        <ColumnConstraints minWidth="140" prefWidth="160"/>
+                        <ColumnConstraints hgrow="ALWAYS"/>
+                    </columnConstraints>
+
+                    <!-- Civilité -->
+                    <Label text="Civilité *" GridPane.columnIndex="0" GridPane.rowIndex="0"
+                           styleClass="field-label"/>
+                    <ComboBox fx:id="cmbCivilite" promptText="Sélectionner..."
+                              GridPane.columnIndex="1" GridPane.rowIndex="0"
+                              maxWidth="Infinity"/>
+
+                    <!-- Nom -->
+                    <Label text="Nom *" GridPane.columnIndex="2" GridPane.rowIndex="0"
+                           styleClass="field-label"/>
+                    <TextField fx:id="txtNom" promptText="Nom de famille"
+                               GridPane.columnIndex="3" GridPane.rowIndex="0"/>
+
+                    <!-- Prénom -->
+                    <Label text="Prénom *" GridPane.columnIndex="0" GridPane.rowIndex="1"
+                           styleClass="field-label"/>
+                    <TextField fx:id="txtPrenom" promptText="Prénom"
+                               GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+
+                    <!-- Date de naissance -->
+                    <Label text="Date de naissance" GridPane.columnIndex="2" GridPane.rowIndex="1"
+                           styleClass="field-label"/>
+                    <DatePicker fx:id="dpDateNaissance" promptText="jj/mm/aaaa"
+                                GridPane.columnIndex="3" GridPane.rowIndex="1"
+                                maxWidth="Infinity"/>
+                </GridPane>
+            </TitledPane>
+
+            <!-- ===== SECTION : COMPTE ===== -->
+            <TitledPane text="Compte" collapsible="false" styleClass="section-pane">
+                <GridPane hgap="15" vgap="12">
+                    <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
+
+                    <columnConstraints>
+                        <ColumnConstraints minWidth="140" prefWidth="160"/>
+                        <ColumnConstraints hgrow="ALWAYS"/>
+                        <ColumnConstraints minWidth="140" prefWidth="160"/>
+                        <ColumnConstraints hgrow="ALWAYS"/>
+                    </columnConstraints>
+
+                    <!-- Login -->
+                    <Label text="Identifiant *" GridPane.columnIndex="0" GridPane.rowIndex="0"
+                           styleClass="field-label"/>
+                    <TextField fx:id="txtLogin" promptText="Identifiant de connexion"
+                               GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+
+                    <!-- Email -->
+                    <Label text="Email *" GridPane.columnIndex="2" GridPane.rowIndex="0"
+                           styleClass="field-label"/>
+                    <TextField fx:id="txtEmail" promptText="exemple@domaine.fr"
+                               GridPane.columnIndex="3" GridPane.rowIndex="0"/>
+
+                    <!-- Mot de passe -->
+                    <Label text="Mot de passe *" GridPane.columnIndex="0" GridPane.rowIndex="1"
+                           styleClass="field-label"/>
+                    <PasswordField fx:id="txtPassword" promptText="Mot de passe"
+                                   GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+
+                    <!-- Confirmation mot de passe -->
+                    <Label text="Confirmation *" GridPane.columnIndex="2" GridPane.rowIndex="1"
+                           styleClass="field-label"/>
+                    <PasswordField fx:id="txtPasswordConfirm" promptText="Confirmer le mot de passe"
+                                   GridPane.columnIndex="3" GridPane.rowIndex="1"/>
+
+                    <!-- Rôle -->
+                    <Label text="Rôle *" GridPane.columnIndex="0" GridPane.rowIndex="2"
+                           styleClass="field-label"/>
+                    <ComboBox fx:id="cmbRole" promptText="Sélectionner un rôle..."
+                              GridPane.columnIndex="1" GridPane.rowIndex="2"
+                              maxWidth="Infinity"/>
+
+                    <!-- Actif -->
+                    <Label text="Statut" GridPane.columnIndex="2" GridPane.rowIndex="2"
+                           styleClass="field-label"/>
+                    <CheckBox fx:id="chkActif" text="Compte actif"
+                              GridPane.columnIndex="3" GridPane.rowIndex="2"
+                              selected="true"/>
+                </GridPane>
+            </TitledPane>
+
+            <!-- ===== SECTION : COORDONNÉES ===== -->
+            <TitledPane text="Coordonnées" collapsible="false" styleClass="section-pane">
+                <GridPane hgap="15" vgap="12">
+                    <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
+
+                    <columnConstraints>
+                        <ColumnConstraints minWidth="140" prefWidth="160"/>
+                        <ColumnConstraints hgrow="ALWAYS"/>
+                        <ColumnConstraints minWidth="140" prefWidth="160"/>
+                        <ColumnConstraints hgrow="ALWAYS"/>
+                    </columnConstraints>
+
+                    <!-- Téléphone -->
+                    <Label text="Téléphone" GridPane.columnIndex="0" GridPane.rowIndex="0"
+                           styleClass="field-label"/>
+                    <TextField fx:id="txtTelephone" promptText="0X XX XX XX XX"
+                               GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+
+                    <!-- Service -->
+                    <Label text="Service" GridPane.columnIndex="2" GridPane.rowIndex="0"
+                           styleClass="field-label"/>
+                    <TextField fx:id="txtService" promptText="Direction / Service"
+                               GridPane.columnIndex="3" GridPane.rowIndex="0"/>
+
+                    <!-- Adresse -->
+                    <Label text="Adresse" GridPane.columnIndex="0" GridPane.rowIndex="1"
+                           styleClass="field-label" VBox.vgrow="ALWAYS"/>
+                    <TextArea fx:id="txtAdresse" promptText="Adresse postale"
+                              GridPane.columnIndex="1" GridPane.rowIndex="1"
+                              GridPane.columnSpan="3"
+                              prefRowCount="3" wrapText="true"/>
+                </GridPane>
+            </TitledPane>
+
+            <!-- ===== BARRE D'ERREUR ===== -->
+            <Label fx:id="lblErreur" styleClass="error-label" wrapText="true"
+                   visible="false" managed="false"/>
+
+            <!-- ===== BOUTONS ===== -->
+            <HBox spacing="12" alignment="CENTER_RIGHT">
+                <Button fx:id="btnReinitialiser" text="Réinitialiser"
+                        styleClass="btn-secondary"
+                        onAction="#handleReinitialiser"/>
+                <Button fx:id="btnAnnuler" text="Annuler"
+                        styleClass="btn-secondary"
+                        onAction="#handleAnnuler"/>
+                <Button fx:id="btnEnregistrer" text="Enregistrer"
+                        styleClass="btn-primary"
+                        defaultButton="true"
+                        onAction="#handleEnregistrer"/>
+            </HBox>
+
+            <!-- Légende champs obligatoires -->
+            <Label text="* Champs obligatoires" styleClass="legend-label"/>
+
+        </VBox>
+    </content>
+</ScrollPane>

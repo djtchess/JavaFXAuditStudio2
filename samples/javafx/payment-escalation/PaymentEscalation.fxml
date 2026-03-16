@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.VBox?>
+<VBox xmlns:fx="http://javafx.com/fxml" fx:controller="app.ui.payment.PaymentEscalationController" spacing="10">
+    <children>
+        <Label text="Payment escalation" />
+        <TextField fx:id="paymentReferenceField" />
+        <TextField fx:id="amountField" />
+        <CheckBox fx:id="fraudAlertCheckBox" text="Fraud alert" />
+        <TextArea fx:id="escalationReasonArea" />
+        <Label fx:id="feedbackLabel" text="Draft" />
+        <Button fx:id="escalateButton" text="Escalate" onAction="#onEscalatePayment" />
+    </children>
+</VBox>

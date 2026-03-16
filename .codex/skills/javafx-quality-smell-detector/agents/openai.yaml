@@ -1,0 +1,7 @@
+interface:
+  display_name: "Quality Smell Detector"
+  short_description: "Detecte dette et blocages d'extraction"
+  default_prompt: "Use $javafx-quality-smell-detector to detect maintainability risks and extraction blockers in JavaFX code."
+
+policy:
+  allow_implicit_invocation: true

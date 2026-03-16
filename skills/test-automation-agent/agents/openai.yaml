@@ -1,0 +1,4 @@
+interface:
+  display_name: "Test Automation Agent"
+  short_description: "Genere TU et TI front/back"
+  default_prompt: "Use $test-automation-agent to generate frontend and backend unit and integration tests for this project."

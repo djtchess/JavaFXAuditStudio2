@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.example.ComplexController">
+
+    <top>
+        <HBox spacing="8">
+            <Label text="Recherche :" />
+            <TextField fx:id="searchField"
+                       promptText="Terme de recherche" />
+            <Button fx:id="searchButton"
+                    text="Chercher"
+                    onAction="#handleSearch" />
+            <Button fx:id="clearSearchButton"
+                    text="Effacer"
+                    onAction="#handleClearSearch" />
+        </HBox>
+    </top>
+
+    <center>
+        <VBox spacing="6">
+            <HBox spacing="8">
+                <Label text="Categorie :" />
+                <ComboBox fx:id="categoryCombo"
+                          onAction="#handleCategoryChange" />
+                <Label text="Statut :" />
+                <ComboBox fx:id="statusCombo" />
+            </HBox>
+
+            <TableView fx:id="resultTable">
+                <columns>
+                    <TableColumn fx:id="nameColumn" text="Nom" />
+                    <TableColumn fx:id="typeColumn" text="Type" />
+                    <TableColumn fx:id="statusColumn" text="Statut" />
+                </columns>
+            </TableView>
+        </VBox>
+    </center>
+
+    <bottom>
+        <HBox spacing="8">
+            <Button fx:id="addButton"
+                    text="Ajouter"
+                    onAction="#handleAdd" />
+            <Button fx:id="editButton"
+                    text="Modifier"
+                    onAction="#handleEdit" />
+            <Button fx:id="deleteButton"
+                    text="Supprimer"
+                    onAction="#handleDelete" />
+            <Label fx:id="infoLabel"
+                   text="Prêt." />
+        </HBox>
+    </bottom>
+
+</BorderPane>

@@ -10,8 +10,12 @@ import java.net.http.HttpResponse;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 
+// @ActiveProfiles("test") ajouté lors de JAS-EPIC-12 : la classe n'avait pas de profil actif,
+// ce qui provoquait un échec à l'inclusion dans Surefire (ddl-auto=validate sans PostgreSQL).
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@ActiveProfiles("test")
 class WorkbenchControllerIT {
 
     @Value("${local.server.port}")

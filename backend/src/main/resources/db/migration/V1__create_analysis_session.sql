@@ -10,5 +10,5 @@ COMMENT ON TABLE analysis_session IS 'Sessions d analyse de controllers JavaFX';
 COMMENT ON COLUMN analysis_session.session_id IS 'UUID de la session';
 COMMENT ON COLUMN analysis_session.controller_name IS 'Nom du controller analyse';
 COMMENT ON COLUMN analysis_session.source_snippet_ref IS 'Reference optionnelle au snippet source';
-COMMENT ON COLUMN analysis_session.status IS 'Statut : PENDING, RUNNING, COMPLETED, FAILED';
+COMMENT ON COLUMN analysis_session.status IS 'Statut : CREATED, IN_PROGRESS, COMPLETED, FAILED';
 COMMENT ON COLUMN analysis_session.created_at IS 'Horodatage UTC de creation';

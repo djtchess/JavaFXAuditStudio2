@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./mvnw compile:*)",
+      "Bash(java -version)",
+      "Bash(echo \"JAVA_HOME=$JAVA_HOME\")",
+      "Bash(./mvnw test:*)",
+      "Bash(./mvnw clean:*)",
+      "Bash(./mvnw dependency:tree -Dscope=test)",
+      "Bash(./mvnw test-compile:*)",
+      "Bash(./mvnw dependency:tree)",
+      "Read(//c/Users/JACQUOT-07370/.m2/repository/org/springframework/boot/spring-boot-test-autoconfigure/**)",
+      "Bash(jar tf:*)"
+    ]
+  }
+}

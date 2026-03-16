@@ -71,6 +71,24 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
+			<!--
+				JAS-EPIC-12 : Surefire est configure pour inclure les classes *IT
+				(tests d'integration) dans la phase test standard (mvn test).
+				Par defaut Surefire 3.x exclut les *IT et les reserve a Failsafe.
+				On surcharge ce comportement pour simplifier le cycle CI : un seul
+				./mvnw test suffit pour executer l'ensemble de la suite.
+			-->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<includes>
+						<include>**/*Test.java</include>
+						<include>**/*Tests.java</include>
+						<include>**/*IT.java</include>
+					</includes>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
 

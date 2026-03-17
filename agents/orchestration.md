@@ -25,6 +25,7 @@ Agents :
 - `analyste-regles-metier`
 - `api-contrats`
 - `securite`
+- `transparence-openai`
 
 Sorties attendues :
 
@@ -32,6 +33,7 @@ Sorties attendues :
 - module mappee sur le guide ;
 - contrats d'API et DTO candidats ;
 - contraintes de securite ;
+- rapport initial de transparence OpenAI ;
 - definition de l'interaction conversationnelle.
 
 ## Phase 2 - Architecture du moteur
@@ -112,7 +114,7 @@ Sorties attendues :
 ## Ordre d'execution recommande
 
 1. `architecture-applicative`
-2. `product-owner-fonctionnel`, `analyste-regles-metier`, `api-contrats`, `securite`
+2. `product-owner-fonctionnel`, `analyste-regles-metier`, `api-contrats`, `securite`, `transparence-openai`
 3. `architecture-moteur-analyse`, `audit-qualite-analyse`
 4. `backend-hexagonal`, `frontend-angular`, `database-postgres`, `implementation-moteur-analyse`
 5. agents specialises du moteur en parallele sur echantillons reels
@@ -132,10 +134,12 @@ Les skills `.codex` servent de sous-agents specialises pendant les phases 2 a 5.
 - `javafx-refactoring-planner` alimente `implementation-moteur-analyse` et `documentation-technique`.
 - `javafx-test-strategy-advisor` alimente `test-automation`, `qa-backend` et `qa-frontend`.
 - `javafx-report-writer` alimente `restitution` et la documentation de sortie.
+- `openai-transparency-reporter` alimente `transparence-openai`.
 
 ## Regles de parallelisation
 
 - Ne lancer les agents de production qu'apres validation des contrats et de la securite.
+- Rejouer `transparence-openai` des qu'un nouveau prompt, skill ou flux de fichiers est introduit.
 - Les agents analytiques peuvent travailler en parallele sur un meme controller seulement si `consolidation` reste unique.
 - Toute ambiguite fonctionnelle remonte vers `architecture-applicative` et `gouvernance`.
 - Toute ambiguite de version frontend remonte avant generation du squelette Angular.

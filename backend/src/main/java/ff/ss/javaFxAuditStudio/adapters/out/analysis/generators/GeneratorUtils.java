@@ -4,12 +4,16 @@ import ff.ss.javaFxAuditStudio.domain.generation.ArtifactType;
 import ff.ss.javaFxAuditStudio.domain.generation.CodeArtifact;
 import ff.ss.javaFxAuditStudio.domain.rules.BusinessRule;
 import ff.ss.javaFxAuditStudio.domain.rules.MethodSignature;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Methodes utilitaires partagees entre tous les generateurs d'artefacts.
  * Classe finale avec uniquement des methodes statiques — pas d'instanciation.
  */
 public final class GeneratorUtils {
+
+    private static final Logger LOG = LoggerFactory.getLogger(GeneratorUtils.class);
 
     private GeneratorUtils() {
         // utilitaire statique — pas d'instanciation
@@ -80,6 +84,9 @@ public final class GeneratorUtils {
      * 3. "Champ FXML Type fieldName : ..." -> "fieldName"
      * 4. "void foo(Arg arg)" -> "foo"
      * 5. Fallback camelCase sur les 3 premiers mots significatifs
+     *
+     * <p>JAS-008 : le nom extrait est ensuite nettoye par suppression des prefixes et suffixes
+     * techniques (on, handle, btn, button, action, Clicked, Action, Pressed...).
      */
     public static String methodNameFromRule(final BusinessRule rule) {
         String desc = rule.description();
@@ -90,7 +97,7 @@ public final class GeneratorUtils {
             int colon = rest.indexOf(':');
             String name = (colon > 0 ? rest.substring(0, colon) : rest).trim();
             if (isValidIdentifier(name)) {
-                return name;
+                return cleanMethodName(name);
             }
         }
 
@@ -128,7 +135,7 @@ public final class GeneratorUtils {
                     ? desc.substring(spaceIndex + 1, parenIndex).trim()
                     : desc.substring(0, parenIndex).trim();
             if (isValidIdentifier(name)) {
-                return name;
+                return cleanMethodName(name);
             }
         }
 
@@ -151,6 +158,61 @@ public final class GeneratorUtils {
         }
         String result = method.toString();
         return result.isEmpty() ? "handle" : result;
+    }
+
+    /**
+     * JAS-008 — Nettoie un nom de methode en supprimant les prefixes et suffixes techniques.
+     * Si le resultat serait vide ou de moins de 3 caracteres, retourne le nom original.
+     *
+     * <p>Prefixes supprimes (dans l'ordre, insensibles a la casse, une seule iteration) :
+     * on, handle/handler, btn/button, action.
+     *
+     * <p>Suffixes supprimes (insensibles a la casse) :
+     * Clicked, Click, Action, Pressed, Press, Released, Changed, Change,
+     * Selected, Select, Fired, Event, Handler.
+     */
+    public static String cleanMethodName(final String rawName) {
+        if (rawName == null || rawName.length() < 3) {
+            return rawName;
+        }
+        String cleaned = stripPrefix(rawName);
+        cleaned = stripSuffix(cleaned);
+        cleaned = decapitalize(cleaned);
+        if (cleaned.isEmpty() || cleaned.length() < 3) {
+            return decapitalize(rawName);
+        }
+        return cleaned;
+    }
+
+    private static String stripPrefix(final String name) {
+        // Ordre important : prefixes les plus longs d'abord pour eviter les correspondances partielles
+        String[] prefixes = {"handler", "handle", "button", "bouton", "action", "on", "btn"};
+        for (String prefix : prefixes) {
+            if (name.length() > prefix.length()
+                    && name.toLowerCase().startsWith(prefix.toLowerCase())) {
+                String remainder = name.substring(prefix.length());
+                // Le reste doit commencer par une majuscule pour etre un nom camelCase valide
+                if (!remainder.isEmpty() && Character.isUpperCase(remainder.charAt(0))) {
+                    return remainder;
+                }
+            }
+        }
+        return name;
+    }
+
+    private static String stripSuffix(final String name) {
+        String[] suffixes = {
+            "Clicked", "Click", "Pressed", "Press", "Released",
+            "Changed", "Change", "Selected", "Select",
+            "Action", "Fired", "Event", "Handler"
+        };
+        for (String suffix : suffixes) {
+            if (name.length() > suffix.length()
+                    && name.toLowerCase().endsWith(suffix.toLowerCase())) {
+                return name.substring(0, name.length() - suffix.length());
+            }
+        }
+        return name;
     }
 
     /**
@@ -208,9 +270,14 @@ public final class GeneratorUtils {
     /**
      * Mappe un type de composant JavaFX a une propriete semantique du ViewModel.
      * Retourne null pour les composants dont la representation est trop complexe (TableView...).
+     *
+     * <p>JAS-007 : apres la correspondance exacte, une heuristique par sous-chaine (case-insensitive)
+     * resout les types custom heritant de composants JavaFX standards.
      */
     public static ViewModelProperty fxmlTypeToProperty(final String rawField, final String fxmlType) {
         String lower = fxmlType.toLowerCase();
+
+        // Correspondance exacte — types standards JavaFX
         if (lower.endsWith("vbox") || lower.endsWith("hbox") || lower.endsWith("pane")
                 || lower.endsWith("gridpane") || lower.endsWith("flowpane")
                 || lower.endsWith("borderpane") || lower.endsWith("anchorpane")
@@ -238,7 +305,77 @@ public final class GeneratorUtils {
                 || lower.endsWith("treeview")) {
             return null;
         }
+
+        // JAS-007 — heuristique par sous-chaine pour les types custom heritant de composants JavaFX
+        ViewModelProperty heuristicResult = resolveByHeuristic(rawField, fxmlType, lower);
+        if (heuristicResult != null) {
+            return heuristicResult;
+        }
+
         return new ViewModelProperty(rawField, inferPropertyType(rawField));
+    }
+
+    /**
+     * JAS-007 — Resout un type custom JavaFX par heuristique de sous-chaine (case-insensitive).
+     * Retourne null si aucune heuristique ne correspond (type inconnu).
+     */
+    private static ViewModelProperty resolveByHeuristic(
+            final String rawField, final String fxmlType, final String lower) {
+        // TableView avant ListView et TreeView pour eviter les correspondances "table" ambigues
+        if (lower.contains("tableview") || lower.contains("table")) {
+            LOG.debug("[JAS-007] Type custom '{}' resolu par heuristique vers 'TableView'", fxmlType);
+            return null; // TODO: ObservableList — meme comportement que TableView standard
+        }
+        if (lower.contains("listview") || lower.contains("list")) {
+            LOG.debug("[JAS-007] Type custom '{}' resolu par heuristique vers 'ListView'", fxmlType);
+            return null; // TODO: ObservableList — meme comportement que ListView standard
+        }
+        if (lower.contains("treeview") || lower.contains("tree")) {
+            LOG.debug("[JAS-007] Type custom '{}' resolu par heuristique vers 'TreeView'", fxmlType);
+            return null; // TODO: ObservableList — meme comportement que TreeView standard
+        }
+        if (lower.contains("gridpane") || lower.contains("grid")) {
+            LOG.debug("[JAS-007] Type custom '{}' resolu par heuristique vers 'GridPane'", fxmlType);
+            return new ViewModelProperty(rawField + "Visible", PropertyType.BOOLEAN);
+        }
+        if (lower.contains("checkbox") || lower.contains("toggle") || lower.contains("radio")) {
+            LOG.debug("[JAS-007] Type custom '{}' resolu par heuristique vers 'CheckBox'", fxmlType);
+            return new ViewModelProperty(rawField + "Selected", PropertyType.BOOLEAN);
+        }
+        if (lower.contains("button") || lower.contains("btn") || lower.contains("bouton")) {
+            LOG.debug("[JAS-007] Type custom '{}' resolu par heuristique vers 'Button'", fxmlType);
+            return new ViewModelProperty(rawField + "Enabled", PropertyType.BOOLEAN);
+        }
+        if (lower.contains("label") || lower.contains("lbl")) {
+            LOG.debug("[JAS-007] Type custom '{}' resolu par heuristique vers 'Label'", fxmlType);
+            return new ViewModelProperty(rawField + "Text", PropertyType.STRING);
+        }
+        if (lower.contains("textfield") || lower.contains("textarea")
+                || lower.contains("input") || lower.contains("champ")) {
+            LOG.debug("[JAS-007] Type custom '{}' resolu par heuristique vers 'TextField'", fxmlType);
+            return new ViewModelProperty(rawField + "Text", PropertyType.STRING);
+        }
+        // "text" seul apres les variantes plus specifiques
+        if (lower.contains("text")) {
+            LOG.debug("[JAS-007] Type custom '{}' resolu par heuristique vers 'TextField'", fxmlType);
+            return new ViewModelProperty(rawField + "Text", PropertyType.STRING);
+        }
+        if (lower.contains("combobox") || lower.contains("combo") || lower.contains("choice")
+                || lower.contains("spinner") || lower.contains("slider")) {
+            LOG.debug("[JAS-007] Type custom '{}' resolu par heuristique vers 'ComboBox'", fxmlType);
+            return new ViewModelProperty(rawField + "Value", PropertyType.STRING);
+        }
+        // "tab" sans "table" (deja traite plus haut)
+        if (lower.contains("tab")) {
+            LOG.debug("[JAS-007] Type custom '{}' resolu par heuristique vers 'TabPane'", fxmlType);
+            return new ViewModelProperty(rawField + "Visible", PropertyType.BOOLEAN);
+        }
+        if (lower.contains("vbox") || lower.contains("hbox") || lower.contains("pane")
+                || lower.contains("box") || lower.contains("container") || lower.contains("panel")) {
+            LOG.debug("[JAS-007] Type custom '{}' resolu par heuristique vers 'VBox'", fxmlType);
+            return new ViewModelProperty(rawField + "Visible", PropertyType.BOOLEAN);
+        }
+        return null;
     }
 
     /** Infere le type JavaFX le plus approprie selon la convention de nommage du champ. */

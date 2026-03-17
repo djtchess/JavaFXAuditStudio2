@@ -1,20 +1,18 @@
 package ff.ss.javaFxAuditStudio.application.ports.out;
 
-import ff.ss.javaFxAuditStudio.domain.rules.BusinessRule;
-
-import java.util.List;
+import ff.ss.javaFxAuditStudio.domain.rules.ExtractionResult;
 
 /**
- * Port sortant : extraction des règles de gestion depuis le contenu source d'un controller.
+ * Port sortant : extraction des regles de gestion depuis le contenu source d'un controller.
  */
 public interface RuleExtractionPort {
 
     /**
-     * Extrait les règles de gestion depuis le contenu Java ou FXML fourni.
+     * Extrait les regles de gestion depuis le contenu Java ou FXML fourni.
      *
-     * @param controllerRef référence du controller (chemin ou identifiant)
+     * @param controllerRef reference du controller (chemin ou identifiant)
      * @param javaContent   contenu textuel du fichier Java source (vide si non disponible)
-     * @return liste des règles extraites, jamais null
+     * @return resultat de l'extraction contenant les regles et le mode de parsing utilise, jamais null
      */
-    List<BusinessRule> extract(String controllerRef, String javaContent);
+    ExtractionResult extract(String controllerRef, String javaContent);
 }

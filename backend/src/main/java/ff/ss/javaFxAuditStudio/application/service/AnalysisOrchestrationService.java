@@ -10,7 +10,6 @@ import ff.ss.javaFxAuditStudio.application.ports.in.ProduceRestitutionUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.out.AnalysisSessionPort;
 import ff.ss.javaFxAuditStudio.domain.cartography.ControllerCartography;
 import ff.ss.javaFxAuditStudio.domain.generation.GenerationResult;
-import ff.ss.javaFxAuditStudio.domain.ingestion.IngestionResult;
 import ff.ss.javaFxAuditStudio.domain.migration.MigrationPlan;
 import ff.ss.javaFxAuditStudio.domain.restitution.RestitutionReport;
 import ff.ss.javaFxAuditStudio.domain.rules.ClassificationResult;
@@ -93,15 +92,12 @@ public final class AnalysisOrchestrationService implements AnalysisOrchestration
         try {
             // Etape 3 : ingestion
             log.debug("Etape ingestion demarree");
-            IngestionResult ingestionResult = ingestSourcesUseCase.handle(List.of(sourceRef));
+            ingestSourcesUseCase.handle(List.of(sourceRef));
 
-            // Etape 4 : cartographie
-            // CartographyUseCase.handle(controllerRef, fxmlRef) — utilise le premier input si disponible
+            // Etape 4 : cartographie — utilise les chemins reels stockes dans la session
             log.debug("Etape cartographie demarree");
-            String resolvedControllerRef = ingestionResult.inputs().isEmpty()
-                    ? controllerRef
-                    : ingestionResult.inputs().get(0).ref();
-            ControllerCartography cartography = cartographyUseCase.handle(sessionId, resolvedControllerRef, "");
+            ControllerCartography cartography = cartographyUseCase.handle(
+                    sessionId, session.controllerName(), session.sourceSnippetRef());
 
             // Etape 5 : classification
             log.debug("Etape classification demarree");

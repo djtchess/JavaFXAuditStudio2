@@ -1,12 +1,16 @@
 package ff.ss.javaFxAuditStudio.adapters.out.persistence;
 
+import ff.ss.javaFxAuditStudio.domain.rules.ParsingMode;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
@@ -31,8 +35,14 @@ public class ClassificationResultEntity {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "classification_id")
+    @Column(name = "parsing_mode", nullable = false, length = 30)
+    @Enumerated(EnumType.STRING)
+    private ParsingMode parsingMode = ParsingMode.AST;
+
+    @Column(name = "parsing_fallback_reason")
+    private String parsingFallbackReason;
+
+    @OneToMany(mappedBy = "classification", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<BusinessRuleEntity> rules = new ArrayList<>();
 
     /** Constructeur no-arg requis par JPA. */
@@ -42,12 +52,23 @@ public class ClassificationResultEntity {
     public ClassificationResultEntity(
             final String sessionId,
             final String controllerRef,
-            final Instant createdAt,
-            final List<BusinessRuleEntity> rules) {
+            final Instant createdAt) {
         this.sessionId = sessionId;
         this.controllerRef = controllerRef;
         this.createdAt = createdAt;
-        this.rules = rules;
+    }
+
+    public ClassificationResultEntity(
+            final String sessionId,
+            final String controllerRef,
+            final Instant createdAt,
+            final ParsingMode parsingMode,
+            final String parsingFallbackReason) {
+        this.sessionId = sessionId;
+        this.controllerRef = controllerRef;
+        this.createdAt = createdAt;
+        this.parsingMode = parsingMode != null ? parsingMode : ParsingMode.AST;
+        this.parsingFallbackReason = parsingFallbackReason;
     }
 
     public Long getId() {
@@ -64,6 +85,22 @@ public class ClassificationResultEntity {
 
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public ParsingMode getParsingMode() {
+        return parsingMode;
+    }
+
+    public void setParsingMode(final ParsingMode parsingMode) {
+        this.parsingMode = parsingMode != null ? parsingMode : ParsingMode.AST;
+    }
+
+    public String getParsingFallbackReason() {
+        return parsingFallbackReason;
+    }
+
+    public void setParsingFallbackReason(final String parsingFallbackReason) {
+        this.parsingFallbackReason = parsingFallbackReason;
     }
 
     public List<BusinessRuleEntity> getRules() {

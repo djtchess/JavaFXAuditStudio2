@@ -51,6 +51,8 @@ export interface ClassificationResponse {
   ruleCount: number;
   uncertainCount: number;
   rules: BusinessRuleDto[];
+  parsingMode: 'AST' | 'REGEX_FALLBACK';
+  parsingFallbackReason?: string;
 }
 
 // --- Migration Plan ---
@@ -75,6 +77,7 @@ export interface CodeArtifactDto {
   type: string;
   lotNumber: number;
   className: string;
+  content: string;
   transitionalBridge: boolean;
 }
 
@@ -82,6 +85,18 @@ export interface ArtifactsResponse {
   controllerRef: string;
   artifacts: CodeArtifactDto[];
   warnings: string[];
+}
+
+// --- Export ---
+
+export interface ExportArtifactsRequest {
+  targetDirectory: string;
+}
+
+export interface ExportArtifactsResponse {
+  targetDirectory: string;
+  exportedFiles: string[];
+  errors: string[];
 }
 
 // --- Restitution Report ---

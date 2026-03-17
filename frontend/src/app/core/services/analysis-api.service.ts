@@ -7,6 +7,7 @@ import {
   ArtifactsResponse,
   CartographyResponse,
   ClassificationResponse,
+  ExportArtifactsResponse,
   MigrationPlanResponse,
   OrchestratedAnalysisResultResponse,
   RestitutionReportResponse,
@@ -40,6 +41,13 @@ export class AnalysisApiService {
 
   getReport(sessionId: string): Observable<RestitutionReportResponse> {
     return this.http.get<RestitutionReportResponse>(`${this.base}/${sessionId}/report`);
+  }
+
+  exportArtifacts(sessionId: string, targetDirectory: string): Observable<ExportArtifactsResponse> {
+    return this.http.post<ExportArtifactsResponse>(
+      `${this.base}/${sessionId}/artifacts/export`,
+      { targetDirectory },
+    );
   }
 
   runFullPipeline(sessionId: string): Observable<OrchestratedAnalysisResultResponse> {

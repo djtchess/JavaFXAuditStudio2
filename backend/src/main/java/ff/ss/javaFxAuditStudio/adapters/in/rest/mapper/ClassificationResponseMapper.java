@@ -15,11 +15,16 @@ public class ClassificationResponseMapper {
 
     public ClassificationResponse toResponse(final ClassificationResult result) {
         List<BusinessRuleDto> allRules = buildAllRules(result);
+        String parsingMode = result.parsingMode() != null
+                ? result.parsingMode().name()
+                : "AST";
         return new ClassificationResponse(
                 result.controllerRef(),
                 result.rules().size(),
                 result.uncertainRules().size(),
-                allRules);
+                allRules,
+                parsingMode,
+                result.parsingFallbackReason());
     }
 
     private List<BusinessRuleDto> buildAllRules(final ClassificationResult result) {

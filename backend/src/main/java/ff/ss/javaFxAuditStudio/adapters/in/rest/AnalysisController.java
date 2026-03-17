@@ -1,6 +1,7 @@
 package ff.ss.javaFxAuditStudio.adapters.in.rest;
 
 import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
@@ -17,6 +18,8 @@ import ff.ss.javaFxAuditStudio.adapters.in.rest.dto.AnalysisSessionResponse;
 import ff.ss.javaFxAuditStudio.adapters.in.rest.dto.ArtifactsResponse;
 import ff.ss.javaFxAuditStudio.adapters.in.rest.dto.CartographyResponse;
 import ff.ss.javaFxAuditStudio.adapters.in.rest.dto.ClassificationResponse;
+import ff.ss.javaFxAuditStudio.adapters.in.rest.dto.ExportArtifactsRequest;
+import ff.ss.javaFxAuditStudio.adapters.in.rest.dto.ExportArtifactsResponse;
 import ff.ss.javaFxAuditStudio.adapters.in.rest.dto.MigrationPlanResponse;
 import ff.ss.javaFxAuditStudio.adapters.in.rest.dto.OrchestratedAnalysisResultResponse;
 import ff.ss.javaFxAuditStudio.adapters.in.rest.dto.RestitutionReportResponse;
@@ -31,9 +34,11 @@ import ff.ss.javaFxAuditStudio.adapters.in.rest.mapper.RestitutionReportResponse
 import ff.ss.javaFxAuditStudio.application.ports.in.AnalysisOrchestrationUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.in.CartographyUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.in.ClassifyResponsibilitiesUseCase;
+import ff.ss.javaFxAuditStudio.application.ports.in.ExportArtifactsUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.in.GenerateArtifactsUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.in.ProduceMigrationPlanUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.in.ProduceRestitutionUseCase;
+import ff.ss.javaFxAuditStudio.domain.generation.ExportResult;
 import ff.ss.javaFxAuditStudio.application.ports.out.AnalysisSessionPort;
 import ff.ss.javaFxAuditStudio.domain.workbench.AnalysisSession;
 import ff.ss.javaFxAuditStudio.domain.workbench.AnalysisStatus;
@@ -57,6 +62,7 @@ public class AnalysisController {
     private final ArtifactsResponseMapper artifactsResponseMapper;
     private final RestitutionReportResponseMapper restitutionReportResponseMapper;
     private final OrchestratedAnalysisResultResponseMapper orchestratedAnalysisResultResponseMapper;
+    private final ExportArtifactsUseCase exportArtifactsUseCase;
 
     public AnalysisController(
             final CartographyUseCase cartographyUseCase,
@@ -72,7 +78,8 @@ public class AnalysisController {
             final MigrationPlanResponseMapper migrationPlanResponseMapper,
             final ArtifactsResponseMapper artifactsResponseMapper,
             final RestitutionReportResponseMapper restitutionReportResponseMapper,
-            final OrchestratedAnalysisResultResponseMapper orchestratedAnalysisResultResponseMapper) {
+            final OrchestratedAnalysisResultResponseMapper orchestratedAnalysisResultResponseMapper,
+            final ExportArtifactsUseCase exportArtifactsUseCase) {
         this.cartographyUseCase = cartographyUseCase;
         this.classifyResponsibilitiesUseCase = classifyResponsibilitiesUseCase;
         this.generateArtifactsUseCase = generateArtifactsUseCase;
@@ -87,15 +94,24 @@ public class AnalysisController {
         this.artifactsResponseMapper = artifactsResponseMapper;
         this.restitutionReportResponseMapper = restitutionReportResponseMapper;
         this.orchestratedAnalysisResultResponseMapper = orchestratedAnalysisResultResponseMapper;
+        this.exportArtifactsUseCase = exportArtifactsUseCase;
     }
 
     @PostMapping("/sessions")
     @ResponseStatus(HttpStatus.CREATED)
     public AnalysisSessionResponse submitSession(@RequestBody final SubmitAnalysisRequest request) {
+        String javaPath = request.sourceFilePaths().stream()
+                .filter(p -> p.endsWith(".java"))
+                .findFirst()
+                .orElse(request.sourceFilePaths().get(0));
+        String fxmlPath = request.sourceFilePaths().stream()
+                .filter(p -> p.endsWith(".fxml"))
+                .findFirst()
+                .orElse(null);
         AnalysisSession session = new AnalysisSession(
                 UUID.randomUUID().toString(),
-                request.sessionName(),
-                request.sourceFilePaths().get(0),
+                javaPath,
+                fxmlPath,
                 AnalysisStatus.CREATED,
                 Instant.now());
         analysisSessionPort.save(session);
@@ -104,32 +120,55 @@ public class AnalysisController {
 
     @GetMapping("/sessions/{sessionId}/cartography")
     public CartographyResponse getCartography(@PathVariable final String sessionId) {
+        AnalysisSession session = analysisSessionPort.findById(sessionId)
+                .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Session introuvable : " + sessionId));
         return cartographyResponseMapper.toResponse(
-                cartographyUseCase.handle(sessionId, sessionId, ""));
+                cartographyUseCase.handle(sessionId, session.controllerName(), session.sourceSnippetRef()));
     }
 
     @GetMapping("/sessions/{sessionId}/classification")
     public ClassificationResponse getClassification(@PathVariable final String sessionId) {
+        AnalysisSession session = analysisSessionPort.findById(sessionId)
+                .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Session introuvable : " + sessionId));
         return classificationResponseMapper.toResponse(
-                classifyResponsibilitiesUseCase.handle(sessionId, sessionId));
+                classifyResponsibilitiesUseCase.handle(sessionId, session.controllerName()));
     }
 
     @GetMapping("/sessions/{sessionId}/plan")
     public MigrationPlanResponse getMigrationPlan(@PathVariable final String sessionId) {
+        AnalysisSession session = analysisSessionPort.findById(sessionId)
+                .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Session introuvable : " + sessionId));
         return migrationPlanResponseMapper.toResponse(
-                produceMigrationPlanUseCase.handle(sessionId, sessionId));
+                produceMigrationPlanUseCase.handle(sessionId, session.controllerName()));
     }
 
     @GetMapping("/sessions/{sessionId}/artifacts")
     public ArtifactsResponse getArtifacts(@PathVariable final String sessionId) {
+        AnalysisSession session = analysisSessionPort.findById(sessionId)
+                .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Session introuvable : " + sessionId));
         return artifactsResponseMapper.toResponse(
-                generateArtifactsUseCase.handle(sessionId, sessionId));
+                generateArtifactsUseCase.handle(sessionId, session.controllerName()));
     }
 
     @GetMapping("/sessions/{sessionId}/report")
     public RestitutionReportResponse getReport(@PathVariable final String sessionId) {
+        AnalysisSession session = analysisSessionPort.findById(sessionId)
+                .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Session introuvable : " + sessionId));
         return restitutionReportResponseMapper.toResponse(
-                produceRestitutionUseCase.handle(sessionId, sessionId));
+                produceRestitutionUseCase.handle(sessionId, session.controllerName()));
+    }
+
+    @PostMapping("/sessions/{sessionId}/artifacts/export")
+    public ExportArtifactsResponse exportArtifacts(
+            @PathVariable final String sessionId,
+            @RequestBody final ExportArtifactsRequest request) {
+        ExportResult result = exportArtifactsUseCase.export(sessionId, request.targetDirectory());
+        return new ExportArtifactsResponse(result.targetDirectory(), result.exportedFiles(), result.errors());
     }
 
     /**
@@ -146,16 +185,14 @@ public class AnalysisController {
     public ResponseEntity<OrchestratedAnalysisResultResponse> runPipeline(
             @PathVariable final String sessionId) {
 
-        return analysisSessionPort.findById(sessionId)
-                .<ResponseEntity<OrchestratedAnalysisResultResponse>>map(session -> {
-                    if (session.status() != AnalysisStatus.CREATED) {
-                        return ResponseEntity
-                                .<OrchestratedAnalysisResultResponse>status(HttpStatus.CONFLICT)
-                                .build();
-                    }
-                    OrchestratedAnalysisResult result = analysisOrchestrationUseCase.orchestrate(sessionId);
-                    return ResponseEntity.ok(orchestratedAnalysisResultResponseMapper.toResponse(result));
-                })
-                .orElse(ResponseEntity.<OrchestratedAnalysisResultResponse>notFound().build());
+        Optional<AnalysisSession> sessionOpt = analysisSessionPort.findById(sessionId);
+        if (sessionOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        if (sessionOpt.get().status() != AnalysisStatus.CREATED) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        }
+        OrchestratedAnalysisResult result = analysisOrchestrationUseCase.orchestrate(sessionId);
+        return ResponseEntity.ok(orchestratedAnalysisResultResponseMapper.toResponse(result));
     }
 }

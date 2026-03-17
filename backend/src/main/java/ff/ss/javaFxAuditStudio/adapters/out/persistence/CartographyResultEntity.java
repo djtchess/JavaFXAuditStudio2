@@ -3,10 +3,10 @@ package ff.ss.javaFxAuditStudio.adapters.out.persistence;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
@@ -37,16 +37,13 @@ public class CartographyResultEntity {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "cartography_id")
+    @OneToMany(mappedBy = "cartography", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<FxmlComponentEntity> components = new ArrayList<>();
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "cartography_id")
+    @OneToMany(mappedBy = "cartography", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<HandlerBindingEntity> handlers = new ArrayList<>();
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "cartography_id")
+    @OneToMany(mappedBy = "cartography", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<CartographyUnknownEntity> unknowns = new ArrayList<>();
 
     /** Constructeur no-arg requis par JPA. */
@@ -58,18 +55,12 @@ public class CartographyResultEntity {
             final String controllerRef,
             final String fxmlRef,
             final boolean hasUnknowns,
-            final Instant createdAt,
-            final List<FxmlComponentEntity> components,
-            final List<HandlerBindingEntity> handlers,
-            final List<CartographyUnknownEntity> unknowns) {
+            final Instant createdAt) {
         this.sessionId = sessionId;
         this.controllerRef = controllerRef;
         this.fxmlRef = fxmlRef;
         this.hasUnknowns = hasUnknowns;
         this.createdAt = createdAt;
-        this.components = components;
-        this.handlers = handlers;
-        this.unknowns = unknowns;
     }
 
     public Long getId() {

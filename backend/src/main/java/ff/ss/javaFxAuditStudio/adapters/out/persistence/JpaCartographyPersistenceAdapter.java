@@ -10,7 +10,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -39,28 +38,23 @@ public class JpaCartographyPersistenceAdapter implements CartographyPersistenceP
     }
 
     private CartographyResultEntity toEntity(final String sessionId, final ControllerCartography c) {
-        List<FxmlComponentEntity> componentEntities = c.components().stream()
-                .map(comp -> new FxmlComponentEntity(null, comp.fxId(), comp.componentType(), comp.eventHandler()))
-                .toList();
+        boolean hasUnknowns = !c.unknowns().isEmpty();
+        CartographyResultEntity entity = new CartographyResultEntity(
+                sessionId, c.controllerRef(), c.fxmlRef(), hasUnknowns, Instant.now());
 
-        List<HandlerBindingEntity> handlerEntities = c.handlers().stream()
-                .map(h -> new HandlerBindingEntity(null, h.methodName(), h.fxmlRef(), h.injectedType()))
-                .toList();
+        c.components().stream()
+                .map(comp -> new FxmlComponentEntity(entity, comp.fxId(), comp.componentType(), comp.eventHandler()))
+                .forEach(entity.getComponents()::add);
 
-        List<CartographyUnknownEntity> unknownEntities = c.unknowns().stream()
-                .map(u -> new CartographyUnknownEntity(null, u.location(), u.reason()))
-                .toList();
+        c.handlers().stream()
+                .map(h -> new HandlerBindingEntity(entity, h.methodName(), h.fxmlRef(), h.injectedType()))
+                .forEach(entity.getHandlers()::add);
 
-        boolean hasUnknowns = !unknownEntities.isEmpty();
-        return new CartographyResultEntity(
-                sessionId,
-                c.controllerRef(),
-                c.fxmlRef(),
-                hasUnknowns,
-                Instant.now(),
-                new ArrayList<>(componentEntities),
-                new ArrayList<>(handlerEntities),
-                new ArrayList<>(unknownEntities));
+        c.unknowns().stream()
+                .map(u -> new CartographyUnknownEntity(entity, u.location(), u.reason()))
+                .forEach(entity.getUnknowns()::add);
+
+        return entity;
     }
 
     private ControllerCartography toDomain(final CartographyResultEntity entity) {

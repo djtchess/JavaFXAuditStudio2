@@ -4,42 +4,62 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Résultat de la classification des responsabilités pour un controller donné.
- * Les règles certaines et incertaines sont conservées séparément pour permettre
- * au consommateur de traiter chaque catégorie selon sa politique de validation.
+ * Resultat de la classification des responsabilites pour un controller donne.
+ * Les regles certaines et incertaines sont conservees separement pour permettre
+ * au consommateur de traiter chaque categorie selon sa politique de validation.
  *
- * @param controllerRef  référence du controller analysé
- * @param rules          règles classifiées avec certitude
- * @param uncertainRules règles dont la classification nécessite une validation humaine
+ * @param controllerRef          reference du controller analyse
+ * @param rules                  regles classifiees avec certitude
+ * @param uncertainRules         regles dont la classification necessite une validation humaine
+ * @param parsingMode            mode de parsing utilise lors de l'extraction
+ * @param parsingFallbackReason  raison du fallback regex, null si mode AST
  */
 public record ClassificationResult(
         String controllerRef,
         List<BusinessRule> rules,
-        List<BusinessRule> uncertainRules) {
+        List<BusinessRule> uncertainRules,
+        ParsingMode parsingMode,
+        String parsingFallbackReason) {
 
     public ClassificationResult {
         Objects.requireNonNull(controllerRef, "controllerRef must not be null");
         Objects.requireNonNull(rules, "rules must not be null");
         Objects.requireNonNull(uncertainRules, "uncertainRules must not be null");
+        Objects.requireNonNull(parsingMode, "parsingMode must not be null");
         rules = List.copyOf(rules);
         uncertainRules = List.copyOf(uncertainRules);
+        // parsingFallbackReason peut etre null si mode AST
     }
 
     /**
-     * Indique si le résultat contient des règles dont la classification est incertaine.
+     * Constructeur de compatibilite pour les usages sans information de parsing (mode AST par defaut).
      *
-     * @return vrai si au moins une règle incertaine est présente
+     * @param controllerRef  reference du controller analyse
+     * @param rules          regles certaines
+     * @param uncertainRules regles incertaines
+     */
+    public ClassificationResult(
+            final String controllerRef,
+            final List<BusinessRule> rules,
+            final List<BusinessRule> uncertainRules) {
+        this(controllerRef, rules, uncertainRules, ParsingMode.AST, null);
+    }
+
+    /**
+     * Indique si le resultat contient des regles dont la classification est incertaine.
+     *
+     * @return vrai si au moins une regle incertaine est presente
      */
     public boolean hasUncertainties() {
         return !uncertainRules.isEmpty();
     }
 
     /**
-     * Retourne la liste des règles (certaines et incertaines) correspondant
-     * au candidat d'extraction demandé.
+     * Retourne la liste des regles (certaines et incertaines) correspondant
+     * au candidat d'extraction demande.
      *
-     * @param type le type de candidat à filtrer
-     * @return liste filtrée, jamais null
+     * @param type le type de candidat a filtrer
+     * @return liste filtree, jamais null
      */
     public List<BusinessRule> candidates(final ExtractionCandidate type) {
         Objects.requireNonNull(type, "type must not be null");

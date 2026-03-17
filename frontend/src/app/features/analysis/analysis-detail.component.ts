@@ -210,6 +210,24 @@ function emptyStep<T>(): StepState<T> {
       padding: 0 1.5rem 1.25rem;
     }
 
+    .parsing-warning-banner {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.7rem 1rem;
+      border-radius: 12px;
+      background: rgba(245, 158, 11, 0.08);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      color: #92400e;
+      font-size: 0.85rem;
+      margin-bottom: 1rem;
+    }
+
+    .parsing-warning-banner .reason {
+      font-style: italic;
+      opacity: 0.8;
+    }
+
     .status-loading {
       padding: 0.8rem 1rem;
       border-radius: 12px;
@@ -310,6 +328,14 @@ function emptyStep<T>(): StepState<T> {
               } @else if (classification().error) {
                 <div class="status-error">{{ classification().error }}</div>
               } @else if (classification().data) {
+                @if (classification().data!.parsingMode === 'REGEX_FALLBACK') {
+                  <div class="parsing-warning-banner">
+                    ⚠ Analyse en mode regex — précision réduite (JavaParser a échoué)
+                    @if (classification().data!.parsingFallbackReason) {
+                      <span class="reason">{{ classification().data!.parsingFallbackReason }}</span>
+                    }
+                  </div>
+                }
                 <jas-classification-view [data]="classification().data!" />
               }
             </div>
@@ -366,7 +392,7 @@ function emptyStep<T>(): StepState<T> {
               } @else if (artifacts().error) {
                 <div class="status-error">{{ artifacts().error }}</div>
               } @else if (artifacts().data) {
-                <jas-artifacts-view [data]="artifacts().data!" />
+                <jas-artifacts-view [data]="artifacts().data!" [sessionId]="sessionId" />
               }
             </div>
           }

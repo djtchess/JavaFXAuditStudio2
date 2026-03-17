@@ -4,6 +4,7 @@ import org.flywaydb.core.Flyway;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -18,8 +19,11 @@ import java.util.Arrays;
  * entityManagerFactory -> flyway sans l'autoconfiguration Flyway complete.
  * Le BeanFactoryPostProcessor ci-dessous declare cette dependance explicitement,
  * ce qui force Spring a creer et migrer via Flyway avant d'initialiser JPA.
+ *
+ * <p>Desactive via spring.flyway.enabled=false (profil test : H2 in-memory).
  */
 @Configuration
+@ConditionalOnProperty(name = "spring.flyway.enabled", havingValue = "true", matchIfMissing = true)
 public class FlywayMigrationConfiguration {
 
     /**

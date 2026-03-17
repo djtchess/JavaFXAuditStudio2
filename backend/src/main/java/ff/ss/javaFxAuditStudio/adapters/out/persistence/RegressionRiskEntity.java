@@ -2,9 +2,12 @@ package ff.ss.javaFxAuditStudio.adapters.out.persistence;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
@@ -15,8 +18,9 @@ public class RegressionRiskEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "lot_id", nullable = false)
-    private Long lotId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "lot_id", nullable = false)
+    private PlannedLotEntity lot;
 
     @Column(name = "description", columnDefinition = "text")
     private String description;
@@ -32,11 +36,11 @@ public class RegressionRiskEntity {
     }
 
     public RegressionRiskEntity(
-            final Long lotId,
+            final PlannedLotEntity lot,
             final String description,
             final String riskLevel,
             final String mitigation) {
-        this.lotId = lotId;
+        this.lot = lot;
         this.description = description;
         this.riskLevel = riskLevel;
         this.mitigation = mitigation;
@@ -46,8 +50,8 @@ public class RegressionRiskEntity {
         return id;
     }
 
-    public Long getLotId() {
-        return lotId;
+    public PlannedLotEntity getLot() {
+        return lot;
     }
 
     public String getDescription() {

@@ -7,12 +7,16 @@ public record ClassificationResponse(
         String controllerRef,
         int ruleCount,
         int uncertainCount,
-        List<BusinessRuleDto> rules) {
+        List<BusinessRuleDto> rules,
+        String parsingMode,
+        String parsingFallbackReason) {
 
     public ClassificationResponse {
         Objects.requireNonNull(controllerRef, "controllerRef must not be null");
         Objects.requireNonNull(rules, "rules must not be null");
+        Objects.requireNonNull(parsingMode, "parsingMode must not be null");
         rules = List.copyOf(rules);
+        // parsingFallbackReason peut etre null si mode AST
     }
 
     public record BusinessRuleDto(

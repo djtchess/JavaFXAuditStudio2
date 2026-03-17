@@ -1,0 +1,37 @@
+package com.example.patient.migration;
+
+import javafx.fxml.FXML;
+import org.springframework.stereotype.Component;
+
+/**
+ * Controller JavaFX allege — delegue l'etat UI au ViewModel
+ * et les intentions utilisateur aux UseCases.
+ */
+@Component
+public class PatientSlimController {
+
+    private final PatientViewModel viewModel;
+    private final PatientUseCase useCase;
+
+    public PatientSlimController(
+            final PatientViewModel viewModel,
+            final PatientUseCase useCase) {
+        this.viewModel = viewModel;
+        this.useCase = useCase;
+    }
+
+    @FXML
+    public void initialize() {
+        // TODO : lier les composants FXML aux proprietes du ViewModel
+    }
+
+    @FXML
+    public void onSave() {
+        useCase.onSave();
+    }
+
+    @FXML
+    public void onDelete() {
+        useCase.onDelete();
+    }
+}

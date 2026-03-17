@@ -10,7 +10,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -39,30 +38,21 @@ public class JpaMigrationPlanPersistenceAdapter implements MigrationPlanPersiste
     }
 
     private MigrationPlanEntity toEntity(final String sessionId, final MigrationPlan plan) {
-        List<PlannedLotEntity> lotEntities = plan.lots().stream()
-                .map(this::toLotEntity)
-                .toList();
-
-        return new MigrationPlanEntity(
-                sessionId,
-                plan.controllerRef(),
-                plan.compilable(),
-                Instant.now(),
-                new ArrayList<>(lotEntities));
+        MigrationPlanEntity entity = new MigrationPlanEntity(
+                sessionId, plan.controllerRef(), plan.compilable(), Instant.now());
+        plan.lots().stream()
+                .map(lot -> toLotEntity(lot, entity))
+                .forEach(entity.getLots()::add);
+        return entity;
     }
 
-    private PlannedLotEntity toLotEntity(final PlannedLot lot) {
-        List<RegressionRiskEntity> riskEntities = lot.risks().stream()
-                .map(r -> new RegressionRiskEntity(null, r.description(), r.level().name(), r.mitigation()))
-                .toList();
-
-        return new PlannedLotEntity(
-                null,
-                lot.lotNumber(),
-                lot.title(),
-                lot.objective(),
-                lot.extractionCandidates(),
-                new ArrayList<>(riskEntities));
+    private PlannedLotEntity toLotEntity(final PlannedLot lot, final MigrationPlanEntity plan) {
+        PlannedLotEntity lotEntity = new PlannedLotEntity(
+                plan, lot.lotNumber(), lot.title(), lot.objective(), lot.extractionCandidates());
+        lot.risks().stream()
+                .map(r -> new RegressionRiskEntity(lotEntity, r.description(), r.level().name(), r.mitigation()))
+                .forEach(lotEntity.getRisks()::add);
+        return lotEntity;
     }
 
     private MigrationPlan toDomain(final MigrationPlanEntity entity) {

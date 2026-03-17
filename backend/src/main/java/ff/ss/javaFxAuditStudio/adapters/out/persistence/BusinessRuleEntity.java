@@ -2,9 +2,12 @@ package ff.ss.javaFxAuditStudio.adapters.out.persistence;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
@@ -15,8 +18,9 @@ public class BusinessRuleEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "classification_id", nullable = false)
-    private Long classificationId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "classification_id", nullable = false)
+    private ClassificationResultEntity classification;
 
     @Column(name = "rule_id", length = 64)
     private String ruleId;
@@ -44,7 +48,7 @@ public class BusinessRuleEntity {
     }
 
     public BusinessRuleEntity(
-            final Long classificationId,
+            final ClassificationResultEntity classification,
             final String ruleId,
             final String description,
             final String sourceRef,
@@ -52,7 +56,7 @@ public class BusinessRuleEntity {
             final String responsibilityClass,
             final String extractionCandidate,
             final boolean uncertain) {
-        this.classificationId = classificationId;
+        this.classification = classification;
         this.ruleId = ruleId;
         this.description = description;
         this.sourceRef = sourceRef;
@@ -66,8 +70,8 @@ public class BusinessRuleEntity {
         return id;
     }
 
-    public Long getClassificationId() {
-        return classificationId;
+    public ClassificationResultEntity getClassification() {
+        return classification;
     }
 
     public String getRuleId() {

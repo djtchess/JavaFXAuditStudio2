@@ -21,12 +21,14 @@ public record ArtifactsResponse(
             String type,
             int lotNumber,
             String className,
+            String content,
             boolean transitionalBridge) {
 
         public CodeArtifactDto {
             Objects.requireNonNull(artifactId, "artifactId must not be null");
             Objects.requireNonNull(type, "type must not be null");
             Objects.requireNonNull(className, "className must not be null");
+            Objects.requireNonNull(content, "content must not be null");
         }
     }
 }

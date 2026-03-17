@@ -1,0 +1,14 @@
+package com.example.patient.migration;
+
+/**
+ * Port d'entree — intentions utilisateur liees a Patient.
+ */
+public interface PatientUseCase {
+
+    /** Methode handler onSave : responsabilite APPLICATION detectee */
+    void onSave(); // TODO: verifier signature
+
+    /** Methode handler onDelete : responsabilite APPLICATION detectee */
+    void onDelete(); // TODO: verifier signature
+
+}

@@ -2,12 +2,14 @@ package ff.ss.javaFxAuditStudio.adapters.out.persistence;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.Convert;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
@@ -22,8 +24,9 @@ public class PlannedLotEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "plan_id", nullable = false)
-    private Long planId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "plan_id", nullable = false)
+    private MigrationPlanEntity plan;
 
     @Column(name = "lot_number", nullable = false)
     private int lotNumber;
@@ -38,8 +41,7 @@ public class PlannedLotEntity {
     @Convert(converter = StringListJsonbConverter.class)
     private List<String> extractionCandidates;
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "lot_id")
+    @OneToMany(mappedBy = "lot", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<RegressionRiskEntity> risks = new ArrayList<>();
 
     /** Constructeur no-arg requis par JPA. */
@@ -47,26 +49,24 @@ public class PlannedLotEntity {
     }
 
     public PlannedLotEntity(
-            final Long planId,
+            final MigrationPlanEntity plan,
             final int lotNumber,
             final String title,
             final String objective,
-            final List<String> extractionCandidates,
-            final List<RegressionRiskEntity> risks) {
-        this.planId = planId;
+            final List<String> extractionCandidates) {
+        this.plan = plan;
         this.lotNumber = lotNumber;
         this.title = title;
         this.objective = objective;
         this.extractionCandidates = extractionCandidates;
-        this.risks = risks;
     }
 
     public Long getId() {
         return id;
     }
 
-    public Long getPlanId() {
-        return planId;
+    public MigrationPlanEntity getPlan() {
+        return plan;
     }
 
     public int getLotNumber() {

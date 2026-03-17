@@ -2,29 +2,38 @@ package ff.ss.javaFxAuditStudio.application.service;
 
 import ff.ss.javaFxAuditStudio.application.ports.in.GenerateArtifactsUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.out.ArtifactPersistencePort;
+import ff.ss.javaFxAuditStudio.application.ports.out.ClassificationPersistencePort;
 import ff.ss.javaFxAuditStudio.application.ports.out.CodeGenerationPort;
+import ff.ss.javaFxAuditStudio.application.ports.out.SourceReaderPort;
 import ff.ss.javaFxAuditStudio.domain.generation.CodeArtifact;
 import ff.ss.javaFxAuditStudio.domain.generation.GenerationResult;
+import ff.ss.javaFxAuditStudio.domain.rules.BusinessRule;
 
-import java.util.ArrayList;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
 public class GenerateArtifactsService implements GenerateArtifactsUseCase {
 
-    private static final String STUB_WARNING = "Generation stub - contenu source non connecte";
+    private static final Logger log = LoggerFactory.getLogger(GenerateArtifactsService.class);
 
     private final CodeGenerationPort codeGenerationPort;
     private final ArtifactPersistencePort artifactPersistencePort;
+    private final ClassificationPersistencePort classificationPersistencePort;
+    private final SourceReaderPort sourceReaderPort;
 
     public GenerateArtifactsService(
             final CodeGenerationPort codeGenerationPort,
-            final ArtifactPersistencePort artifactPersistencePort) {
-        this.codeGenerationPort = Objects.requireNonNull(
-                codeGenerationPort, "codeGenerationPort must not be null");
-        this.artifactPersistencePort = Objects.requireNonNull(
-                artifactPersistencePort, "artifactPersistencePort must not be null");
+            final ArtifactPersistencePort artifactPersistencePort,
+            final ClassificationPersistencePort classificationPersistencePort,
+            final SourceReaderPort sourceReaderPort) {
+        this.codeGenerationPort = Objects.requireNonNull(codeGenerationPort);
+        this.artifactPersistencePort = Objects.requireNonNull(artifactPersistencePort);
+        this.classificationPersistencePort = Objects.requireNonNull(classificationPersistencePort);
+        this.sourceReaderPort = Objects.requireNonNull(sourceReaderPort);
     }
 
     @Override
@@ -34,19 +43,26 @@ public class GenerateArtifactsService implements GenerateArtifactsUseCase {
             return cached.get();
         }
 
-        final List<CodeArtifact> artifacts = codeGenerationPort.generate(controllerRef, "");
-        final List<String> warnings = buildWarnings(artifacts);
-        GenerationResult result = new GenerationResult(controllerRef, artifacts, warnings);
+        List<BusinessRule> allRules = classificationPersistencePort.findBySessionId(sessionId)
+                .map(r -> {
+                    var combined = new java.util.ArrayList<>(r.rules());
+                    combined.addAll(r.uncertainRules());
+                    return (List<BusinessRule>) combined;
+                })
+                .orElse(List.of());
+
+        String javaContent = sourceReaderPort.read(controllerRef)
+                .map(input -> input.content())
+                .orElseGet(() -> {
+                    log.warn("Source introuvable pour la generation - ref={}", controllerRef);
+                    return "";
+                });
+
+        final List<CodeArtifact> artifacts = codeGenerationPort.generate(controllerRef, javaContent, allRules);
+        GenerationResult result = new GenerationResult(controllerRef, artifacts, List.of());
 
         artifactPersistencePort.save(sessionId, result);
+        log.debug("Generation terminee - {} artefacts", artifacts.size());
         return result;
-    }
-
-    private List<String> buildWarnings(final List<CodeArtifact> artifacts) {
-        final List<String> warnings = new ArrayList<>();
-        if (artifacts.isEmpty()) {
-            warnings.add(STUB_WARNING);
-        }
-        return warnings;
     }
 }

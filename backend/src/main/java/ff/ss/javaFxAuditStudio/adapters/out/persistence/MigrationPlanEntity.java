@@ -3,10 +3,10 @@ package ff.ss.javaFxAuditStudio.adapters.out.persistence;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
@@ -34,8 +34,7 @@ public class MigrationPlanEntity {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "plan_id")
+    @OneToMany(mappedBy = "plan", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<PlannedLotEntity> lots = new ArrayList<>();
 
     /** Constructeur no-arg requis par JPA. */
@@ -46,13 +45,11 @@ public class MigrationPlanEntity {
             final String sessionId,
             final String controllerRef,
             final boolean compilable,
-            final Instant createdAt,
-            final List<PlannedLotEntity> lots) {
+            final Instant createdAt) {
         this.sessionId = sessionId;
         this.controllerRef = controllerRef;
         this.compilable = compilable;
         this.createdAt = createdAt;
-        this.lots = lots;
     }
 
     public Long getId() {

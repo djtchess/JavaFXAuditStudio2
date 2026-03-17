@@ -4,13 +4,13 @@ import ff.ss.javaFxAuditStudio.application.ports.out.ClassificationPersistencePo
 import ff.ss.javaFxAuditStudio.domain.rules.BusinessRule;
 import ff.ss.javaFxAuditStudio.domain.rules.ClassificationResult;
 import ff.ss.javaFxAuditStudio.domain.rules.ExtractionCandidate;
+import ff.ss.javaFxAuditStudio.domain.rules.ParsingMode;
 import ff.ss.javaFxAuditStudio.domain.rules.ResponsibilityClass;
 
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,12 +27,14 @@ public class JpaClassificationPersistenceAdapter implements ClassificationPersis
     @Transactional
     public ClassificationResult save(final String sessionId, final ClassificationResult result) {
         repository.deleteBySessionId(sessionId);
-        List<BusinessRuleEntity> allRuleEntities = buildRuleEntities(result);
         ClassificationResultEntity entity = new ClassificationResultEntity(
                 sessionId,
                 result.controllerRef(),
                 Instant.now(),
-                new ArrayList<>(allRuleEntities));
+                result.parsingMode(),
+                result.parsingFallbackReason());
+        result.rules().forEach(rule -> entity.getRules().add(toRuleEntity(rule, entity)));
+        result.uncertainRules().forEach(rule -> entity.getRules().add(toRuleEntity(rule, entity)));
         ClassificationResultEntity saved = repository.save(entity);
         return toDomain(saved);
     }
@@ -43,16 +45,9 @@ public class JpaClassificationPersistenceAdapter implements ClassificationPersis
         return repository.findBySessionId(sessionId).map(this::toDomain);
     }
 
-    private List<BusinessRuleEntity> buildRuleEntities(final ClassificationResult result) {
-        List<BusinessRuleEntity> entities = new ArrayList<>();
-        result.rules().forEach(rule -> entities.add(toRuleEntity(rule)));
-        result.uncertainRules().forEach(rule -> entities.add(toRuleEntity(rule)));
-        return entities;
-    }
-
-    private BusinessRuleEntity toRuleEntity(final BusinessRule rule) {
+    private BusinessRuleEntity toRuleEntity(final BusinessRule rule, final ClassificationResultEntity parent) {
         return new BusinessRuleEntity(
-                null,
+                parent,
                 rule.ruleId(),
                 rule.description(),
                 rule.sourceRef(),
@@ -70,7 +65,16 @@ public class JpaClassificationPersistenceAdapter implements ClassificationPersis
         List<BusinessRule> certain = allRules.stream().filter(r -> !r.uncertain()).toList();
         List<BusinessRule> uncertain = allRules.stream().filter(BusinessRule::uncertain).toList();
 
-        return new ClassificationResult(entity.getControllerRef(), certain, uncertain);
+        ParsingMode parsingMode = entity.getParsingMode() != null
+                ? entity.getParsingMode()
+                : ParsingMode.AST;
+
+        return new ClassificationResult(
+                entity.getControllerRef(),
+                certain,
+                uncertain,
+                parsingMode,
+                entity.getParsingFallbackReason());
     }
 
     private BusinessRule toRuleDomain(final BusinessRuleEntity e) {

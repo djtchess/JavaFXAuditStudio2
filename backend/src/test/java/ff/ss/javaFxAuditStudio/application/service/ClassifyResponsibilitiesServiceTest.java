@@ -2,9 +2,12 @@ package ff.ss.javaFxAuditStudio.application.service;
 
 import ff.ss.javaFxAuditStudio.application.ports.out.ClassificationPersistencePort;
 import ff.ss.javaFxAuditStudio.application.ports.out.RuleExtractionPort;
+import ff.ss.javaFxAuditStudio.application.ports.out.SourceReaderPort;
 import ff.ss.javaFxAuditStudio.domain.rules.BusinessRule;
 import ff.ss.javaFxAuditStudio.domain.rules.ClassificationResult;
 import ff.ss.javaFxAuditStudio.domain.rules.ExtractionCandidate;
+import ff.ss.javaFxAuditStudio.domain.rules.ExtractionResult;
+import ff.ss.javaFxAuditStudio.domain.rules.ParsingMode;
 import ff.ss.javaFxAuditStudio.domain.rules.ResponsibilityClass;
 import org.junit.jupiter.api.Test;
 
@@ -26,6 +29,8 @@ class ClassifyResponsibilitiesServiceTest {
                 uncertain);
     }
 
+    private static final SourceReaderPort NO_OP_SOURCE_READER = ref -> Optional.empty();
+
     private static final ClassificationPersistencePort NO_OP_PERSISTENCE = new ClassificationPersistencePort() {
         @Override
         public ClassificationResult save(String sessionId, ClassificationResult result) {
@@ -44,14 +49,15 @@ class ClassifyResponsibilitiesServiceTest {
         ClassifyResponsibilitiesService service;
         ClassificationResult result;
 
-        port = (controllerRef, javaContent) -> List.of();
-        service = new ClassifyResponsibilitiesService(port, NO_OP_PERSISTENCE);
+        port = (controllerRef, javaContent) -> ExtractionResult.ast(List.of());
+        service = new ClassifyResponsibilitiesService(port, NO_OP_PERSISTENCE, NO_OP_SOURCE_READER);
 
         result = service.handle("session-1", "com/example/MyController.java");
 
         assertThat(result.rules()).isEmpty();
         assertThat(result.uncertainRules()).isEmpty();
         assertThat(result.hasUncertainties()).isFalse();
+        assertThat(result.parsingMode()).isEqualTo(ParsingMode.AST);
     }
 
     @Test
@@ -67,8 +73,9 @@ class ClassifyResponsibilitiesServiceTest {
         uncertainRule1 = buildRule("RG-002", true);
         uncertainRule2 = buildRule("RG-003", true);
 
-        port = (controllerRef, javaContent) -> List.of(certainRule, uncertainRule1, uncertainRule2);
-        service = new ClassifyResponsibilitiesService(port, NO_OP_PERSISTENCE);
+        port = (controllerRef, javaContent) ->
+                ExtractionResult.ast(List.of(certainRule, uncertainRule1, uncertainRule2));
+        service = new ClassifyResponsibilitiesService(port, NO_OP_PERSISTENCE, NO_OP_SOURCE_READER);
 
         result = service.handle("session-1", "com/example/MyController.java");
 
@@ -78,5 +85,26 @@ class ClassifyResponsibilitiesServiceTest {
         assertThat(result.uncertainRules()).extracting(BusinessRule::ruleId)
                 .containsExactlyInAnyOrder("RG-002", "RG-003");
         assertThat(result.hasUncertainties()).isTrue();
+        assertThat(result.parsingMode()).isEqualTo(ParsingMode.AST);
+    }
+
+    @Test
+    void handle_propagatesRegexFallbackMode() {
+        BusinessRule rule;
+        RuleExtractionPort port;
+        ClassifyResponsibilitiesService service;
+        ClassificationResult result;
+
+        rule = buildRule("RG-001", false);
+
+        port = (controllerRef, javaContent) ->
+                ExtractionResult.regexFallback(List.of(rule), "Parse error at line 5");
+        service = new ClassifyResponsibilitiesService(port, NO_OP_PERSISTENCE, NO_OP_SOURCE_READER);
+
+        result = service.handle("session-fallback", "com/example/MyController.java");
+
+        assertThat(result.parsingMode()).isEqualTo(ParsingMode.REGEX_FALLBACK);
+        assertThat(result.parsingFallbackReason()).isEqualTo("Parse error at line 5");
+        assertThat(result.rules()).hasSize(1);
     }
 }

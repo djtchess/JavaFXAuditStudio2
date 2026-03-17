@@ -26,6 +26,7 @@ public class ArtifactsResponseMapper {
                         a.type().name(),
                         a.lotNumber(),
                         a.className(),
+                        a.content(),
                         a.transitionalBridge()))
                 .toList();
     }

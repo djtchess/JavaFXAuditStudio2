@@ -1,20 +1,24 @@
 package ff.ss.javaFxAuditStudio.adapters.out.analysis;
 
 import ff.ss.javaFxAuditStudio.application.ports.out.RuleExtractionPort;
+import ff.ss.javaFxAuditStudio.configuration.AnalysisProperties;
 import ff.ss.javaFxAuditStudio.domain.rules.BusinessRule;
 import ff.ss.javaFxAuditStudio.domain.rules.ExtractionCandidate;
+import ff.ss.javaFxAuditStudio.domain.rules.ExtractionResult;
 import ff.ss.javaFxAuditStudio.domain.rules.ResponsibilityClass;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Adapter d'extraction de règles de gestion par analyse textuelle (regex) du contenu Java source.
+ * Adapter d'extraction de regles de gestion par analyse textuelle (regex) du contenu Java source.
  *
- * <p>Limite documentée : {@code sourceLine} est toujours 0, l'analyse textuelle par regex
- * ne permet pas de retrouver les numéros de ligne de manière fiable sans parser l'AST complet.
+ * <p>Limite documentee : {@code sourceLine} est toujours 0, l'analyse textuelle par regex
+ * ne permet pas de retrouver les numeros de ligne de maniere fiable sans parser l'AST complet.
  *
  * <p>Pas d'annotation Spring : instanciation explicite via {@code ClassificationConfiguration}.
  */
@@ -34,10 +38,41 @@ public final class JavaControllerRuleExtractionAdapter implements RuleExtraction
 
     private static final String UNKNOWN_REF = "unknown";
 
+    private final Set<String> lifecycleExcluded;
+    private final AnalysisProperties.ClassificationPatterns patterns;
+
+    /**
+     * Constructeur de compatibilite sans argument (utilise dans les tests unitaires).
+     * Initialise avec un ensemble vide de methodes exclues et des patterns par defaut.
+     */
+    public JavaControllerRuleExtractionAdapter() {
+        this(Set.of(), new AnalysisProperties.ClassificationPatterns(null, null, null, null, null));
+    }
+
+    /**
+     * Constructeur de compatibilite avec exclusions lifecycle uniquement.
+     * Utilise les patterns de classification par defaut.
+     */
+    public JavaControllerRuleExtractionAdapter(final Set<String> lifecycleExcluded) {
+        this(lifecycleExcluded,
+                new AnalysisProperties.ClassificationPatterns(null, null, null, null, null));
+    }
+
+    /**
+     * Constructeur principal : injection explicite des exclusions lifecycle et des patterns
+     * de classification depuis {@code ClassificationConfiguration}.
+     */
+    public JavaControllerRuleExtractionAdapter(
+            final Set<String> lifecycleExcluded,
+            final AnalysisProperties.ClassificationPatterns patterns) {
+        this.lifecycleExcluded = Objects.requireNonNull(lifecycleExcluded, "lifecycleExcluded must not be null");
+        this.patterns = Objects.requireNonNull(patterns, "patterns must not be null");
+    }
+
     @Override
-    public List<BusinessRule> extract(final String controllerRef, final String javaContent) {
+    public ExtractionResult extract(final String controllerRef, final String javaContent) {
         if (javaContent == null || javaContent.isBlank()) {
-            return List.of();
+            return ExtractionResult.regexFallback(List.of(), "Analyse textuelle regex");
         }
         String ref = (controllerRef == null) ? UNKNOWN_REF : controllerRef;
         List<BusinessRule> rules = new ArrayList<>();
@@ -45,7 +80,7 @@ public final class JavaControllerRuleExtractionAdapter implements RuleExtraction
         extractNamedHandlers(ref, javaContent, rules);
         extractFxmlFields(ref, javaContent, rules);
         extractInjectedServices(ref, javaContent, rules);
-        return List.copyOf(rules);
+        return ExtractionResult.regexFallback(List.copyOf(rules), "Analyse textuelle regex");
     }
 
     private void extractFxmlHandlers(
@@ -73,6 +108,9 @@ public final class JavaControllerRuleExtractionAdapter implements RuleExtraction
             final int bodyStart,
             final String methodName,
             final List<BusinessRule> rules) {
+        if (lifecycleExcluded.contains(methodName)) {
+            return;
+        }
         String methodBody = extractApproximateBody(content, bodyStart);
         ResponsibilityClass rc = classifyByKeywords(methodBody);
         ExtractionCandidate ec = candidateFor(rc);
@@ -103,16 +141,18 @@ public final class JavaControllerRuleExtractionAdapter implements RuleExtraction
         while (matcher.find()) {
             String typeName = matcher.group(1);
             String fieldName = matcher.group(2);
-            boolean isAppLayer = isApplicationLayerService(typeName);
-            ResponsibilityClass rc =
-                    isAppLayer ? ResponsibilityClass.APPLICATION : ResponsibilityClass.TECHNICAL;
-            ExtractionCandidate ec =
-                    isAppLayer ? ExtractionCandidate.USE_CASE : ExtractionCandidate.GATEWAY;
+            // Les services injectes dans un controller JavaFX sont des ports sortants
+            // (GATEWAY) du point de vue de l'architecture hexagonale.
+            // Les intentions utilisateur proviennent des handlers @FXML, pas des services.
+            ExtractionCandidate ec = isInfrastructureType(typeName)
+                    ? ExtractionCandidate.GATEWAY
+                    : ExtractionCandidate.GATEWAY; // toujours GATEWAY — le UseCase agrege
             String ruleId = buildRuleId(ref, rules.size() + 1);
             String description =
                     "Service injecte " + typeName + " " + fieldName
-                    + " : responsabilite " + rc.name() + " detectee";
-            rules.add(new BusinessRule(ruleId, description, ref, 0, rc, ec, false));
+                    + " : responsabilite TECHNICAL detectee";
+            rules.add(new BusinessRule(ruleId, description, ref, 0,
+                    ResponsibilityClass.TECHNICAL, ec, false));
         }
     }
 
@@ -140,24 +180,53 @@ public final class JavaControllerRuleExtractionAdapter implements RuleExtraction
         return content.substring(openBrace, pos);
     }
 
+    /**
+     * Classifie le corps d'un handler selon les familles de mots-cles configurables.
+     *
+     * <p>Ordre de priorite : UI > BUSINESS > APPLICATION (mots-cles) > APPLICATION (service call)
+     * > TECHNICAL > UNKNOWN.
+     */
     private ResponsibilityClass classifyByKeywords(final String body) {
-        if (containsAny(body,
-                "setText", "setVisible", "getChildren", "setStyle", "setDisable", "getScene")) {
+        if (containsAnyKeyword(body, patterns.effectiveUiKeywords())) {
             return ResponsibilityClass.UI;
         }
-        if (containsAny(body,
-                "service.save", "repository", "persist", "entityManager", "flush", "commit")) {
+        if (containsAnyKeyword(body, patterns.effectiveBusinessKeywords())) {
             return ResponsibilityClass.BUSINESS;
         }
-        if (containsAny(body,
-                "execute", "invoke", "useCase", "command", "submit", "dispatch")) {
+        if (containsAnyKeyword(body, patterns.effectiveApplicationKeywords())) {
             return ResponsibilityClass.APPLICATION;
         }
-        if (containsAny(body,
-                "restTemplate", "webClient", "http", "ftp", "socket", "printJob", "file.write")) {
+        if (containsServiceCall(body)) {
+            return ResponsibilityClass.APPLICATION;
+        }
+        if (containsAnyKeyword(body, patterns.effectiveTechnicalKeywords())) {
             return ResponsibilityClass.TECHNICAL;
         }
         return ResponsibilityClass.UNKNOWN;
+    }
+
+    /**
+     * Detecte un appel de service dans le corps de la methode en cherchant les suffixes
+     * configures (ex: {@code calculateur.}, {@code gestionnaire.}, {@code service.}).
+     */
+    private boolean containsServiceCall(final String body) {
+        String lower = body.toLowerCase();
+        for (String suffix : patterns.effectiveServiceCallSuffixes()) {
+            if (lower.contains(suffix.toLowerCase())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean containsAnyKeyword(final String text, final List<String> keywords) {
+        String lowerText = text.toLowerCase();
+        for (String keyword : keywords) {
+            if (lowerText.contains(keyword.toLowerCase())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private ExtractionCandidate candidateFor(final ResponsibilityClass rc) {
@@ -170,18 +239,10 @@ public final class JavaControllerRuleExtractionAdapter implements RuleExtraction
         };
     }
 
-    private boolean isApplicationLayerService(final String typeName) {
-        return typeName.contains("Service") || typeName.contains("UseCase");
-    }
-
-    private boolean containsAny(final String text, final String... keywords) {
-        String lowerText = text.toLowerCase();
-        for (String keyword : keywords) {
-            if (lowerText.contains(keyword.toLowerCase())) {
-                return true;
-            }
-        }
-        return false;
+    private boolean isInfrastructureType(final String typeName) {
+        return typeName.contains("Factory") || typeName.contains("Utils")
+                || typeName.contains("Config") || typeName.contains("Converter")
+                || typeName.contains("Adapter") || typeName.contains("Helper");
     }
 
     private String buildRuleId(final String ref, final int index) {

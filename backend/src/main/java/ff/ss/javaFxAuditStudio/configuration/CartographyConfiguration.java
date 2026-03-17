@@ -4,6 +4,7 @@ import ff.ss.javaFxAuditStudio.adapters.out.analysis.FxmlCartographyAnalysisAdap
 import ff.ss.javaFxAuditStudio.application.ports.in.CartographyUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.out.CartographyAnalysisPort;
 import ff.ss.javaFxAuditStudio.application.ports.out.CartographyPersistencePort;
+import ff.ss.javaFxAuditStudio.application.ports.out.SourceReaderPort;
 import ff.ss.javaFxAuditStudio.application.service.CartographyService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,7 +20,8 @@ public class CartographyConfiguration {
     @Bean
     public CartographyUseCase cartographyUseCase(
             final CartographyAnalysisPort cartographyAnalysisPort,
-            final CartographyPersistencePort cartographyPersistencePort) {
-        return new CartographyService(cartographyAnalysisPort, cartographyPersistencePort);
+            final CartographyPersistencePort cartographyPersistencePort,
+            final SourceReaderPort sourceReaderPort) {
+        return new CartographyService(cartographyAnalysisPort, cartographyPersistencePort, sourceReaderPort);
     }
 }

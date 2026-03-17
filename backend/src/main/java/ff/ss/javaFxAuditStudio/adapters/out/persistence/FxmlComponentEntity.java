@@ -2,9 +2,12 @@ package ff.ss.javaFxAuditStudio.adapters.out.persistence;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
@@ -15,8 +18,9 @@ public class FxmlComponentEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "cartography_id", nullable = false)
-    private Long cartographyId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "cartography_id", nullable = false)
+    private CartographyResultEntity cartography;
 
     @Column(name = "fx_id", length = 256)
     private String fxId;
@@ -32,11 +36,11 @@ public class FxmlComponentEntity {
     }
 
     public FxmlComponentEntity(
-            final Long cartographyId,
+            final CartographyResultEntity cartography,
             final String fxId,
             final String componentType,
             final String eventHandler) {
-        this.cartographyId = cartographyId;
+        this.cartography = cartography;
         this.fxId = fxId;
         this.componentType = componentType;
         this.eventHandler = eventHandler;
@@ -46,8 +50,8 @@ public class FxmlComponentEntity {
         return id;
     }
 
-    public Long getCartographyId() {
-        return cartographyId;
+    public CartographyResultEntity getCartography() {
+        return cartography;
     }
 
     public String getFxId() {

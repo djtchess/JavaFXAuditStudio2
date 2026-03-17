@@ -1,6 +1,8 @@
 package ff.ss.javaFxAuditStudio.adapters.out.analysis;
 
 import ff.ss.javaFxAuditStudio.domain.rules.BusinessRule;
+import ff.ss.javaFxAuditStudio.domain.rules.ExtractionResult;
+import ff.ss.javaFxAuditStudio.domain.rules.ParsingMode;
 import ff.ss.javaFxAuditStudio.domain.rules.ResponsibilityClass;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -68,39 +70,42 @@ class JavaControllerRuleExtractionAdapterTest {
 
     @Test
     void shouldExtractAtLeast3RulesFromSampleController() {
-        List<BusinessRule> rules = adapter.extract("SampleController", SAMPLE_CONTROLLER);
+        ExtractionResult result = adapter.extract("SampleController", SAMPLE_CONTROLLER);
 
-        assertThat(rules).hasSizeGreaterThanOrEqualTo(3);
+        assertThat(result.rules()).hasSizeGreaterThanOrEqualTo(3);
+        assertThat(result.parsingMode()).isEqualTo(ParsingMode.REGEX_FALLBACK);
     }
 
     @Test
     void shouldReturnEmptyListWhenContentIsNull() {
-        List<BusinessRule> rules = adapter.extract("SampleController", null);
+        ExtractionResult result = adapter.extract("SampleController", null);
 
-        assertThat(rules).isEmpty();
+        assertThat(result.rules()).isEmpty();
+        assertThat(result.parsingMode()).isEqualTo(ParsingMode.REGEX_FALLBACK);
     }
 
     @Test
     void shouldReturnEmptyListWhenContentIsEmpty() {
-        List<BusinessRule> rules = adapter.extract("SampleController", "");
+        ExtractionResult result = adapter.extract("SampleController", "");
 
-        assertThat(rules).isEmpty();
+        assertThat(result.rules()).isEmpty();
+        assertThat(result.parsingMode()).isEqualTo(ParsingMode.REGEX_FALLBACK);
     }
 
     @Test
     void shouldClassifyUiMethodsCorrectly() {
-        List<BusinessRule> rules = adapter.extract("UiController", UI_ONLY_CONTROLLER);
+        ExtractionResult result = adapter.extract("UiController", UI_ONLY_CONTROLLER);
 
-        boolean hasUiRule = rules.stream()
+        boolean hasUiRule = result.rules().stream()
                 .anyMatch(r -> r.responsibilityClass() == ResponsibilityClass.UI);
         assertThat(hasUiRule).isTrue();
     }
 
     @Test
     void shouldClassifyBusinessMethodsCorrectly() {
-        List<BusinessRule> rules = adapter.extract("BusinessController", BUSINESS_CONTROLLER);
+        ExtractionResult result = adapter.extract("BusinessController", BUSINESS_CONTROLLER);
 
-        boolean hasBusinessOrApplicationRule = rules.stream()
+        boolean hasBusinessOrApplicationRule = result.rules().stream()
                 .anyMatch(r -> r.responsibilityClass() == ResponsibilityClass.BUSINESS
                         || r.responsibilityClass() == ResponsibilityClass.APPLICATION);
         assertThat(hasBusinessOrApplicationRule).isTrue();
@@ -108,8 +113,9 @@ class JavaControllerRuleExtractionAdapterTest {
 
     @Test
     void shouldGenerateUniqueRuleIds() {
-        List<BusinessRule> rules = adapter.extract("SampleController", SAMPLE_CONTROLLER);
+        ExtractionResult result = adapter.extract("SampleController", SAMPLE_CONTROLLER);
 
+        List<BusinessRule> rules = result.rules();
         Set<String> ids = new HashSet<>();
         for (BusinessRule rule : rules) {
             ids.add(rule.ruleId());
@@ -119,9 +125,9 @@ class JavaControllerRuleExtractionAdapterTest {
 
     @Test
     void shouldUseUnknownRefWhenControllerRefIsNull() {
-        List<BusinessRule> rules = adapter.extract(null, UI_ONLY_CONTROLLER);
+        ExtractionResult result = adapter.extract(null, UI_ONLY_CONTROLLER);
 
-        assertThat(rules).allMatch(r -> r.sourceRef().equals("unknown"));
+        assertThat(result.rules()).allMatch(r -> r.sourceRef().equals("unknown"));
     }
 
     @Test
@@ -134,9 +140,9 @@ class JavaControllerRuleExtractionAdapterTest {
                     }
                 }
                 """;
-        List<BusinessRule> rules = adapter.extract("AController", content);
+        ExtractionResult result = adapter.extract("AController", content);
 
-        boolean hasUncertain = rules.stream()
+        boolean hasUncertain = result.rules().stream()
                 .filter(r -> r.responsibilityClass() == ResponsibilityClass.UNKNOWN)
                 .allMatch(BusinessRule::uncertain);
         assertThat(hasUncertain).isTrue();
@@ -149,8 +155,8 @@ class JavaControllerRuleExtractionAdapterTest {
                     @FXML private Button myButton;
                 }
                 """;
-        List<BusinessRule> rules = adapter.extract("FieldController", content);
+        ExtractionResult result = adapter.extract("FieldController", content);
 
-        assertThat(rules).anyMatch(r -> r.responsibilityClass() == ResponsibilityClass.UI);
+        assertThat(result.rules()).anyMatch(r -> r.responsibilityClass() == ResponsibilityClass.UI);
     }
 }

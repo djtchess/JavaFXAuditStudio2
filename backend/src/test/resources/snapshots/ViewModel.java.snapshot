@@ -1,0 +1,50 @@
+package com.example.patient.migration;
+
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.StringProperty;
+import org.springframework.stereotype.Component;
+
+/**
+ * ViewModel de presentation pour Patient.
+ * Expose les proprietes JavaFX observables liees aux composants FXML.
+ * Les composants conteneurs (VBox, HBox, GridPane) exposent une propriete visible.
+ * Les boutons exposent une propriete enabled. Les labels exposent leur texte.
+ */
+@Component
+public class PatientViewModel {
+
+    /** Champ FXML Label statusLabel : liaison UI directe detectee */
+    private final SimpleStringProperty statusLabelText = new SimpleStringProperty();
+
+    public StringProperty statusLabelTextProperty() {
+        return statusLabelText;
+    }
+
+    public String getStatusLabelText() {
+        return statusLabelText.get();
+    }
+
+    public void setStatusLabelText(final String value) {
+        statusLabelText.set(value);
+    }
+
+    /** Champ FXML Button saveBtn : liaison UI directe detectee */
+    private final SimpleBooleanProperty saveBtnEnabled = new SimpleBooleanProperty();
+
+    public BooleanProperty saveBtnEnabledProperty() {
+        return saveBtnEnabled;
+    }
+
+    public boolean getSaveBtnEnabled() {
+        return saveBtnEnabled.get();
+    }
+
+    public void setSaveBtnEnabled(final boolean value) {
+        saveBtnEnabled.set(value);
+    }
+
+}

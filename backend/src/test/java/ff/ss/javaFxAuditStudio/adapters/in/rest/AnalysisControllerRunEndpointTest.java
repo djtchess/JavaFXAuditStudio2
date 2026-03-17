@@ -13,6 +13,7 @@ import ff.ss.javaFxAuditStudio.application.ports.in.CartographyUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.in.ClassifyResponsibilitiesUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.in.GenerateArtifactsUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.in.ProduceMigrationPlanUseCase;
+import ff.ss.javaFxAuditStudio.application.ports.in.ExportArtifactsUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.in.ProduceRestitutionUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.out.AnalysisSessionPort;
 import ff.ss.javaFxAuditStudio.domain.workbench.AnalysisSession;
@@ -78,6 +79,9 @@ class AnalysisControllerRunEndpointTest {
     @Mock
     private OrchestratedAnalysisResultResponseMapper orchestratedAnalysisResultResponseMapper;
 
+    @Mock
+    private ExportArtifactsUseCase exportArtifactsUseCase;
+
     private AnalysisController controller;
 
     @BeforeEach
@@ -96,7 +100,8 @@ class AnalysisControllerRunEndpointTest {
                 migrationPlanResponseMapper,
                 artifactsResponseMapper,
                 restitutionReportResponseMapper,
-                orchestratedAnalysisResultResponseMapper);
+                orchestratedAnalysisResultResponseMapper,
+                exportArtifactsUseCase);
     }
 
     @Test

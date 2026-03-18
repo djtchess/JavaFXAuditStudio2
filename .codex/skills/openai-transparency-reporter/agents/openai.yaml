@@ -1,0 +1,7 @@
+interface:
+  display_name: "OpenAI Transparency Reporter"
+  short_description: "Rapport Markdown des donnees et fichiers exposes a OpenAI"
+  default_prompt: "Use $openai-transparency-reporter to produce a markdown transparency report of data, files, and observable agent reasoning sent to OpenAI."
+
+policy:
+  allow_implicit_invocation: true

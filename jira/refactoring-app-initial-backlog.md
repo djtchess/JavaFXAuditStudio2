@@ -3,12 +3,12 @@
 ## Metadonnees
 
 - Date de generation : 2026-03-17
-- Derniere mise a jour : 2026-03-17
+- Derniere mise a jour : 2026-03-18
 - Agent : `jira-estimation`
-- Version : 2.1
+- Version : 2.2
 - Perimetre : amelioration de la genericite du moteur d'analyse et de la qualite des artefacts generes
 - Source de verite : `guide_generique_refactoring_controller_javafx_spring.md`, `AGENTS.md`, `agents/contracts.md`, `agents/orchestration.md`
-- Stack cible : Spring Boot 4.0.3 / Java 21 / Angular 19 / PostgreSQL / JavaParser
+- Stack cible : Spring Boot 4.0.3 / Java 21 / Angular 21.x / PostgreSQL / JavaParser
 
 ---
 
@@ -38,14 +38,15 @@
 | JAS-014 | Dashboard progression migration | ⏳ TODO | |
 | JAS-015 | API métriques projet | ⏳ TODO | |
 | JAS-016 | ClassificationBadgeComponent Angular | ⏳ TODO | |
-| JAS-017 | Intégration Claude API (circuit breaker) | ⏳ TODO | |
-| JAS-018 | Nommage sémantique UseCase par LLM | ⏳ TODO | |
+| JAS-017 | Orchestration LLM multi-fournisseur | ⏳ TODO | Choix `claude-code` / `gpt-5.4`, mode degrade, bundle sanitise uniquement |
+| JAS-018 | Pack de desensibilisation complet avant LLM | ⏳ TODO | Renommage metier, secrets/URLs, commentaires, donnees fictives |
 | JAS-019 | Détection state machines | ⏳ TODO | |
 | JAS-020 | Extraction gardes habilitation en Policy | ⏳ TODO | |
-| JAS-021 | Prompt engineering corpus référence IA | ⏳ TODO | |
-| JAS-022 | Config sécurisée clé API Claude | ⏳ TODO | |
-| JAS-029 | Audit trail données LLM + UI transparence | ⏳ TODO | |
-| JAS-030 | Visualisation raisonnement LLM (chain-of-thought) | ⏳ TODO | |
+| JAS-021 | Corpus sanitise et templates de prompts multi-fournisseur | ⏳ TODO | |
+| JAS-022 | Config securisee des credentials fournisseurs LLM | ⏳ TODO | |
+| JAS-029 | Audit trail des envois sanitises au LLM + UI transparence | ⏳ TODO | |
+| JAS-030 | Explications observables des decisions LLM | ⏳ TODO | Pas de chain-of-thought brute |
+| JAS-031 | Workspace miroir et extraction du plus petit perimetre utile | ⏳ TODO | |
 | JAS-023 | Analyse projet complet multi-controllers | ⏳ TODO | |
 | JAS-024 | Dépendances inter-controllers + graphe | ⏳ TODO | |
 | JAS-025 | Pipeline différentiel delta analysis | ⏳ TODO | |
@@ -148,7 +149,7 @@ Tout ticket est considered DONE lorsque les conditions suivantes sont toutes sat
 
 **Qualite frontend**
 - [ ] Composant Angular avec `ChangeDetectionStrategy.OnPush`
-- [ ] Utilisation des signals Angular 19 pour l'etat reactif
+- [ ] Utilisation des signals Angular 21 pour l'etat reactif
 - [ ] Aucune logique metier de refactoring dans le composant Angular
 
 **Livraison**
@@ -172,6 +173,7 @@ Tout ticket est considered DONE lorsque les conditions suivantes sont toutes sat
 | R-06 | Plugin IDE depend d'APIs privees changeantes | Haute | Moyen | Abstraction du protocole d'export, decouplage par contrat fichier |
 | R-07 | Detection des state machines fausse-positive | Moyenne | Moyen | Seuil de confiance configurable, validation humaine obligatoire |
 | R-08 | Regression silencieuse en mode regex fallback | Haute | Eleve | Metriques comparatives AST vs regex loggees et exposees API |
+| R-09 | Desensibilisation incomplete laisse fuiter des marqueurs sensibles | Moyenne | Critique | Deny-by-default, preview humain, regles versionnees, hash et audit du bundle sanitise |
 
 ---
 
@@ -181,7 +183,7 @@ Tout ticket est considered DONE lorsque les conditions suivantes sont toutes sat
 **Description** : Fiabiliser le pipeline d'extraction pour garantir une classification correcte meme sur du code Java invalide, anonymise ou partiellement parsable. Couvre les limites 1, 2 et 5.
 **Composant** : Backend / Infra
 **Priorite** : Critical
-**Estimation globale** : 42 points
+**Estimation globale** : 21 points
 
 ---
 
@@ -288,7 +290,7 @@ Tout ticket est considered DONE lorsque les conditions suivantes sont toutes sat
 **Description** : Ameliorer la precision et la completude des artefacts Java generes (UseCase, Gateway, ViewModel, etc.) en preservant les signatures de methodes, en gerant les composants custom JavaFX et en validant la compilabilite du code produit. Couvre les limites 3, 4, 7 et 10.
 **Composant** : Backend
 **Priorite** : Critical
-**Estimation globale** : 55 points
+**Estimation globale** : 45 points
 
 ---
 
@@ -425,7 +427,7 @@ Tout ticket est considered DONE lorsque les conditions suivantes sont toutes sat
 **Description** : Permettre a l'utilisateur de corriger les classifications erronees depuis le frontend Angular, et offrir un tableau de bord de progression de migration par projet. Couvre la limite 9 et l'amelioration D.
 **Composant** : Frontend, Backend
 **Priorite** : High
-**Estimation globale** : 44 points
+**Estimation globale** : 42 points
 
 ---
 
@@ -480,7 +482,7 @@ Tout ticket est considered DONE lorsque les conditions suivantes sont toutes sat
 - [ ] Les donnees sont actualisees automatiquement toutes les 30 secondes via polling ou SSE
 - [ ] Le dashboard est responsive et utilisable sur ecran 1280px minimum
 **Estimation** : 13
-**Priorite** : Medium
+**Priorite** : High
 **Dependances** : JAS-013
 **Composant** : Frontend, Backend
 
@@ -526,49 +528,52 @@ Tout ticket est considered DONE lorsque les conditions suivantes sont toutes sat
 ## EPIC 4 - Analyse enrichie par intelligence artificielle
 
 **ID Epic** : JAS-EPIC-04
-**Description** : Integrer Claude API comme couche d'enrichissement optionnelle pour nommer les UseCases selon l'intention metier, detecter les state machines et enrichir les descriptions des regles. Couvre l'amelioration A et les limites 6 et 7.
-**Composant** : Backend
+**Description** : Integrer une couche d'enrichissement IA optionnelle et multi-fournisseur (`claude-code` ou `gpt-5.4`) pour nommer les UseCases, enrichir les descriptions et assister l'analyse, mais uniquement a partir d'un workspace miroir desensibilise. L'EPIC couvre le choix du fournisseur, l'extraction du plus petit perimetre utile, la suppression des elements sensibles, la transparence utilisateur et l'explication observable sans exposition de chain-of-thought brute.
+**Composant** : Backend, Frontend, Infra
 **Priorite** : Medium
-**Estimation globale** : 47 points
+**Estimation globale** : 76 points
 
 ---
 
 ### JAS-017
 
 **Type** : Story
-**Titre** : Integration Claude API comme service d'enrichissement optionnel (circuit breaker + mode degrade)
-**Description** : Creer le port `AiEnrichmentPort` et son adaptateur `ClaudeApiAiEnrichmentAdapter` permettant d'envoyer des extraits de code au LLM pour enrichissement. L'integration doit etre totalement optionnelle : si le service est absent ou lent, l'application fonctionne en mode degrade sans aucune perte fonctionnelle.
+**Titre** : Orchestration LLM multi-fournisseur via `AiEnrichmentPort` (routing + mode degrade)
+**Description** : Creer un port sortant `AiEnrichmentPort` strictement hexagonal et un adaptateur de routage `RoutingAiEnrichmentAdapter` capable de deleguer vers `ClaudeCodeAiEnrichmentAdapter` ou `OpenAiGpt54AiEnrichmentAdapter` selon la configuration ou le choix utilisateur. Le port ne recoit jamais de code brut : uniquement un `SanitizedWorkspaceBundle` et un `AiEnrichmentRequest` deja valides. L'integration reste totalement optionnelle : si le service est absent, lent ou refuse, l'application continue en mode degrade sans perte fonctionnelle.
 **Criteres d'acceptation** :
 - [ ] Le port `AiEnrichmentPort` est dans le package `ports.out` (hexagone respecte)
-- [ ] L'adaptateur `ClaudeApiAiEnrichmentAdapter` est dans `adapters.out.ai`
+- [ ] Les adaptateurs `ClaudeCodeAiEnrichmentAdapter` et `OpenAiGpt54AiEnrichmentAdapter` sont encapsules dans `adapters.out.ai`
+- [ ] Le routage du fournisseur est resolu cote backend a partir d'un identifiant supporte (`claude-code` ou `gpt-5.4`) sans logique metier cote Angular
 - [ ] Si la propriete `ai.enrichment.enabled=false`, aucun appel reseau n'est effectue
-- [ ] Si l'API Claude est indisponible, un circuit breaker (Resilience4j) declenche le mode degrade en < 5s
+- [ ] Si le fournisseur choisi est indisponible, un circuit breaker (Resilience4j) declenche le mode degrade en < 5s
 - [ ] Le timeout est configurable via `ai.enrichment.timeout-ms` (defaut : 10000)
+- [ ] Le choix du fournisseur est expose par contrat backend et persiste dans la session d'analyse
 - [ ] Un log INFO indique si l'enrichissement IA est actif ou desactive au demarrage
-- [ ] Le cout estimé en tokens est logue au niveau DEBUG pour chaque appel
-**Estimation** : 8
+- [ ] Le cout estime en tokens est logue au niveau DEBUG pour chaque appel sans exposer le contenu brut
+**Estimation** : 13
 **Priorite** : Medium
 **Dependances** : JAS-010
-**Composant** : Backend
+**Composant** : Backend, Frontend
 
 ---
 
 ### JAS-018
 
 **Type** : Story
-**Titre** : Nommage semantique des UseCases par Claude API
-**Description** : Utiliser Claude API pour transformer les noms techniques de methodes en noms metier semantiques. Le LLM recoit le handler source (signature + corps), le contexte du controller (domaine metier detecte) et les conventions de nommage du projet. Il retourne un nom de UseCase expressif.
+**Titre** : Pack de desensibilisation complet avant tout appel LLM
+**Description** : Construire un pipeline de desensibilisation backend qui transforme le perimetre utile avant enrichissement IA. Le pipeline doit appliquer, dans un ordre deterministe et versionne, le renommage metier, la suppression des secrets et URLs internes, la suppression des commentaires sensibles, le remplacement des donnees d'exemple par des donnees fictives et le blocage de tout envoi non conforme. La table de correspondance de re-identification reste locale et n'est jamais exposee au fournisseur LLM.
 **Criteres d'acceptation** :
-- [ ] Given un handler `onBtnValiderResultatExamenClicked()` avec corps contenant des appels a `examenService`, When l'enrichissement IA est active, Then le nom genere est semantique (ex: `validerResultatExamen`)
-- [ ] Given le meme handler avec enrichissement IA desactive, When le UseCase est genere, Then la transformation regle JAS-008 s'applique (non-bloquant)
-- [ ] Le nom suggere par l'IA est soumis a validation utilisateur avant d'etre persiste (flag `aiSuggested: true`)
-- [ ] L'utilisateur peut accepter ou rejeter la suggestion depuis l'UI
-- [ ] Le prompt envoye a Claude ne contient pas de donnees patient ou de donnees metier sensibles (uniquement la structure de code)
-- [ ] Un test d'integration avec mock Claude API valide le flux complet
-**Estimation** : 8
+- [ ] Les regles de desensibilisation sont versionnees et appliquees cote backend avant `AiEnrichmentPort`
+- [ ] Les noms metier detectes sont remplaces par des termes generiques coherents et stables a l'echelle du bundle
+- [ ] Les secrets, tokens, mots de passe, URLs internes, noms de serveurs et identifiants reels sont remplaces par des placeholders neutres
+- [ ] Les commentaires sensibles sont supprimes ou remplaces par une note neutre sans contexte interne
+- [ ] Les donnees d'exemple reelles des sources et tests sont remplacees par des donnees fictives preservant la structure utile
+- [ ] Si une regle de desensibilisation echoue ou si un marqueur sensible subsiste, l'envoi au fournisseur est refuse
+- [ ] Un rapport de desensibilisation liste les transformations appliquees sans exposer la valeur d'origine
+**Estimation** : 13
 **Priorite** : Medium
-**Dependances** : JAS-017, JAS-008
-**Composant** : Backend, Frontend
+**Dependances** : JAS-017
+**Composant** : Backend
 
 ---
 
@@ -611,16 +616,17 @@ Tout ticket est considered DONE lorsque les conditions suivantes sont toutes sat
 ### JAS-021
 
 **Type** : Task
-**Titre** : Prompt engineering et tests de qualite sur corpus reference
-**Description** : Definir et tester les prompts envoyes a Claude API pour le nommage semantique et l'enrichissement des descriptions. Creer un corpus de test avec les reponses attendues et mesurer la precision des suggestions.
+**Titre** : Templates de prompts et corpus sanitise multi-fournisseur
+**Description** : Definir et tester les prompts envoyes aux fournisseurs supportes pour le nommage semantique et l'enrichissement des descriptions a partir de bundles deja desensibilises. Creer un corpus de test sanitise avec les reponses attendues et mesurer la precision des suggestions par fournisseur.
 **Criteres d'acceptation** :
-- [ ] Un corpus de 20 handlers avec noms attendus est disponible dans `src/test/resources/ai-corpus/`
+- [ ] Un corpus de 20 handlers avec noms attendus est disponible dans `src/test/resources/ai-corpus-sanitized/`
+- [ ] Le corpus ne contient aucun terme metier, secret, URL interne ou donnee reelle
 - [ ] Le taux de precision des suggestions IA est > 70% sur ce corpus (mesure par similarite semantique)
 - [ ] Les prompts sont externalises dans des fichiers de template Mustache (non hardcodes)
-- [ ] Un test de regression compare les suggestions IA aux valeurs du corpus lors de chaque build (avec mock Claude)
+- [ ] Un test de regression compare les suggestions IA aux valeurs du corpus lors de chaque build avec mock `claude-code` et mock `gpt-5.4`
 **Estimation** : 5
 **Priorite** : Low
-**Dependances** : JAS-017, JAS-018
+**Dependances** : JAS-017, JAS-018, JAS-031
 **Composant** : Backend
 
 ---
@@ -628,15 +634,15 @@ Tout ticket est considered DONE lorsque les conditions suivantes sont toutes sat
 ### JAS-022
 
 **Type** : Task
-**Titre** : Configuration securisee de la cle API Claude (Vault ou secret management)
-**Description** : La cle API Claude ne doit jamais etre committee ni loggee. Mettre en place la gestion securisee via variable d'environnement avec validation au demarrage.
+**Titre** : Configuration securisee des credentials fournisseurs LLM
+**Description** : Les credentials des fournisseurs LLM ne doivent jamais etre committes ni logges. Mettre en place la gestion securisee via variables d'environnement ou secret management avec validation au demarrage et masquage systematique.
 **Criteres d'acceptation** :
-- [ ] La cle est injectee via `CLAUDE_API_KEY` (variable d'environnement), jamais en dur dans le code
-- [ ] Si `ai.enrichment.enabled=true` et que la cle est absente, l'application refuse de demarrer avec un message explicite
-- [ ] La cle n'apparait jamais dans les logs (masquee par un filtre Logback)
+- [ ] Les credentials sont injectes via variables dediees au fournisseur selectionne, jamais en dur dans le code
+- [ ] Si `ai.enrichment.enabled=true` et que le credential requis pour le fournisseur choisi est absent, l'application refuse de demarrer avec un message explicite
+- [ ] Les credentials n'apparaissent jamais dans les logs (masques par un filtre Logback)
 - [ ] Le `docker-compose.yml` reference la variable sans la valeur
 - [ ] La documentation d'installation est mise a jour dans `docs/`
-**Estimation** : 2
+**Estimation** : 3
 **Priorite** : High
 **Dependances** : JAS-017
 **Composant** : Infra, Backend
@@ -646,26 +652,22 @@ Tout ticket est considered DONE lorsque les conditions suivantes sont toutes sat
 ### JAS-029
 
 **Type** : Story
-**Titre** : Audit trail des données envoyées au LLM — transparence et conformité RGPD
+**Titre** : Audit trail des envois sanitises au LLM + UI transparence
 **Description** :
-Avant tout appel au LLM (Claude API ou autre), l'utilisateur doit pouvoir savoir exactement quelles données sont transmises au serveur externe. Deux exigences : (1) les données envoyées sont loguées côté backend dans une table d'audit dédiée, (2) un panneau de visualisation dans l'UI permet d'inspecter le payload exact de chaque appel LLM lié à une session.
-
-Cela répond à deux besoins : la conformité (l'utilisateur consent en connaissance de cause à l'envoi de code source potentiellement sensible vers un LLM externe) et le debug (l'équipe peut diagnostiquer pourquoi le LLM a produit un résultat inattendu).
+Avant tout appel au LLM, l'utilisateur doit pouvoir savoir quel fournisseur est cible, quel perimetre minimal a ete extrait et quelles transformations de desensibilisation ont ete appliquees. L'audit doit etre suffisamment precis pour la conformite et le debug, sans stocker de code brut ni de secret. Le frontend reste client du backend et affiche les informations de transparence issues des contrats backend.
 
 **Critères d'acceptation** :
-- [ ] Chaque appel LLM (JAS-017, JAS-018, JAS-019, JAS-020) persiste en base un enregistrement `llm_audit_log` avec : `session_id`, `timestamp`, `model`, `endpoint`, `prompt_tokens`, `completion_tokens`, `payload_hash` (SHA-256 du prompt), `payload_text` (texte complet du prompt envoyé), `response_summary`
-- [ ] La table `llm_audit_log` est créée via migration Flyway (V8 ou suivante)
-- [ ] Le `payload_text` est tronqué à 50 000 caractères avec indicateur `truncated=true` si dépassement
-- [ ] Un endpoint `GET /api/v1/analysis/sessions/{sessionId}/llm-audit` retourne la liste des appels LLM de la session (paginée, 20 entrées/page)
-- [ ] Le frontend affiche dans l'onglet "Analyse IA" un tableau des appels LLM avec colonnes : horodatage, modèle, tokens utilisés, bouton "Voir le prompt"
-- [ ] Le bouton "Voir le prompt" ouvre un drawer/modal avec le texte complet du prompt envoyé, syntaxiquement mis en évidence (zone de code non éditable)
-- [ ] Un bandeau d'avertissement RGPD s'affiche la première fois que l'enrichissement IA est activé : "Le code source sera transmis à [fournisseur LLM]. Continuer ?"
-- [ ] Le consentement est persisté en session (pas de répétition à chaque appel)
+- [ ] Chaque appel LLM persiste un enregistrement `llm_audit_log` avec au minimum : `session_id`, `timestamp`, `provider_id`, `model`, `scope_manifest`, `sanitization_profile_version`, `payload_hash`, `prompt_tokens`, `completion_tokens`, `response_summary`
+- [ ] Aucun code brut, aucun secret, aucune table de correspondance de renommage et aucun commentaire sensible d'origine ne sont stockes dans `llm_audit_log`
+- [ ] La table `llm_audit_log` est créée via migration Flyway
+- [ ] Un endpoint `GET /api/v1/analysis/sessions/{sessionId}/llm-audit` retourne la liste paginée des appels et leur niveau de desensibilisation
+- [ ] Le frontend affiche dans l'onglet "Analyse IA" le fournisseur, le modèle, le hash, le perimetre extrait, les compteurs de redaction et le statut de consentement
+- [ ] Avant le premier envoi externe, l'utilisateur voit un recapitulatif du bundle sanitise et doit confirmer l'envoi
 - [ ] L'ensemble est désactivable via `ai.audit.enabled=false` (par défaut `true` si IA activée)
 
 **Estimation** : 8
 **Priorité** : High
-**Dépendances** : JAS-017, JAS-022
+**Dépendances** : JAS-017, JAS-018, JAS-022, JAS-031
 **Composant** : Backend, Frontend
 
 ---
@@ -673,28 +675,43 @@ Cela répond à deux besoins : la conformité (l'utilisateur consent en connaiss
 ### JAS-030
 
 **Type** : Story
-**Titre** : Visualisation du raisonnement détaillé du LLM (chain-of-thought) dans l'UI
+**Titre** : Explications observables des decisions LLM sans chain-of-thought brute
 **Description** :
-Quand le LLM enrichit une classification ou nomme un UseCase, son raisonnement intermédiaire (chain-of-thought) doit être visible dans l'interface. L'objectif est double : permettre à l'utilisateur de comprendre POURQUOI le LLM a pris une décision, et lui donner les moyens de la valider ou de la rejeter en connaissance de cause.
-
-Le raisonnement doit être demandé explicitement dans le prompt (via le champ `thinking` de l'API Claude ou via un prompt structuré demandant un bloc `<reasoning>…</reasoning>` avant la réponse finale), stocké séparément du payload audit (JAS-029), et affiché dans l'UI sous forme structurée (étapes numérotées, pas un bloc texte brut).
+Quand le LLM enrichit une classification ou nomme un UseCase, l'interface doit exposer une justification observable et exploitable par l'utilisateur sans demander ni stocker une chaine de pensee interne brute. Le backend doit normaliser une explication finale du type "indices retenus", "regles appliquees", "zones d'incertitude", afin de permettre la validation humaine.
 
 **Critères d'acceptation** :
-- [ ] Le prompt système envoyé au LLM inclut une instruction explicite demandant un raisonnement structuré avant la réponse finale (format `<thinking>…</thinking>` puis `<answer>…</answer>`)
-- [ ] Le backend parse la réponse LLM pour séparer le bloc `<thinking>` de la réponse finale `<answer>`
-- [ ] La table `llm_audit_log` (JAS-029) contient une colonne `reasoning_text` (TEXT, nullable) stockant le bloc de raisonnement extrait
-- [ ] Un endpoint `GET /api/v1/analysis/sessions/{sessionId}/llm-audit/{auditId}/reasoning` retourne le texte de raisonnement complet pour un appel donné
-- [ ] Dans l'UI, chaque ligne du tableau d'audit LLM (JAS-029) affiche un badge "Raisonnement disponible" si `reasoning_text` est non null
-- [ ] Un clic sur ce badge ouvre un panneau latéral (side panel) affichant le raisonnement découpé en étapes numérotées (split sur les sauts de ligne ou les marqueurs `Step N:`)
-- [ ] Chaque étape du raisonnement est affichée avec un niveau d'indentation visuel selon sa profondeur logique
-- [ ] Si le raisonnement est absent (modèle ne supportant pas le chain-of-thought), le badge est remplacé par "Non disponible" en gris
-- [ ] Le panneau de raisonnement inclut un bouton "Copier le raisonnement" (clipboard)
-- [ ] Les performances ne sont pas dégradées : le raisonnement n'est chargé qu'à la demande (lazy loading via l'endpoint dédié), pas dans la liste paginée
+- [ ] Le prompt demande une justification finale concise et non une chaine de pensee brute
+- [ ] Le backend persiste uniquement une synthese explicative compatible avec la gouvernance du repo
+- [ ] Un endpoint `GET /api/v1/analysis/sessions/{sessionId}/llm-audit/{auditId}/explanation` retourne l'explication observable d'un appel
+- [ ] Dans l'UI, chaque ligne du tableau d'audit LLM affiche un badge "Explication disponible" si une synthese est disponible
+- [ ] Un clic sur ce badge ouvre un panneau affichant les indices retenus, la suggestion finale et les incertitudes residuelles
+- [ ] Si le fournisseur ne retourne aucune justification exploitable, le badge est remplace par "Non disponible"
+- [ ] Les performances ne sont pas degradees : l'explication n'est chargee qu'a la demande
 
-**Estimation** : 8
+**Estimation** : 5
 **Priorité** : High
 **Dépendances** : JAS-029
 **Composant** : Backend, Frontend
+
+---
+
+### JAS-031
+
+**Type** : Story
+**Titre** : Workspace miroir et extraction du plus petit perimetre utile
+**Description** : Construire un `workspace-sanitized/` minimal a partir du perimetre utile a la demande utilisateur. Le moteur doit extraire uniquement les classes, DTO, interfaces, tests et README strictement necessaires au refactoring cible, puis produire un bundle sanitise utilisable soit pour l'appel LLM backend, soit pour une revue humaine ou un export local.
+
+**Criteres d'acceptation** :
+- [ ] L'utilisateur peut demander un bundle limite a un service, un controller, des DTO et les tests utiles associes
+- [ ] Le backend calcule un `scope_manifest` explicite listant les fichiers, classes et methodes retenus
+- [ ] Le bundle genere un repertoire `workspace-sanitized/` ou une archive equivalente avec `src/main`, `src/test` et `README_sanitized.md`
+- [ ] Les fichiers hors perimetre utile ne sont ni copies ni envoyes au fournisseur LLM
+- [ ] Le bundle est reutilisable pour une revue humaine avant re-injection dans le depot interne
+
+**Estimation** : 8
+**Priorite** : High
+**Dependances** : JAS-010
+**Composant** : Backend
 
 ---
 
@@ -704,7 +721,7 @@ Le raisonnement doit être demandé explicitement dans le prompt (via le champ `
 **Description** : Etendre l'outil pour supporter l'analyse multi-controllers (projet complet), le pipeline differentiel (delta analysis), l'export vers les IDE et la generation de squelettes de tests. Couvre la limite 8 et les ameliorations B, C et E.
 **Composant** : Backend, Frontend, Infra
 **Priorite** : Medium / Low
-**Estimation globale** : 76 points
+**Estimation globale** : 73 points
 
 ---
 
@@ -842,14 +859,15 @@ Le raisonnement doit être demandé explicitement dans le prompt (via le champ `
 | JAS-014 | Story | Dashboard progression migration par projet | EPIC-03 | 13 | Medium | Front+Back |
 | JAS-015 | Story | API agregation metriques par projet | EPIC-03 | 8 | Medium | Backend |
 | JAS-016 | Task | Composant Angular badge confiance classification | EPIC-03 | 3 | Medium | Frontend |
-| JAS-017 | Story | Integration Claude API optionnelle (circuit breaker) | EPIC-04 | 8 | Medium | Backend |
-| JAS-018 | Story | Nommage semantique UseCases par Claude API | EPIC-04 | 8 | Medium | Back+Front |
+| JAS-017 | Story | Orchestration LLM multi-fournisseur via AiEnrichmentPort | EPIC-04 | 13 | Medium | Back+Front |
+| JAS-018 | Story | Pack de desensibilisation complet avant LLM | EPIC-04 | 13 | Medium | Backend |
 | JAS-019 | Story | Detection logique d'etat (state machine) | EPIC-04 | 13 | Medium | Backend |
 | JAS-020 | Story | Extraction gardes d'habilitation en Policy candidates | EPIC-04 | 8 | Medium | Backend |
-| JAS-021 | Task | Prompt engineering et tests corpus reference IA | EPIC-04 | 5 | Low | Backend |
-| JAS-022 | Task | Configuration securisee cle API Claude | EPIC-04 | 2 | High | Infra+Back |
-| JAS-029 | Story | Audit trail données envoyées au LLM + UI transparence | EPIC-04 | 8 | High | Back+Front |
-| JAS-030 | Story | Visualisation raisonnement détaillé LLM (chain-of-thought) | EPIC-04 | 8 | High | Back+Front |
+| JAS-021 | Task | Templates de prompts et corpus sanitise multi-fournisseur | EPIC-04 | 5 | Low | Backend |
+| JAS-022 | Task | Configuration securisee des credentials fournisseurs LLM | EPIC-04 | 3 | High | Infra+Back |
+| JAS-029 | Story | Audit trail des envois sanitises au LLM + UI transparence | EPIC-04 | 8 | High | Back+Front |
+| JAS-030 | Story | Explications observables des decisions LLM | EPIC-04 | 5 | High | Back+Front |
+| JAS-031 | Story | Workspace miroir et extraction du plus petit perimetre utile | EPIC-04 | 8 | High | Backend |
 | JAS-023 | Story | Ingestion et analyse projet complet multi-controllers | EPIC-05 | 21 | Medium | Back+Front |
 | JAS-024 | Story | Detection dependances inter-controllers | EPIC-05 | 13 | Medium | Back+Front |
 | JAS-025 | Story | Pipeline differentiel delta analysis | EPIC-05 | 13 | Low | Back+Front |
@@ -857,7 +875,7 @@ Le raisonnement doit être demandé explicitement dans le prompt (via le champ `
 | JAS-027 | Story | Generation squelettes tests JUnit 5 | EPIC-05 | 13 | Low | Backend |
 | JAS-028 | Task | Documentation OpenAPI 3.1 nouveaux endpoints | EPIC-05 | 5 | Medium | Backend |
 
-**Total estimé : 280 story points**
+**Total estimé : 257 story points**
 
 ---
 
@@ -875,7 +893,7 @@ Objectif : que les artefacts generes soient corrects en termes de signatures et 
 
 ### Lot C - Qualite avancee des artefacts et feedback utilisateur
 Tickets : JAS-007, JAS-008, JAS-009, JAS-016, JAS-022
-Total : 28 points
+Total : 30 points
 Objectif : artefacts semantiquement corrects, composants custom geres, compilabilite validee, UI informee.
 
 ### Lot D - Reclassification manuelle et metriques projet
@@ -884,9 +902,9 @@ Total : 39 points
 Objectif : l'utilisateur peut corriger l'outil et voir la progression globale.
 
 ### Lot E - Enrichissement IA
-Tickets : JAS-017, JAS-022 (si pas fait), JAS-021, JAS-018, JAS-019, JAS-020, JAS-029, JAS-030
-Total : 60 points
-Objectif : le LLM enrichit les noms et detecte les patterns avances. Chaque appel LLM est auditable et son raisonnement visible dans l'UI.
+Tickets : JAS-017, JAS-031, JAS-018, JAS-022, JAS-021, JAS-019, JAS-020, JAS-029, JAS-030
+Total : 76 points
+Objectif : le LLM enrichit les noms et detecte les patterns avances uniquement a partir d'un workspace miroir sanitise. Chaque appel reste multi-fournisseur, auditable et explicable sans chain-of-thought brute.
 
 ### Lot F - Scalabilite et integration
 Tickets : JAS-023, JAS-024, JAS-027, JAS-028, JAS-025, JAS-026
@@ -902,13 +920,13 @@ handoff:
   vers: gouvernance
   preconditions:
     - Backlog valide par product-owner-fonctionnel
-    - Risques R-01 a R-08 arbitres et mitigation assignee
+    - Risques R-01 a R-09 arbitres et mitigation assignee
     - Lot A confirme comme prerequis non negociable
   points_de_vigilance:
     - JAS-010 (refactorisation Strategy) doit etre merge avant JAS-006 et JAS-007
-    - JAS-017 (Claude API) necessite une decision securite sur les donnees envoyees au LLM — couverte par JAS-029 (audit trail) et JAS-030 (chain-of-thought)
+    - JAS-017 ne peut etre implemente qu'apres validation de la chaine JAS-031 -> JAS-018 -> JAS-029
     - JAS-023 (multi-controllers) necessite une decision sur le stockage des ZIP uploadés
-    - La version Angular cible (19 ou 21.x) doit etre revalidee avant JAS-012 et JAS-014
+    - La version Angular cible 21.x doit etre revalidee avant JAS-012 et JAS-014
   artefacts_a_consulter:
     - jira/refactoring-app-initial-backlog.md (ce document)
     - agents/contracts.md
@@ -921,7 +939,7 @@ handoff:
     - Lot A complete (JAS-005, JAS-003, JAS-010, JAS-001)
     - Contrats API valides pour les nouveaux endpoints
   points_de_vigilance:
-    - Le port AiEnrichmentPort (JAS-017) doit rester dans ports.out sans dependance Spring
+    - Le port AiEnrichmentPort (JAS-017) doit rester dans ports.out sans dependance Spring et ne recevoir que des bundles sanitises
     - Les migrations Flyway pour rule_classification_audit et project doivent etre sequentielles
     - Les generateurs Strategy (JAS-010) doivent etre enregistres via List<ArtifactGenerator> Spring
   artefacts_a_consulter:
@@ -936,7 +954,7 @@ handoff:
     - Version Angular revalidee
   points_de_vigilance:
     - Tous les composants en ChangeDetectionStrategy.OnPush
-    - Utiliser les signals Angular 19 pour l'etat des formulaires de reclassification
+    - Utiliser les signals Angular 21 pour l'etat des formulaires de reclassification
     - Le graphe de dependances (JAS-024) ne doit pas introduire de dependance non validee (D3.js a confirmer)
   artefacts_a_consulter:
     - frontend/ (structure existante)
@@ -962,15 +980,15 @@ handoff:
 ## Annexe - Contrat de sortie de l'agent jira-estimation
 
 ### objectif
-Transformer les 10 limites et 5 ameliorations identifiees en backlog JIRA structuré, estime et ordonnance.
+Transformer les 10 limites, les 5 ameliorations et les contraintes de desensibilisation LLM en backlog JIRA structure, estime et ordonnance.
 
 ### perimetre
-28 tickets couvrant les 5 epics definis. Exclus : la refonte de l'architecture backend existante, les migrations de donnees de production, la securite des acces utilisateurs (hors perimetre non exprime dans le scope initial).
+31 tickets couvrant les 5 epics definis. Exclus : la refonte de l'architecture backend existante, les migrations de donnees de production, la securite des acces utilisateurs (hors perimetre non exprime dans le scope initial).
 
 ### faits
 - 10 limites documentees avec exemples concrets (ExamenParacliniqueController, 12/15 handlers en Bridge)
 - 5 ameliorations identifiees (A a E)
-- Stack : Spring Boot 4.0.3 / Java 21 / Angular 19 / JavaParser / PostgreSQL
+- Stack : Spring Boot 4.0.3 / Java 21 / Angular 21.x / JavaParser / PostgreSQL
 - Corpus de samples existant dans `samples/`
 - Architecture hexagonale stricte deja en place dans `backend/`
 
@@ -979,30 +997,32 @@ Transformer les 10 limites et 5 ameliorations identifiees en backlog JIRA struct
 - La limite 2 (dictionnaire regex etroit) explique directement le probleme des 12/15 handlers en Bridge
 - L'amelioration A (LLM) doit etre strictement optionnelle pour ne pas bloquer les lots precedents
 - JAS-010 (refactorisation Strategy) est un prerequis technique non visible par l'utilisateur mais critique pour la maintenabilite
+- Un enrichissement IA conforme a la politique interne impose une extraction minimale et une desensibilisation avant tout appel externe
 
 ### hypotheses
-- La version Angular 19 est confirmee (a revalider si upgrade vers 21.x prevu)
+- La version Angular 21.x est la cible courante et doit etre revalidee au bootstrap frontend
 - JavaParser peut re-parser le code genere pour la validation de compilabilite (JAS-009)
-- Claude API (Anthropic) est le LLM cible pour l'amelioration A
+- Les fournisseurs cibles de l'amelioration A sont `claude-code` et `gpt-5.4`
 - Un corpus de samples adequat existe dans `samples/` pour les tests de regression
 
 ### incertitudes
-- La version exacte d'Angular cible (19 mentionnee dans le prompt, 21.x dans AGENTS.md) doit etre arbitree
+- Le protocole exact de connexion a `claude-code` reste a confirmer avant implementation de l'adaptateur technique
 - Le choix de la librairie de visualisation pour le graphe de dependances (JAS-024) est ouvert
 - Le stockage des ZIPs uploades pour l'analyse multi-controllers necessite une decision d'infrastructure
-- Le modele Claude exact (Sonnet, Opus, Haiku) et le schema de tarification pour l'amelioration A sont a confirmer
+- Le niveau de conservation acceptable du payload sanitise en audit doit etre arbitre avec la securite
 
 ### decisions
 - Lot A defini comme prerequis non negociable (JAS-010 en premier)
-- Enrichissement IA totalement optionnel avec circuit breaker Resilience4j
+- Enrichissement IA totalement optionnel avec circuit breaker Resilience4j et choix de fournisseur cote backend
 - Validation de compilabilite non bloquante (avertissements, pas erreurs)
 - Reclassification manuelle avec audit log obligatoire
+- Aucun code brut, secret ou chaine de pensee interne brute ne doit etre envoye ni stocke dans l'EPIC 4
 
 ### livrables
 - Ce fichier : `jira/refactoring-app-initial-backlog.md`
-- 28 tickets structures avec criteres d'acceptation Given/When/Then
+- 31 tickets structures avec criteres d'acceptation Given/When/Then
 - 6 lots progressifs d'implementation (A a F)
-- 8 risques identifies et mitigations proposees
+- 9 risques identifies et mitigations proposees
 - Handoffs vers gouvernance, backend-hexagonal, frontend-angular, implementation-moteur-analyse
 
 ### dependances
@@ -1011,7 +1031,7 @@ Transformer les 10 limites et 5 ameliorations identifiees en backlog JIRA struct
 - `AGENTS.md` pour les conventions d'orchestration
 
 ### verifications
-- [ ] Chaque ticket a un ID unique (JAS-001 a JAS-028)
+- [ ] Chaque ticket a un ID unique (JAS-001 a JAS-031, hors trous reserves)
 - [ ] Chaque ticket a au moins 3 criteres d'acceptation verifiables
 - [ ] Les estimations sont en Fibonacci (1, 2, 3, 5, 8, 13, 21)
 - [ ] Les dependances sont coherentes (pas de dependance circulaire)

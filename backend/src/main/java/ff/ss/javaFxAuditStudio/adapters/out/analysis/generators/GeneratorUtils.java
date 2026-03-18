@@ -85,8 +85,10 @@ public final class GeneratorUtils {
      * 4. "void foo(Arg arg)" -> "foo"
      * 5. Fallback camelCase sur les 3 premiers mots significatifs
      *
-     * <p>JAS-008 : le nom extrait est ensuite nettoye par suppression des prefixes et suffixes
-     * techniques (on, handle, btn, button, action, Clicked, Action, Pressed...).
+     * <p>JAS-008 : le nettoyage des prefixes et suffixes techniques est disponible via
+     * {@link #cleanMethodName(String)} et s'applique explicitement dans les generateurs
+     * qui veulent un nom semantique cible. L'extraction conserve le nom d'origine pour
+     * preserver les handlers JavaFX et les signatures detectees.
      */
     public static String methodNameFromRule(final BusinessRule rule) {
         String desc = rule.description();
@@ -97,7 +99,7 @@ public final class GeneratorUtils {
             int colon = rest.indexOf(':');
             String name = (colon > 0 ? rest.substring(0, colon) : rest).trim();
             if (isValidIdentifier(name)) {
-                return cleanMethodName(name);
+                return name;
             }
         }
 
@@ -135,7 +137,7 @@ public final class GeneratorUtils {
                     ? desc.substring(spaceIndex + 1, parenIndex).trim()
                     : desc.substring(0, parenIndex).trim();
             if (isValidIdentifier(name)) {
-                return cleanMethodName(name);
+                return name;
             }
         }
 

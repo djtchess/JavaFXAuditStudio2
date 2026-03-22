@@ -10,6 +10,7 @@
 | api-contrats | Definir les contrats echanges front/back et moteur/backend | endpoints, DTO, schemas, versioning | GPT-5.4 | `backend/`, `agents/contracts.md` |
 | securite | Poser les controles de securite et d'exposition | menaces, exigences, controles, journalisation | GPT-5.4 | contrats, backend |
 | transparence-openai | Auditer la surface de donnees, prompts et fichiers exposes a OpenAI | rapport Markdown, inventaire de fichiers, trace agent observable | GPT-5.4 | `AGENTS.md`, `agents/`, `.codex/`, prompts du repo |
+| transparence-claude | Auditer la surface de donnees, prompts, permissions et fichiers exposes a Claude Code | rapport Markdown, inventaire de fichiers, trace agent observable | claude-sonnet-4-6 | `AGENTS.md`, `AGENTS-codex.md`, `agents/`, `.claude/`, `.codex/`, prompts du repo |
 | architecture-moteur-analyse | Decouper le moteur d'analyse/refactoring en composants implementables | architecture du moteur, interfaces, flux de donnees | GPT-5.4 | guide, `.codex` skills |
 | audit-qualite-analyse | Evaluer la fiabilite des analyses et garde-fous | score de confiance, alertes, checklist de qualite | GPT-5.4 | `javafx-quality-smell-detector` |
 | jira-estimation | Transformer le scope en epics/stories/tasks | backlog estime, dependances, risques | GPT-5.4 | guide, architecture cible |
@@ -54,3 +55,4 @@
 | javafx-refactoring-planner | Produire la migration par lots | GPT-5.4 | analyses consolidees |
 | javafx-report-writer | Rediger la restitution finale | GPT-5.4 | sorties consolidees |
 | openai-transparency-reporter | Produire un rapport Markdown de transparence OpenAI | GPT-5.4 | `agents/`, `.codex/prompts`, fichiers lus dans la session |
+| claude-transparency-reporter | Produire un rapport Markdown de transparence Claude Code | claude-sonnet-4-6 | `agents/`, `.claude/settings.local.json`, `.codex/prompts`, fichiers lus dans la session |

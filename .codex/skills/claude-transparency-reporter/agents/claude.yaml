@@ -1,0 +1,7 @@
+interface:
+  display_name: "Claude Code Transparency Reporter"
+  short_description: "Rapport Markdown des donnees et fichiers exposes a Claude Code"
+  default_prompt: "Use $claude-transparency-reporter to produce a markdown transparency report of data, files, permissions, hooks, worktrees, and observable agent reasoning sent to Claude Code."
+
+policy:
+  allow_implicit_invocation: true

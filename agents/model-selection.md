@@ -36,6 +36,7 @@ Utiliser `GPT-5.3-codex` pour les taches de generation de code, de transformatio
 | api-contrats | GPT-5.4 | Conception des contrats et compatibilite front/back |
 | securite | GPT-5.4 | Menaces, controles, contraintes transverses |
 | transparence-openai | GPT-5.4 | Audit de donnees exposees, synthese et explicabilite |
+| transparence-claude | claude-sonnet-4-6 | Audit des donnees, permissions, hooks et worktrees exposes a Claude Code |
 | architecture-moteur-analyse | GPT-5.4 | Decomposition modulaire et decisions structurelles |
 | audit-qualite-analyse | GPT-5.4 | Evaluation de fiabilite, scoring et garde-fous |
 | jira-estimation | GPT-5.4 | Decoupage, estimation, dependances |
@@ -80,3 +81,4 @@ Utiliser `GPT-5.3-codex` pour les taches de generation de code, de transformatio
 | javafx-refactoring-planner | GPT-5.4 | Plan de migration progressif |
 | javafx-report-writer | GPT-5.4 | Synthese finale actionnable |
 | openai-transparency-reporter | GPT-5.4 | Audit Markdown des donnees, fichiers et traces agent |
+| claude-transparency-reporter | claude-sonnet-4-6 | Audit Markdown des donnees, fichiers, permissions, worktrees et traces agent Claude Code |

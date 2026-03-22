@@ -283,8 +283,8 @@ import { AnalysisApiService } from '../../../core/services/analysis-api.service'
               @if (art.transitionalBridge) {
                 <span class="bridge-badge">Bridge</span>
               }
-              @if (art.generationStatus === 'NEEDS_REVIEW') {
-                <span class="needs-review-badge">⚠ NEEDS_REVIEW</span>
+              @if (art.generationStatus === 'WARNING') {
+                <span class="needs-review-badge">⚠ À VÉRIFIER</span>
               }
               <button
                 class="code-toggle"
@@ -334,23 +334,17 @@ export class ArtifactsViewComponent {
   });
 
   protected readonly needsReviewCount = computed((): number =>
-    this.data().artifacts.filter(a => a.generationStatus === 'NEEDS_REVIEW').length
+    this.data().artifacts.filter(a => a.generationStatus === 'WARNING').length
   );
 
   protected formatWarning(warning: string): string {
-    if (warning.startsWith('DUPLICATE_METHOD: ')) {
-      return `Méthode dupliquée : ${warning.substring('DUPLICATE_METHOD: '.length)}`;
-    }
-    if (warning.startsWith('MISSING_IMPORT: ')) {
-      return `Import manquant : ${warning.substring('MISSING_IMPORT: '.length)}`;
-    }
-    if (warning.startsWith('CUSTOM_TYPE_UNRESOLVED: ')) {
-      return `Type custom non résolu : ${warning.substring('CUSTOM_TYPE_UNRESOLVED: '.length)}`;
-    }
-    if (warning.startsWith('CUSTOM_TYPE_HEURISTIC: ')) {
-      return `Type résolu par heuristique : ${warning.substring('CUSTOM_TYPE_HEURISTIC: '.length)}`;
-    }
-    return warning;
+    const translations: Record<string, string> = {
+      'DUPLICATE_METHOD_NAME': 'Noms de méthodes dupliqués',
+      'MISSING_IMPORT': 'Import(s) potentiellement manquant(s)',
+      'EMPTY_BODY': 'Artefact sans méthode significative',
+      'PARSE_ERROR': 'Erreur de syntaxe Java détectée',
+    };
+    return translations[warning] ?? warning;
   }
 
   protected toggleCode(artifactId: string): void {

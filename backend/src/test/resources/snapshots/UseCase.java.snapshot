@@ -6,9 +6,9 @@ package com.example.patient.migration;
 public interface PatientUseCase {
 
     /** Methode handler onSave : responsabilite APPLICATION detectee */
-    void onSave(); // TODO: verifier signature
+    void save(); // TODO: verifier signature
 
     /** Methode handler onDelete : responsabilite APPLICATION detectee */
-    void onDelete(); // TODO: verifier signature
+    void delete(); // TODO: verifier signature
 
 }

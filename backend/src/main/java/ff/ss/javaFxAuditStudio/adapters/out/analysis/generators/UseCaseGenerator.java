@@ -24,7 +24,7 @@ public final class UseCaseGenerator implements ArtifactGeneratorStrategy {
         sb.append("public interface ").append(className).append(" {\n\n");
         var seen = new LinkedHashSet<String>();
         for (BusinessRule rule : rules) {
-            String method = GeneratorUtils.methodNameFromRule(rule);
+            String method = GeneratorUtils.cleanMethodName(GeneratorUtils.methodNameFromRule(rule));
             if (seen.add(method)) {
                 sb.append("    /** ").append(rule.description()).append(" */\n");
                 String returnType = GeneratorUtils.buildReturnType(rule);

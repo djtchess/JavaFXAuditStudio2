@@ -50,18 +50,21 @@ public final class SlimControllerGenerator implements ArtifactGeneratorStrategy 
         sb.append("    }\n");
         var seen = new LinkedHashSet<String>();
         for (BusinessRule rule : rules) {
-            String handler = GeneratorUtils.methodNameFromRule(rule);
-            if (!seen.add(handler)) {
-                continue;
+            String handler = GeneratorUtils.cleanMethodName(GeneratorUtils.methodNameFromRule(rule));
+            if (seen.add(handler)) {
+                appendHandlerMethod(sb, handler, rule);
             }
-            String params = GeneratorUtils.buildMethodSignature(rule);
-            String args = GeneratorUtils.buildArgumentList(rule);
-            sb.append("\n    @FXML\n");
-            sb.append("    public void ").append(handler).append("(").append(params).append(") {\n");
-            sb.append("        useCase.").append(handler).append("(").append(args).append(");\n");
-            sb.append("    }\n");
         }
         sb.append("}\n");
         return GeneratorUtils.artifact(baseName, 1, ArtifactType.CONTROLLER_SLIM, className, sb.toString(), true);
+    }
+
+    private void appendHandlerMethod(final StringBuilder sb, final String handler, final BusinessRule rule) {
+        String params = GeneratorUtils.buildMethodSignature(rule);
+        String args = GeneratorUtils.buildArgumentList(rule);
+        sb.append("\n    @FXML\n");
+        sb.append("    public void ").append(handler).append("(").append(params).append(") {\n");
+        sb.append("        useCase.").append(handler).append("(").append(args).append(");\n");
+        sb.append("    }\n");
     }
 }

@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 
 import ff.ss.javaFxAuditStudio.adapters.in.rest.dto.ArtifactsResponse;
 import ff.ss.javaFxAuditStudio.adapters.in.rest.dto.ArtifactsResponse.CodeArtifactDto;
+import ff.ss.javaFxAuditStudio.domain.generation.ArtifactValidationWarning;
 import ff.ss.javaFxAuditStudio.domain.generation.CodeArtifact;
 import ff.ss.javaFxAuditStudio.domain.generation.GenerationResult;
 
@@ -21,13 +22,25 @@ public class ArtifactsResponseMapper {
 
     private List<CodeArtifactDto> mapArtifacts(final List<CodeArtifact> artifacts) {
         return artifacts.stream()
-                .map(a -> new CodeArtifactDto(
-                        a.artifactId(),
-                        a.type().name(),
-                        a.lotNumber(),
-                        a.className(),
-                        a.content(),
-                        a.transitionalBridge()))
+                .map(this::toDto)
+                .toList();
+    }
+
+    private CodeArtifactDto toDto(final CodeArtifact a) {
+        return new CodeArtifactDto(
+                a.artifactId(),
+                a.type().name(),
+                a.lotNumber(),
+                a.className(),
+                a.content(),
+                a.transitionalBridge(),
+                mapWarnings(a.generationWarnings()),
+                a.generationStatus());
+    }
+
+    private List<String> mapWarnings(final List<ArtifactValidationWarning> warnings) {
+        return warnings.stream()
+                .map(ArtifactValidationWarning::name)
                 .toList();
     }
 }

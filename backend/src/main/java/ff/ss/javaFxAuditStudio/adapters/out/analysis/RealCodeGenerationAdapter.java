@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 /**
  * Orchestrateur de generation d'artefacts.
  * Deleguea chaque generateur specialise selon le type d'ExtractionCandidate.
+ * Integre la validation structurelle (JAS-009) apres chaque generation.
  * Instancie par GenerationConfiguration — pas d'annotation Spring.
  */
 public final class RealCodeGenerationAdapter implements CodeGenerationPort {
@@ -34,6 +35,7 @@ public final class RealCodeGenerationAdapter implements CodeGenerationPort {
     private final AssemblerGenerator assemblerGenerator;
     private final StrategyArtifactGenerator strategyArtifactGenerator;
     private final BridgeGenerator bridgeGenerator;
+    private final ArtifactCompilabilityValidator compilabilityValidator;
 
     public RealCodeGenerationAdapter() {
         this.slimControllerGenerator = new SlimControllerGenerator();
@@ -44,6 +46,7 @@ public final class RealCodeGenerationAdapter implements CodeGenerationPort {
         this.assemblerGenerator = new AssemblerGenerator();
         this.strategyArtifactGenerator = new StrategyArtifactGenerator();
         this.bridgeGenerator = new BridgeGenerator();
+        this.compilabilityValidator = new ArtifactCompilabilityValidator();
     }
 
     @Override
@@ -55,9 +58,7 @@ public final class RealCodeGenerationAdapter implements CodeGenerationPort {
         String pkg = GeneratorUtils.extractPackage(javaContent);
         List<CodeArtifact> artifacts = new ArrayList<>();
 
-        Map<ExtractionCandidate, List<BusinessRule>> grouped = classifiedRules.stream()
-                .filter(r -> r.extractionCandidate() != ExtractionCandidate.NONE)
-                .collect(Collectors.groupingBy(BusinessRule::extractionCandidate));
+        Map<ExtractionCandidate, List<BusinessRule>> grouped = groupByCandidate(classifiedRules);
 
         List<BusinessRule> useCaseRules  = grouped.getOrDefault(ExtractionCandidate.USE_CASE, List.of());
         List<BusinessRule> viewModelRules = grouped.getOrDefault(ExtractionCandidate.VIEW_MODEL, List.of());
@@ -65,41 +66,89 @@ public final class RealCodeGenerationAdapter implements CodeGenerationPort {
         List<BusinessRule> gatewayRules  = grouped.getOrDefault(ExtractionCandidate.GATEWAY, List.of());
         List<BusinessRule> strategyRules = grouped.getOrDefault(ExtractionCandidate.STRATEGY, List.of());
 
-        // Lot 1 — Diagnostic
-        artifacts.add(slimControllerGenerator.generate(baseName, pkg, useCaseRules));
+        addValidated(artifacts, slimControllerGenerator.generate(baseName, pkg, useCaseRules));
+        addValidated(artifacts, viewModelGenerator.generate(baseName, pkg, viewModelRules));
+        addUseCaseIfPresent(artifacts, baseName, pkg, useCaseRules);
+        addPolicyIfPresent(artifacts, baseName, pkg, policyRules);
+        addGatewayIfPresent(artifacts, baseName, pkg, gatewayRules);
+        addAssemblerIfPresent(artifacts, baseName, pkg, grouped);
+        addStrategyIfPresent(artifacts, baseName, pkg, strategyRules);
+        addBridgeIfNeeded(artifacts, baseName, pkg, classifiedRules);
 
-        // Lot 2 — ViewModel + UseCase
-        artifacts.add(viewModelGenerator.generate(baseName, pkg, viewModelRules));
-        if (!useCaseRules.isEmpty()) {
-            artifacts.add(useCaseGenerator.generate(baseName, pkg, useCaseRules));
+        return List.copyOf(artifacts);
+    }
+
+    private Map<ExtractionCandidate, List<BusinessRule>> groupByCandidate(
+            final List<BusinessRule> classifiedRules) {
+        return classifiedRules.stream()
+                .filter(r -> r.extractionCandidate() != ExtractionCandidate.NONE)
+                .collect(Collectors.groupingBy(BusinessRule::extractionCandidate));
+    }
+
+    private void addValidated(final List<CodeArtifact> artifacts, final CodeArtifact artifact) {
+        artifacts.add(compilabilityValidator.validate(artifact));
+    }
+
+    private void addUseCaseIfPresent(
+            final List<CodeArtifact> artifacts,
+            final String baseName,
+            final String pkg,
+            final List<BusinessRule> rules) {
+        if (!rules.isEmpty()) {
+            addValidated(artifacts, useCaseGenerator.generate(baseName, pkg, rules));
         }
+    }
 
-        // Lot 3 — Policies
-        if (!policyRules.isEmpty()) {
-            artifacts.add(policyGenerator.generate(baseName, pkg, policyRules));
+    private void addPolicyIfPresent(
+            final List<CodeArtifact> artifacts,
+            final String baseName,
+            final String pkg,
+            final List<BusinessRule> rules) {
+        if (!rules.isEmpty()) {
+            addValidated(artifacts, policyGenerator.generate(baseName, pkg, rules));
         }
+    }
 
-        // Lot 4 — Gateways
-        if (!gatewayRules.isEmpty()) {
-            artifacts.add(gatewayGenerator.generate(baseName, pkg, gatewayRules));
+    private void addGatewayIfPresent(
+            final List<CodeArtifact> artifacts,
+            final String baseName,
+            final String pkg,
+            final List<BusinessRule> rules) {
+        if (!rules.isEmpty()) {
+            addValidated(artifacts, gatewayGenerator.generate(baseName, pkg, rules));
         }
+    }
 
-        // Lot 5 — Assembler + Strategy
+    private void addAssemblerIfPresent(
+            final List<CodeArtifact> artifacts,
+            final String baseName,
+            final String pkg,
+            final Map<ExtractionCandidate, List<BusinessRule>> grouped) {
         if (grouped.containsKey(ExtractionCandidate.ASSEMBLER)) {
-            artifacts.add(assemblerGenerator.generate(baseName, pkg));
+            addValidated(artifacts, assemblerGenerator.generate(baseName, pkg));
         }
-        if (!strategyRules.isEmpty()) {
-            artifacts.add(strategyArtifactGenerator.generate(baseName, pkg, strategyRules));
-        }
+    }
 
-        // Bridge si regles non classifiees
+    private void addStrategyIfPresent(
+            final List<CodeArtifact> artifacts,
+            final String baseName,
+            final String pkg,
+            final List<BusinessRule> rules) {
+        if (!rules.isEmpty()) {
+            addValidated(artifacts, strategyArtifactGenerator.generate(baseName, pkg, rules));
+        }
+    }
+
+    private void addBridgeIfNeeded(
+            final List<CodeArtifact> artifacts,
+            final String baseName,
+            final String pkg,
+            final List<BusinessRule> classifiedRules) {
         List<BusinessRule> unknownRules = classifiedRules.stream()
                 .filter(r -> r.extractionCandidate() == ExtractionCandidate.NONE)
                 .toList();
         if (!unknownRules.isEmpty()) {
-            artifacts.add(bridgeGenerator.generate(baseName, pkg, classifiedRules));
+            addValidated(artifacts, bridgeGenerator.generate(baseName, pkg, classifiedRules));
         }
-
-        return List.copyOf(artifacts);
     }
 }

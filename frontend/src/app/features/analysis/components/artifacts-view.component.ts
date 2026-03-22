@@ -178,6 +178,39 @@ import { AnalysisApiService } from '../../../core/services/analysis-api.service'
       font-size: 0.85rem;
       font-style: italic;
     }
+
+    .needs-review-badge {
+      background: #fff7ed;
+      color: #c2410c;
+      border: 1px solid #fed7aa;
+      border-radius: 4px;
+      padding: 0.15rem 0.4rem;
+      font-size: 0.68rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .warning-list {
+      margin: 0.3rem 0.9rem 0.5rem;
+      padding-left: 0;
+      list-style: none;
+    }
+
+    .warning-item {
+      font-size: 0.72rem;
+      color: #c2410c;
+      margin-bottom: 0.15rem;
+    }
+
+    .needs-review-summary {
+      padding: 0.5rem 1rem;
+      background: rgba(194, 65, 12, 0.06);
+      border: 1px solid rgba(194, 65, 12, 0.2);
+      border-radius: 8px;
+      font-size: 0.82rem;
+      color: #c2410c;
+      margin-bottom: 0.75rem;
+    }
   `,
   template: `
     @if (data().warnings.length > 0) {
@@ -186,6 +219,12 @@ import { AnalysisApiService } from '../../../core/services/analysis-api.service'
         <ul>
           @for (w of data().warnings; track w) { <li>{{ w }}</li> }
         </ul>
+      </div>
+    }
+
+    @if (needsReviewCount() > 0) {
+      <div class="needs-review-summary">
+        ⚠ {{ needsReviewCount() }} artefact(s) nécessitent révision (voir les badges ci-dessous)
       </div>
     }
 
@@ -244,6 +283,9 @@ import { AnalysisApiService } from '../../../core/services/analysis-api.service'
               @if (art.transitionalBridge) {
                 <span class="bridge-badge">Bridge</span>
               }
+              @if (art.generationStatus === 'NEEDS_REVIEW') {
+                <span class="needs-review-badge">⚠ NEEDS_REVIEW</span>
+              }
               <button
                 class="code-toggle"
                 (click)="toggleCode(art.artifactId)"
@@ -251,6 +293,13 @@ import { AnalysisApiService } from '../../../core/services/analysis-api.service'
                 {{ expandedArtifact() === art.artifactId ? 'Masquer' : 'Voir le code' }}
               </button>
             </div>
+            @if (art.generationWarnings.length > 0) {
+              <ul class="warning-list">
+                @for (w of art.generationWarnings; track w) {
+                  <li class="warning-item">⚠ {{ formatWarning(w) }}</li>
+                }
+              </ul>
+            }
             @if (expandedArtifact() === art.artifactId) {
               <pre class="code-block">{{ art.content }}</pre>
             }
@@ -283,6 +332,26 @@ export class ArtifactsViewComponent {
   protected readonly activeArtifacts = computed((): CodeArtifactDto[] => {
     return this.data().artifacts.filter(a => a.lotNumber === this.activeLot());
   });
+
+  protected readonly needsReviewCount = computed((): number =>
+    this.data().artifacts.filter(a => a.generationStatus === 'NEEDS_REVIEW').length
+  );
+
+  protected formatWarning(warning: string): string {
+    if (warning.startsWith('DUPLICATE_METHOD: ')) {
+      return `Méthode dupliquée : ${warning.substring('DUPLICATE_METHOD: '.length)}`;
+    }
+    if (warning.startsWith('MISSING_IMPORT: ')) {
+      return `Import manquant : ${warning.substring('MISSING_IMPORT: '.length)}`;
+    }
+    if (warning.startsWith('CUSTOM_TYPE_UNRESOLVED: ')) {
+      return `Type custom non résolu : ${warning.substring('CUSTOM_TYPE_UNRESOLVED: '.length)}`;
+    }
+    if (warning.startsWith('CUSTOM_TYPE_HEURISTIC: ')) {
+      return `Type résolu par heuristique : ${warning.substring('CUSTOM_TYPE_HEURISTIC: '.length)}`;
+    }
+    return warning;
+  }
 
   protected toggleCode(artifactId: string): void {
     this.expandedArtifact.update(current => current === artifactId ? null : artifactId);

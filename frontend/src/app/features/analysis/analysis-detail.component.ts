@@ -336,7 +336,7 @@ function emptyStep<T>(): StepState<T> {
                     }
                   </div>
                 }
-                <jas-classification-view [data]="classification().data!" />
+                <jas-classification-view [data]="classification().data!" [sessionId]="sessionId" />
               }
             </div>
           }

@@ -1,7 +1,16 @@
-import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  input,
+  signal,
+} from '@angular/core';
 
-import { ClassificationResponse, BusinessRuleDto } from '../../../core/models/analysis.model';
+import { ClassificationResponse, BusinessRuleDto, ReclassifiedRuleResponse } from '../../../core/models/analysis.model';
 import { ClassificationBadgeComponent } from '../../../shared/components/classification-badge.component';
+import { ReclassifyModalComponent } from './reclassify-modal.component';
+import { ReclassificationHistoryPanelComponent } from './reclassification-history-panel.component';
 
 const RESPONSIBILITY_COLORS: Record<string, string> = {
   UI: '#3b82f6',
@@ -12,10 +21,18 @@ const RESPONSIBILITY_COLORS: Record<string, string> = {
   UNKNOWN: '#ef4444',
 };
 
+/**
+ * Vue de classification des regles avec reclassification manuelle.
+ * JAS-009, JAS-012
+ */
 @Component({
   selector: 'jas-classification-view',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ClassificationBadgeComponent],
+  imports: [
+    ClassificationBadgeComponent,
+    ReclassifyModalComponent,
+    ReclassificationHistoryPanelComponent,
+  ],
   styles: `
     .summary-bar {
       display: flex;
@@ -116,6 +133,11 @@ const RESPONSIBILITY_COLORS: Record<string, string> = {
       color: var(--slate);
     }
 
+    .modified-badge {
+      background: #f59e0b;
+      color: white;
+    }
+
     .uncertain-icon {
       display: inline-flex;
       align-items: center;
@@ -130,11 +152,45 @@ const RESPONSIBILITY_COLORS: Record<string, string> = {
       flex-shrink: 0;
     }
 
+    .rule-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      flex-shrink: 0;
+    }
+
+    .btn-action {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.22rem 0.6rem;
+      border: 1px solid #e5e7eb;
+      border-radius: 999px;
+      background: white;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: #374151;
+      cursor: pointer;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+
+    .btn-action:hover {
+      background: #f3f4f6;
+    }
+
+    .btn-history {
+      padding: 0.22rem 0.5rem;
+    }
+
     .empty-msg {
       padding: 0.6rem 0;
       color: var(--ink-soft);
       font-size: 0.85rem;
       font-style: italic;
+    }
+
+    .history-wrapper {
+      margin-top: 0.5rem;
     }
   `,
   template: `
@@ -172,21 +228,74 @@ const RESPONSIBILITY_COLORS: Record<string, string> = {
               @if (rule.extractionCandidate) {
                 <span class="mini-badge extraction-badge">{{ rule.extractionCandidate }}</span>
               }
+              @if (isReclassified(rule.ruleId)) {
+                <span class="mini-badge modified-badge">Modifie</span>
+              }
+            </div>
+            <div class="rule-actions">
+              <button
+                class="btn-action"
+                (click)="openModal(rule.ruleId)"
+                title="Reclassifier cette regle"
+              >
+                Reclassifier
+              </button>
+              <button
+                class="btn-action btn-history"
+                (click)="openHistory(rule.ruleId)"
+                title="Voir l'historique de reclassification"
+              >
+                Hist.
+              </button>
             </div>
           </div>
+
+          @if (openHistoryForRuleId() === rule.ruleId) {
+            <div class="history-wrapper">
+              <jas-reclassification-history-panel
+                [ruleId]="rule.ruleId"
+                [analysisId]="sessionId()"
+                (closed)="closeHistory()"
+              />
+            </div>
+          }
         }
       </div>
     }
-  `
+
+    @if (openModalForRuleId(); as modalRuleId) {
+      @if (findRule(modalRuleId); as modalRule) {
+        <jas-reclassify-modal
+          [ruleId]="modalRule.ruleId"
+          [ruleDescription]="modalRule.description"
+          [currentCategory]="modalRule.responsibilityClass"
+          [analysisId]="sessionId()"
+          (reclassified)="onReclassified($event)"
+          (closed)="closeModal()"
+        />
+      }
+    }
+  `,
 })
 export class ClassificationViewComponent {
   readonly data = input.required<ClassificationResponse>();
+  readonly sessionId = input.required<string>();
 
   protected readonly filterBy = signal<string | null>(null);
+  protected readonly openModalForRuleId = signal<string | null>(null);
+  protected readonly openHistoryForRuleId = signal<string | null>(null);
+  protected readonly reclassifiedRuleIds = signal<Set<string>>(new Set());
+  protected readonly localRules = signal<BusinessRuleDto[]>([]);
+
+  constructor() {
+    effect(() => {
+      this.localRules.set([...this.data().rules]);
+    });
+  }
 
   protected readonly classCounts = computed(() => {
     const map = new Map<string, number>();
-    for (const rule of this.data().rules) {
+    for (const rule of this.localRules()) {
       map.set(rule.responsibilityClass, (map.get(rule.responsibilityClass) ?? 0) + 1);
     }
     return Array.from(map.entries())
@@ -197,9 +306,9 @@ export class ClassificationViewComponent {
   protected readonly filteredRules = computed((): BusinessRuleDto[] => {
     const filter = this.filterBy();
     if (!filter) {
-      return this.data().rules;
+      return this.localRules();
     }
-    return this.data().rules.filter(r => r.responsibilityClass === filter);
+    return this.localRules().filter(r => r.responsibilityClass === filter);
   });
 
   protected getColor(responsibilityClass: string): string {
@@ -207,6 +316,55 @@ export class ClassificationViewComponent {
   }
 
   protected toggleFilter(className: string): void {
-    this.filterBy.update(current => current === className ? null : className);
+    this.filterBy.update(current => (current === className ? null : className));
+  }
+
+  protected isReclassified(ruleId: string): boolean {
+    return this.reclassifiedRuleIds().has(ruleId);
+  }
+
+  protected findRule(ruleId: string): BusinessRuleDto | undefined {
+    return this.localRules().find(r => r.ruleId === ruleId);
+  }
+
+  protected openModal(ruleId: string): void {
+    this.openModalForRuleId.set(ruleId);
+  }
+
+  protected closeModal(): void {
+    this.openModalForRuleId.set(null);
+  }
+
+  protected openHistory(ruleId: string): void {
+    this.openHistoryForRuleId.update(current => (current === ruleId ? null : ruleId));
+  }
+
+  protected closeHistory(): void {
+    this.openHistoryForRuleId.set(null);
+  }
+
+  protected onReclassified(result: ReclassifiedRuleResponse): void {
+    this.applyReclassification(result);
+    this.closeModal();
+  }
+
+  private applyReclassification(result: ReclassifiedRuleResponse): void {
+    this.localRules.update(rules =>
+      rules.map(rule =>
+        rule.ruleId === result.ruleId
+          ? {
+              ...rule,
+              responsibilityClass: result.responsibilityClass,
+              uncertain: result.uncertain,
+              extractionCandidate: result.extractionCandidate,
+            }
+          : rule,
+      ),
+    );
+    this.reclassifiedRuleIds.update(set => {
+      const next = new Set(set);
+      next.add(result.ruleId);
+      return next;
+    });
   }
 }

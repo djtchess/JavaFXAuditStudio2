@@ -133,3 +133,27 @@ export interface ErrorResponse {
   error: string;
   correlationId: string;
 }
+
+// --- Reclassification ---
+
+export interface ReclassifyRuleRequest {
+  category: string;
+  reason: string;
+}
+
+export interface ReclassifiedRuleResponse {
+  ruleId: string;
+  description: string;
+  responsibilityClass: string;
+  extractionCandidate: string;
+  uncertain: boolean;
+  manuallyReclassified: boolean;
+}
+
+export interface ReclassificationAuditEntryResponse {
+  ruleId: string;
+  fromCategory: string;
+  toCategory: string;
+  reason: string;
+  timestamp: string;
+}

@@ -178,6 +178,39 @@ import { AnalysisApiService } from '../../../core/services/analysis-api.service'
       font-size: 0.85rem;
       font-style: italic;
     }
+
+    .needs-review-badge {
+      background: #fff7ed;
+      color: #c2410c;
+      border: 1px solid #fed7aa;
+      border-radius: 4px;
+      padding: 0.15rem 0.4rem;
+      font-size: 0.68rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .warning-list {
+      margin: 0.3rem 0.9rem 0.5rem;
+      padding-left: 0;
+      list-style: none;
+    }
+
+    .warning-item {
+      font-size: 0.72rem;
+      color: #c2410c;
+      margin-bottom: 0.15rem;
+    }
+
+    .needs-review-summary {
+      padding: 0.5rem 1rem;
+      background: rgba(194, 65, 12, 0.06);
+      border: 1px solid rgba(194, 65, 12, 0.2);
+      border-radius: 8px;
+      font-size: 0.82rem;
+      color: #c2410c;
+      margin-bottom: 0.75rem;
+    }
   `,
   template: `
     @if (data().warnings.length > 0) {
@@ -186,6 +219,12 @@ import { AnalysisApiService } from '../../../core/services/analysis-api.service'
         <ul>
           @for (w of data().warnings; track w) { <li>{{ w }}</li> }
         </ul>
+      </div>
+    }
+
+    @if (needsReviewCount() > 0) {
+      <div class="needs-review-summary">
+        ⚠ {{ needsReviewCount() }} artefact(s) nécessitent révision (voir les badges ci-dessous)
       </div>
     }
 
@@ -244,6 +283,9 @@ import { AnalysisApiService } from '../../../core/services/analysis-api.service'
               @if (art.transitionalBridge) {
                 <span class="bridge-badge">Bridge</span>
               }
+              @if (art.generationStatus === 'WARNING') {
+                <span class="needs-review-badge">⚠ À VÉRIFIER</span>
+              }
               <button
                 class="code-toggle"
                 (click)="toggleCode(art.artifactId)"
@@ -251,6 +293,13 @@ import { AnalysisApiService } from '../../../core/services/analysis-api.service'
                 {{ expandedArtifact() === art.artifactId ? 'Masquer' : 'Voir le code' }}
               </button>
             </div>
+            @if (art.generationWarnings.length > 0) {
+              <ul class="warning-list">
+                @for (w of art.generationWarnings; track w) {
+                  <li class="warning-item">⚠ {{ formatWarning(w) }}</li>
+                }
+              </ul>
+            }
             @if (expandedArtifact() === art.artifactId) {
               <pre class="code-block">{{ art.content }}</pre>
             }
@@ -283,6 +332,20 @@ export class ArtifactsViewComponent {
   protected readonly activeArtifacts = computed((): CodeArtifactDto[] => {
     return this.data().artifacts.filter(a => a.lotNumber === this.activeLot());
   });
+
+  protected readonly needsReviewCount = computed((): number =>
+    this.data().artifacts.filter(a => a.generationStatus === 'WARNING').length
+  );
+
+  protected formatWarning(warning: string): string {
+    const translations: Record<string, string> = {
+      'DUPLICATE_METHOD_NAME': 'Noms de méthodes dupliqués',
+      'MISSING_IMPORT': 'Import(s) potentiellement manquant(s)',
+      'EMPTY_BODY': 'Artefact sans méthode significative',
+      'PARSE_ERROR': 'Erreur de syntaxe Java détectée',
+    };
+    return translations[warning] ?? warning;
+  }
 
   protected toggleCode(artifactId: string): void {
     this.expandedArtifact.update(current => current === artifactId ? null : artifactId);

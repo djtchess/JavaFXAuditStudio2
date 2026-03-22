@@ -1,8 +1,10 @@
 package ff.ss.javaFxAuditStudio.adapters.out.analysis.generators;
 
+import ff.ss.javaFxAuditStudio.application.generation.ArtifactGenerator;
 import ff.ss.javaFxAuditStudio.domain.generation.ArtifactType;
 import ff.ss.javaFxAuditStudio.domain.generation.CodeArtifact;
 import ff.ss.javaFxAuditStudio.domain.rules.BusinessRule;
+import org.springframework.stereotype.Component;
 
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -10,8 +12,10 @@ import java.util.List;
 /**
  * Generateur de la classe Policy.
  * Produit la classe de decision metier extraite des regles classifiees POLICY.
+ * JAS-010 : implemente ArtifactGenerator (port applicatif) au lieu de ArtifactGeneratorStrategy.
  */
-public final class PolicyGenerator implements ArtifactGeneratorStrategy {
+@Component
+public final class PolicyGenerator implements ArtifactGenerator {
 
     @Override
     public CodeArtifact generate(final String baseName, final String pkg, final List<BusinessRule> rules) {

@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
 
 import { ClassificationResponse, BusinessRuleDto } from '../../../core/models/analysis.model';
+import { ClassificationBadgeComponent } from '../../../shared/components/classification-badge.component';
 
 const RESPONSIBILITY_COLORS: Record<string, string> = {
   UI: '#3b82f6',
@@ -14,6 +15,7 @@ const RESPONSIBILITY_COLORS: Record<string, string> = {
 @Component({
   selector: 'jas-classification-view',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [ClassificationBadgeComponent],
   styles: `
     .summary-bar {
       display: flex;
@@ -161,14 +163,14 @@ const RESPONSIBILITY_COLORS: Record<string, string> = {
             <span class="rule-id">{{ rule.ruleId }}</span>
             <span class="rule-desc">{{ rule.description }}</span>
             <div class="rule-badges">
-              <span class="mini-badge" [style.background]="getColor(rule.responsibilityClass)">
-                {{ rule.responsibilityClass }}
-              </span>
+              <jas-classification-badge
+                [responsibilityClass]="rule.responsibilityClass"
+                [uncertain]="rule.uncertain"
+                [showParsingMode]="true"
+                [parsingMode]="data().parsingMode"
+              />
               @if (rule.extractionCandidate) {
                 <span class="mini-badge extraction-badge">{{ rule.extractionCandidate }}</span>
-              }
-              @if (rule.uncertain) {
-                <span class="uncertain-icon" title="Classification incertaine">?</span>
               }
             </div>
           </div>

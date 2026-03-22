@@ -26,12 +26,12 @@ public class PatientSlimController {
     }
 
     @FXML
-    public void onSave() {
-        useCase.onSave();
+    public void save() {
+        useCase.save();
     }
 
     @FXML
-    public void onDelete() {
-        useCase.onDelete();
+    public void delete() {
+        useCase.delete();
     }
 }

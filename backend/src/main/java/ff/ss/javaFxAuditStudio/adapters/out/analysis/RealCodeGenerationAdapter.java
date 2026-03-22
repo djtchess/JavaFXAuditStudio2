@@ -9,10 +9,13 @@ import ff.ss.javaFxAuditStudio.adapters.out.analysis.generators.SlimControllerGe
 import ff.ss.javaFxAuditStudio.adapters.out.analysis.generators.StrategyArtifactGenerator;
 import ff.ss.javaFxAuditStudio.adapters.out.analysis.generators.UseCaseGenerator;
 import ff.ss.javaFxAuditStudio.adapters.out.analysis.generators.ViewModelGenerator;
+import ff.ss.javaFxAuditStudio.application.generation.ArtifactGenerator;
 import ff.ss.javaFxAuditStudio.application.ports.out.CodeGenerationPort;
 import ff.ss.javaFxAuditStudio.domain.generation.CodeArtifact;
 import ff.ss.javaFxAuditStudio.domain.rules.BusinessRule;
 import ff.ss.javaFxAuditStudio.domain.rules.ExtractionCandidate;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,8 +25,12 @@ import java.util.stream.Collectors;
 /**
  * Orchestrateur de generation d'artefacts.
  * Deleguea chaque generateur specialise selon le type d'ExtractionCandidate.
- * Instancie par GenerationConfiguration — pas d'annotation Spring.
+ * Integre la validation structurelle (JAS-009) apres chaque generation.
+ * JAS-010 : bean Spring detectable par component-scan ; les generateurs sont injectes
+ * via List{@literal <ArtifactGenerator>}. Le constructeur sans argument reste disponible
+ * pour les tests unitaires hors contexte Spring.
  */
+@Component
 public final class RealCodeGenerationAdapter implements CodeGenerationPort {
 
     private final SlimControllerGenerator slimControllerGenerator;
@@ -34,7 +41,12 @@ public final class RealCodeGenerationAdapter implements CodeGenerationPort {
     private final AssemblerGenerator assemblerGenerator;
     private final StrategyArtifactGenerator strategyArtifactGenerator;
     private final BridgeGenerator bridgeGenerator;
+    private final ArtifactCompilabilityValidator compilabilityValidator;
 
+    /**
+     * Constructeur de compatibilite pour les tests unitaires hors contexte Spring.
+     * Instancie directement les generateurs sans injection.
+     */
     public RealCodeGenerationAdapter() {
         this.slimControllerGenerator = new SlimControllerGenerator();
         this.viewModelGenerator = new ViewModelGenerator();
@@ -44,6 +56,34 @@ public final class RealCodeGenerationAdapter implements CodeGenerationPort {
         this.assemblerGenerator = new AssemblerGenerator();
         this.strategyArtifactGenerator = new StrategyArtifactGenerator();
         this.bridgeGenerator = new BridgeGenerator();
+        this.compilabilityValidator = new ArtifactCompilabilityValidator();
+    }
+
+    /**
+     * Constructeur Spring : les generateurs sont injectes depuis le contexte.
+     * Extrait chaque generateur specialise de la liste par type de classe.
+     * JAS-010 : remplace l'instanciation directe par injection via List{@literal <ArtifactGenerator>}.
+     */
+    @Autowired
+    public RealCodeGenerationAdapter(final List<ArtifactGenerator> generators) {
+        this.slimControllerGenerator = extractGenerator(generators, SlimControllerGenerator.class);
+        this.viewModelGenerator = extractGenerator(generators, ViewModelGenerator.class);
+        this.useCaseGenerator = extractGenerator(generators, UseCaseGenerator.class);
+        this.policyGenerator = extractGenerator(generators, PolicyGenerator.class);
+        this.gatewayGenerator = extractGenerator(generators, GatewayGenerator.class);
+        this.assemblerGenerator = extractGenerator(generators, AssemblerGenerator.class);
+        this.strategyArtifactGenerator = extractGenerator(generators, StrategyArtifactGenerator.class);
+        this.bridgeGenerator = extractGenerator(generators, BridgeGenerator.class);
+        this.compilabilityValidator = new ArtifactCompilabilityValidator();
+    }
+
+    private static <T extends ArtifactGenerator> T extractGenerator(
+            final List<ArtifactGenerator> generators, final Class<T> type) {
+        return generators.stream()
+                .filter(type::isInstance)
+                .map(type::cast)
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("ArtifactGenerator manquant : " + type.getSimpleName()));
     }
 
     @Override
@@ -55,9 +95,7 @@ public final class RealCodeGenerationAdapter implements CodeGenerationPort {
         String pkg = GeneratorUtils.extractPackage(javaContent);
         List<CodeArtifact> artifacts = new ArrayList<>();
 
-        Map<ExtractionCandidate, List<BusinessRule>> grouped = classifiedRules.stream()
-                .filter(r -> r.extractionCandidate() != ExtractionCandidate.NONE)
-                .collect(Collectors.groupingBy(BusinessRule::extractionCandidate));
+        Map<ExtractionCandidate, List<BusinessRule>> grouped = groupByCandidate(classifiedRules);
 
         List<BusinessRule> useCaseRules  = grouped.getOrDefault(ExtractionCandidate.USE_CASE, List.of());
         List<BusinessRule> viewModelRules = grouped.getOrDefault(ExtractionCandidate.VIEW_MODEL, List.of());
@@ -65,41 +103,89 @@ public final class RealCodeGenerationAdapter implements CodeGenerationPort {
         List<BusinessRule> gatewayRules  = grouped.getOrDefault(ExtractionCandidate.GATEWAY, List.of());
         List<BusinessRule> strategyRules = grouped.getOrDefault(ExtractionCandidate.STRATEGY, List.of());
 
-        // Lot 1 — Diagnostic
-        artifacts.add(slimControllerGenerator.generate(baseName, pkg, useCaseRules));
+        addValidated(artifacts, slimControllerGenerator.generate(baseName, pkg, useCaseRules));
+        addValidated(artifacts, viewModelGenerator.generate(baseName, pkg, viewModelRules));
+        addUseCaseIfPresent(artifacts, baseName, pkg, useCaseRules);
+        addPolicyIfPresent(artifacts, baseName, pkg, policyRules);
+        addGatewayIfPresent(artifacts, baseName, pkg, gatewayRules);
+        addAssemblerIfPresent(artifacts, baseName, pkg, grouped);
+        addStrategyIfPresent(artifacts, baseName, pkg, strategyRules);
+        addBridgeIfNeeded(artifacts, baseName, pkg, classifiedRules);
 
-        // Lot 2 — ViewModel + UseCase
-        artifacts.add(viewModelGenerator.generate(baseName, pkg, viewModelRules));
-        if (!useCaseRules.isEmpty()) {
-            artifacts.add(useCaseGenerator.generate(baseName, pkg, useCaseRules));
+        return List.copyOf(artifacts);
+    }
+
+    private Map<ExtractionCandidate, List<BusinessRule>> groupByCandidate(
+            final List<BusinessRule> classifiedRules) {
+        return classifiedRules.stream()
+                .filter(r -> r.extractionCandidate() != ExtractionCandidate.NONE)
+                .collect(Collectors.groupingBy(BusinessRule::extractionCandidate));
+    }
+
+    private void addValidated(final List<CodeArtifact> artifacts, final CodeArtifact artifact) {
+        artifacts.add(compilabilityValidator.validate(artifact));
+    }
+
+    private void addUseCaseIfPresent(
+            final List<CodeArtifact> artifacts,
+            final String baseName,
+            final String pkg,
+            final List<BusinessRule> rules) {
+        if (!rules.isEmpty()) {
+            addValidated(artifacts, useCaseGenerator.generate(baseName, pkg, rules));
         }
+    }
 
-        // Lot 3 — Policies
-        if (!policyRules.isEmpty()) {
-            artifacts.add(policyGenerator.generate(baseName, pkg, policyRules));
+    private void addPolicyIfPresent(
+            final List<CodeArtifact> artifacts,
+            final String baseName,
+            final String pkg,
+            final List<BusinessRule> rules) {
+        if (!rules.isEmpty()) {
+            addValidated(artifacts, policyGenerator.generate(baseName, pkg, rules));
         }
+    }
 
-        // Lot 4 — Gateways
-        if (!gatewayRules.isEmpty()) {
-            artifacts.add(gatewayGenerator.generate(baseName, pkg, gatewayRules));
+    private void addGatewayIfPresent(
+            final List<CodeArtifact> artifacts,
+            final String baseName,
+            final String pkg,
+            final List<BusinessRule> rules) {
+        if (!rules.isEmpty()) {
+            addValidated(artifacts, gatewayGenerator.generate(baseName, pkg, rules));
         }
+    }
 
-        // Lot 5 — Assembler + Strategy
+    private void addAssemblerIfPresent(
+            final List<CodeArtifact> artifacts,
+            final String baseName,
+            final String pkg,
+            final Map<ExtractionCandidate, List<BusinessRule>> grouped) {
         if (grouped.containsKey(ExtractionCandidate.ASSEMBLER)) {
-            artifacts.add(assemblerGenerator.generate(baseName, pkg));
+            addValidated(artifacts, assemblerGenerator.generate(baseName, pkg));
         }
-        if (!strategyRules.isEmpty()) {
-            artifacts.add(strategyArtifactGenerator.generate(baseName, pkg, strategyRules));
-        }
+    }
 
-        // Bridge si regles non classifiees
+    private void addStrategyIfPresent(
+            final List<CodeArtifact> artifacts,
+            final String baseName,
+            final String pkg,
+            final List<BusinessRule> rules) {
+        if (!rules.isEmpty()) {
+            addValidated(artifacts, strategyArtifactGenerator.generate(baseName, pkg, rules));
+        }
+    }
+
+    private void addBridgeIfNeeded(
+            final List<CodeArtifact> artifacts,
+            final String baseName,
+            final String pkg,
+            final List<BusinessRule> classifiedRules) {
         List<BusinessRule> unknownRules = classifiedRules.stream()
                 .filter(r -> r.extractionCandidate() == ExtractionCandidate.NONE)
                 .toList();
         if (!unknownRules.isEmpty()) {
-            artifacts.add(bridgeGenerator.generate(baseName, pkg, classifiedRules));
+            addValidated(artifacts, bridgeGenerator.generate(baseName, pkg, classifiedRules));
         }
-
-        return List.copyOf(artifacts);
     }
 }

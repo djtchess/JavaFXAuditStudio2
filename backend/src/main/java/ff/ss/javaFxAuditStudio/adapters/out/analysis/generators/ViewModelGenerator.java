@@ -1,8 +1,10 @@
 package ff.ss.javaFxAuditStudio.adapters.out.analysis.generators;
 
+import ff.ss.javaFxAuditStudio.application.generation.ArtifactGenerator;
 import ff.ss.javaFxAuditStudio.domain.generation.ArtifactType;
 import ff.ss.javaFxAuditStudio.domain.generation.CodeArtifact;
 import ff.ss.javaFxAuditStudio.domain.rules.BusinessRule;
+import org.springframework.stereotype.Component;
 
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -10,8 +12,10 @@ import java.util.List;
 /**
  * Generateur du ViewModel.
  * Produit la classe portant l'etat de presentation extrait des regles classifiees VIEW_MODEL.
+ * JAS-010 : implemente ArtifactGenerator (port applicatif) au lieu de ArtifactGeneratorStrategy.
  */
-public final class ViewModelGenerator implements ArtifactGeneratorStrategy {
+@Component
+public final class ViewModelGenerator implements ArtifactGenerator {
 
     @Override
     public CodeArtifact generate(final String baseName, final String pkg, final List<BusinessRule> rules) {

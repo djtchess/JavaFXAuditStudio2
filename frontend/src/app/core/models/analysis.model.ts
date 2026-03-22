@@ -79,6 +79,8 @@ export interface CodeArtifactDto {
   className: string;
   content: string;
   transitionalBridge: boolean;
+  generationWarnings: string[];
+  generationStatus: string;
 }
 
 export interface ArtifactsResponse {

@@ -64,4 +64,23 @@ class RealCodeGenerationAdapterTest {
                 assertThat(artifact.content()).isNotBlank()
         );
     }
+
+    @Test
+    void shouldProvideGenerationStatusOnEachArtifact() {
+        List<CodeArtifact> artifacts = adapter.generate("/path/to/SampleController.java", "");
+
+        assertThat(artifacts).allSatisfy(artifact -> {
+            assertThat(artifact.generationStatus()).isNotBlank();
+            assertThat(artifact.generationWarnings()).isNotNull();
+        });
+    }
+
+    @Test
+    void shouldPopulateGenerationStatusOkOrWarning() {
+        List<CodeArtifact> artifacts = adapter.generate("/path/to/SampleController.java", "");
+
+        assertThat(artifacts).allSatisfy(artifact ->
+                assertThat(artifact.generationStatus()).isIn("OK", "WARNING")
+        );
+    }
 }

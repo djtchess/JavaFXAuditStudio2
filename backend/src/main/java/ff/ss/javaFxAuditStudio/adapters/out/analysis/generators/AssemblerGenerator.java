@@ -1,8 +1,10 @@
 package ff.ss.javaFxAuditStudio.adapters.out.analysis.generators;
 
+import ff.ss.javaFxAuditStudio.application.generation.ArtifactGenerator;
 import ff.ss.javaFxAuditStudio.domain.generation.ArtifactType;
 import ff.ss.javaFxAuditStudio.domain.generation.CodeArtifact;
 import ff.ss.javaFxAuditStudio.domain.rules.BusinessRule;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 
@@ -10,8 +12,10 @@ import java.util.List;
  * Generateur de la classe Assembler.
  * Produit la classe responsable du mapping entre les champs UI et les objets domaine.
  * L'Assembler n'a pas de regles associees — le parametre rules est ignore.
+ * JAS-010 : implemente ArtifactGenerator (port applicatif) au lieu de ArtifactGeneratorStrategy.
  */
-public final class AssemblerGenerator implements ArtifactGeneratorStrategy {
+@Component
+public final class AssemblerGenerator implements ArtifactGenerator {
 
     @Override
     public CodeArtifact generate(final String baseName, final String pkg, final List<BusinessRule> rules) {

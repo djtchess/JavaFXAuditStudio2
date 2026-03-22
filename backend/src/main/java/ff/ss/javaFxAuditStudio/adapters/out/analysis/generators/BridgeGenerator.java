@@ -1,9 +1,11 @@
 package ff.ss.javaFxAuditStudio.adapters.out.analysis.generators;
 
+import ff.ss.javaFxAuditStudio.application.generation.ArtifactGenerator;
 import ff.ss.javaFxAuditStudio.domain.generation.ArtifactType;
 import ff.ss.javaFxAuditStudio.domain.generation.CodeArtifact;
 import ff.ss.javaFxAuditStudio.domain.rules.BusinessRule;
 import ff.ss.javaFxAuditStudio.domain.rules.ExtractionCandidate;
+import org.springframework.stereotype.Component;
 
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -12,8 +14,10 @@ import java.util.List;
  * Generateur du Bridge transitoire.
  * Produit un artefact encapsulant les regles non classifiees (ExtractionCandidate.NONE).
  * Le Bridge est marque comme transitoire et doit etre supprime apres classification manuelle.
+ * JAS-010 : implemente ArtifactGenerator (port applicatif) au lieu de ArtifactGeneratorStrategy.
  */
-public final class BridgeGenerator implements ArtifactGeneratorStrategy {
+@Component
+public final class BridgeGenerator implements ArtifactGenerator {
 
     @Override
     public CodeArtifact generate(final String baseName, final String pkg, final List<BusinessRule> rules) {

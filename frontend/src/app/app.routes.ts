@@ -16,5 +16,12 @@ export const routes: Routes = [
     path: 'analysis/:sessionId',
     loadComponent: () =>
       import('./features/analysis/analysis-detail.component').then(m => m.AnalysisDetailComponent)
+  },
+  {
+    path: 'projects',
+    loadComponent: () =>
+      import('./features/project-dashboard/project-dashboard.component').then(
+        m => m.ProjectDashboardComponent
+      )
   }
 ];

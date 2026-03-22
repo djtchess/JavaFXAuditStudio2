@@ -50,6 +50,7 @@ import { RouterLink, RouterOutlet } from '@angular/router';
       <div class="nav-links">
         <a routerLink="/">Dashboard</a>
         <a routerLink="/analysis">Analyse</a>
+        <a routerLink="/projects">Projets</a>
       </div>
     </nav>
     <router-outlet />

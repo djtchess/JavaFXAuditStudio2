@@ -134,6 +134,19 @@ export interface ErrorResponse {
   correlationId: string;
 }
 
+// --- Project Dashboard ---
+
+export interface ProjectDashboardResponse {
+  projectId: string;
+  totalSessions: number;
+  analysingCount: number;
+  completedCount: number;
+  rulesByCategory: Record<string, number>;
+  uncertainCount: number;
+  reclassifiedCount: number;
+  recommendedLotOrder: string[];
+}
+
 // --- Reclassification ---
 
 export interface ReclassifyRuleRequest {

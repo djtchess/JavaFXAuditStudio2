@@ -1,8 +1,10 @@
 package ff.ss.javaFxAuditStudio.adapters.out.analysis.generators;
 
+import ff.ss.javaFxAuditStudio.application.generation.ArtifactGenerator;
 import ff.ss.javaFxAuditStudio.domain.generation.ArtifactType;
 import ff.ss.javaFxAuditStudio.domain.generation.CodeArtifact;
 import ff.ss.javaFxAuditStudio.domain.rules.BusinessRule;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 
@@ -10,9 +12,11 @@ import java.util.List;
  * Generateur de l'interface Strategy metier.
  * Produit l'interface modelisant les variantes de workflow conditionnelles (ExtractionCandidate.STRATEGY).
  * Le nom de la classe est suffixe "ArtifactGenerator" pour eviter la collision
- * avec l'interface Strategy pattern elle-meme (ArtifactGeneratorStrategy).
+ * avec le port applicatif ArtifactGenerator (JAS-010).
+ * JAS-010 : implemente ArtifactGenerator (port applicatif) au lieu de ArtifactGeneratorStrategy.
  */
-public final class StrategyArtifactGenerator implements ArtifactGeneratorStrategy {
+@Component
+public final class StrategyArtifactGenerator implements ArtifactGenerator {
 
     @Override
     public CodeArtifact generate(final String baseName, final String pkg, final List<BusinessRule> rules) {

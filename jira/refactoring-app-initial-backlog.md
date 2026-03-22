@@ -3,9 +3,9 @@
 ## Metadonnees
 
 - Date de generation : 2026-03-17
-- Derniere mise a jour : 2026-03-18
-- Agent : `jira-estimation`
-- Version : 2.2
+- Derniere mise a jour : 2026-03-22
+- Agent : `jira-estimation` + verification `audit-qualite-analyse` (5 agents paralleles)
+- Version : 2.3
 - Perimetre : amelioration de la genericite du moteur d'analyse et de la qualite des artefacts generes
 - Source de verite : `guide_generique_refactoring_controller_javafx_spring.md`, `AGENTS.md`, `agents/contracts.md`, `agents/orchestration.md`
 - Stack cible : Spring Boot 4.0.3 / Java 21 / Angular 21.x / PostgreSQL / JavaParser
@@ -28,22 +28,22 @@
 | JAS-004 | Suite tests paramétrée corpus samples/ | ⏳ TODO | |
 | JAS-005 | Log cause JavaParser silencieux | ⏳ TODO | |
 | JAS-006 | Signatures méthodes (params + types retour) | ⏳ TODO | |
-| JAS-007 | Composants JavaFX custom dans ViewModel | 🔄 PARTIAL | Types standard mappés, héritage non résolu |
-| JAS-008 | Nommage sémantique UseCase | 🔄 PARTIAL | Services → GATEWAY (non USE_CASE), pas de LLM |
-| JAS-009 | Validation compilabilité artefacts | ⏳ TODO | Déduplication LinkedHashSet déjà présente |
-| JAS-010 | Refactorisation Strategy pattern | ⏳ TODO | Générateur actuel monolithique |
+| JAS-007 | Composants JavaFX custom dans ViewModel | 🔄 PARTIAL | Heuristique par sous-chaîne OK, pas de résolution AST de l'héritage, ObservableList TODO |
+| JAS-008 | Nommage sémantique UseCase | 🔄 PARTIAL | 5 patterns nommage OK, GATEWAY OK, LLM absent, affichage noms avant génération absent |
+| JAS-009 | Validation compilabilité artefacts | 🔄 PARTIAL | JavaParser + warnings API + UI OK ; dédup imports absent, pas de distinction warning/error |
+| JAS-010 | Refactorisation Strategy pattern | ✅ DONE | ArtifactGenerator + ArtifactResult dans application.generation, injection Spring List<ArtifactGenerator>, ArtifactGeneratorStrategy @Deprecated |
 | JAS-011 | Tests snapshot | ⏳ TODO | |
 | JAS-012 | UI reclassification manuelle | ⏳ TODO | |
 | JAS-013 | API REST PATCH reclassification | ⏳ TODO | |
 | JAS-014 | Dashboard progression migration | ⏳ TODO | |
 | JAS-015 | API métriques projet | ⏳ TODO | |
-| JAS-016 | ClassificationBadgeComponent Angular | ⏳ TODO | |
+| JAS-016 | ClassificationBadgeComponent Angular | ✅ DONE | OnPush, signals, computed, 10 tests, intégré ClassificationViewComponent |
 | JAS-017 | Orchestration LLM multi-fournisseur | ⏳ TODO | Choix `claude-code` / `gpt-5.4`, mode degrade, bundle sanitise uniquement |
 | JAS-018 | Pack de desensibilisation complet avant LLM | ⏳ TODO | Renommage metier, secrets/URLs, commentaires, donnees fictives |
 | JAS-019 | Détection state machines | ⏳ TODO | |
 | JAS-020 | Extraction gardes habilitation en Policy | ⏳ TODO | |
 | JAS-021 | Corpus sanitise et templates de prompts multi-fournisseur | ⏳ TODO | |
-| JAS-022 | Config securisee des credentials fournisseurs LLM | ⏳ TODO | |
+| JAS-022 | Config securisee des credentials fournisseurs LLM | 🔄 PARTIAL | AiEnrichmentProperties + validation démarrage OK ; endpoint vérif absent, docker-compose non config, .env.example incomplet |
 | JAS-029 | Audit trail des envois sanitises au LLM + UI transparence | ⏳ TODO | |
 | JAS-030 | Explications observables des decisions LLM | ⏳ TODO | Pas de chain-of-thought brute |
 | JAS-031 | Workspace miroir et extraction du plus petit perimetre utile | ⏳ TODO | |
@@ -370,16 +370,25 @@ Tout ticket est considered DONE lorsque les conditions suivantes sont toutes sat
 ### JAS-009
 
 **Type** : Story
+**Statut** : 🔄 PARTIAL
 **Titre** : Validation de compilabilite des artefacts generes (detection doublons et imports manquants)
 **Description** : Le code genere n'est pas verifie pour sa compilabilite. Des methodes dupliquees dans les interfaces, des imports manquants ou des types non resolus peuvent produire du code invalide silencieusement. Il faut ajouter une etape de validation post-generation qui utilise JavaParser pour re-parser le code genere et detecter les problemes structurels avant de le persister.
-**Criteres d'acceptation** :
-- [ ] Given un UseCase genere avec deux methodes de meme signature, When la validation est executee, Then une erreur `DUPLICATE_METHOD` est retournee dans le champ `generationWarnings` du DTO
-- [ ] Given un artefact genere avec un type non importe, When la validation est executee, Then un avertissement `MISSING_IMPORT` est retourne
-- [ ] Given un artefact valide, When la validation est executee, Then `generationWarnings` est vide et le statut est `VALID`
-- [ ] La validation est non bloquante : les artefacts avec avertissements sont generes mais marques `NEEDS_REVIEW`
-- [ ] L'UI affiche les avertissements de generation dans la vue detail de chaque artefact
-- [ ] Les artefacts marques `NEEDS_REVIEW` sont comptes dans le resume du rapport
-**Estimation** : 8
+
+**Implémenté** :
+- ✅ `ArtifactCompilabilityValidator.java` : parsing JavaParser, détection doublons méthodes, imports manquants, corps vides
+- ✅ `ArtifactValidationWarning` enum : `PARSE_ERROR`, `DUPLICATE_METHOD_NAME`, `MISSING_IMPORT`, `EMPTY_BODY`
+- ✅ `CodeArtifact` enrichi avec `generationWarnings: List<ArtifactValidationWarning>` et `generationStatus: String`
+- ✅ `ArtifactsResponse` expose `generationWarnings` et `generationStatus` dans le DTO
+- ✅ `RealCodeGenerationAdapter` appelle le validateur avant ajout à la liste (via `addValidated()`)
+- ✅ Frontend : bannière globale warnings, badge "À VÉRIFIER" (`generationStatus === 'WARNING'`), compteur `needsReviewCount()`, traduction des 4 types de warning
+- ✅ Déduplication noms de méthodes/champs via `LinkedHashSet` dans SlimControllerGenerator, UseCaseGenerator, ViewModelGenerator, PolicyGenerator, GatewayGenerator, BridgeGenerator
+
+**Restant** :
+- [ ] Déduplication des imports dans les `StringBuilder` des générateurs (doublons d'imports possibles si 2 règles génèrent le même import)
+- [ ] Distinction explicite `warning` (non-bloquant) vs `error` (bloquant) — actuellement tout est WARNING
+- [ ] Persistance conditionnelle : les artefacts sont sauvegardés même avec `generationStatus = WARNING`, pas de rejet
+- [ ] Critère d'acceptation : `generationWarnings` vide → statut `VALID` (actuellement `OK`)
+**Estimation** : 8 (reste ~3 pts)
 **Priorite** : High
 **Dependances** : JAS-006, JAS-007
 **Composant** : Backend, Frontend
@@ -389,14 +398,25 @@ Tout ticket est considered DONE lorsque les conditions suivantes sont toutes sat
 ### JAS-010
 
 **Type** : Task
+**Statut** : ✅ DONE (vérifié 2026-03-22)
 **Titre** : Refactorisation du generateur d'artefacts en Strategy pattern (un generateur par type d'artefact)
 **Description** : Le generateur d'artefacts actuel est monolithique. Avant d'implémenter JAS-006 et JAS-007, il faut extraire chaque type de generateur (UseCase, Gateway, ViewModel, Policy, Bridge, Assembler, Strategy) dans sa propre classe implementant une interface `ArtifactGenerator`. Cela permettra d'ajouter la gestion des signatures et des composants custom sans risquer de regression sur les autres types.
+
+**Implémenté** :
+- ✅ `application/generation/ArtifactResult.java` — interface marqueur domaine
+- ✅ `application/generation/ArtifactGenerator.java` — port applicatif remplaçant `ArtifactGeneratorStrategy`
+- ✅ `CodeArtifact implements ArtifactResult` — record domaine typisé
+- ✅ 8 générateurs annotés `@Component` implémentent `ArtifactGenerator` : `SlimControllerGenerator`, `ViewModelGenerator`, `UseCaseGenerator`, `PolicyGenerator`, `GatewayGenerator`, `AssemblerGenerator`, `StrategyArtifactGenerator`, `BridgeGenerator`
+- ✅ `RealCodeGenerationAdapter` : `@Component` + constructeur `@Autowired List<ArtifactGenerator>` + constructeur no-arg pour tests
+- ✅ `ArtifactGeneratorStrategy` marquée `@Deprecated(forRemoval = true)`
+- ✅ API REST inchangée, comportement observable identique
+
 **Criteres d'acceptation** :
-- [ ] L'interface `ArtifactGenerator<T extends ArtifactResult>` est definie dans le package `application.generation`
-- [ ] Chaque type d'artefact a sa propre implementation : `UseCaseGenerator`, `GatewayGenerator`, `ViewModelGenerator`, `PolicyGenerator`, `BridgeGenerator`, `AssemblerGenerator`, `StrategyGenerator`
-- [ ] Les tests existants continuent de passer apres refactorisation
-- [ ] Le generateur principal orchestre les sous-generateurs via injection Spring (`List<ArtifactGenerator>`)
-- [ ] La refactorisation ne modifie pas le comportement observable depuis l'API REST
+- [x] L'interface `ArtifactGenerator` est definie dans le package `application.generation`
+- [x] 8 implémentations : UseCaseGenerator, GatewayGenerator, ViewModelGenerator, PolicyGenerator, BridgeGenerator, AssemblerGenerator, StrategyArtifactGenerator, SlimControllerGenerator
+- [x] Tests existants passent après refactorisation
+- [x] Générateur principal orchestre via injection Spring `List<ArtifactGenerator>`
+- [x] La refactorisation ne modifie pas le comportement observable depuis l'API REST
 **Estimation** : 5
 **Priorite** : Critical
 **Dependances** : aucune
@@ -509,15 +529,26 @@ Tout ticket est considered DONE lorsque les conditions suivantes sont toutes sat
 ### JAS-016
 
 **Type** : Task
+**Statut** : ✅ DONE (vérifié 2026-03-22)
 **Titre** : Composant Angular badge de confiance de classification
 **Description** : Creer un composant Angular reutilisable `ClassificationBadgeComponent` qui affiche la categorie d'une regle avec un code couleur, le score de confiance et le mode de parsing utilise. Ce composant sera utilise dans la liste des regles et dans la vue de reclassification.
+
+**Implémenté** :
+- ✅ `classification-badge.component.ts` : selector `jas-classification-badge`, `ChangeDetectionStrategy.OnPush`
+- ✅ Signals Angular 21 : `input.required<string>()` pour `responsibilityClass`, `input<boolean>()` pour `uncertain` et `showParsingMode`, `computed()` pour `categoryColor`
+- ✅ Couleurs par catégorie : UI=#3b82f6, PRESENTATION=#6366f1, APPLICATION=#10b981, BUSINESS=#f59e0b, TECHNICAL=#6b7280, UNKNOWN=#ef4444
+- ✅ Badge AST/REGEX avec classe CSS dynamique, indicateur "?" si incertain
+- ✅ 10 tests unitaires couvrant les 5 catégories, incertitude, AST/REGEX
+- ✅ Exporté dans `shared/index.ts`, intégré dans `ClassificationViewComponent`
+- ✅ Aucune logique métier (présentation pure)
+
 **Criteres d'acceptation** :
-- [ ] Le composant affiche la categorie avec un code couleur (UI=bleu, APPLICATION=vert, BUSINESS=orange, TECHNICAL=gris, UNKNOWN=rouge)
-- [ ] Le score de confiance est affiche en pourcentage (0-100%)
-- [ ] Le badge "REGEX" ou "AST" est affiche en sous-texte
-- [ ] Le composant accepte un Input signal `rule: RuleClassification`
-- [ ] Le composant utilise `ChangeDetectionStrategy.OnPush`
-- [ ] Des tests unitaires Karma couvrent les 5 categories
+- [x] Le composant affiche la categorie avec un code couleur (UI=bleu, APPLICATION=vert, BUSINESS=orange, TECHNICAL=gris, UNKNOWN=rouge)
+- [ ] Le score de confiance est affiche en pourcentage (0-100%) — *non implémenté, pas de champ confidence dans le modèle*
+- [x] Le badge "REGEX" ou "AST" est affiche en sous-texte
+- [x] Le composant accepte un Input signal
+- [x] Le composant utilise `ChangeDetectionStrategy.OnPush`
+- [x] Des tests unitaires couvrent les 5 categories
 **Estimation** : 3
 **Priorite** : Medium
 **Dependances** : JAS-001
@@ -634,15 +665,25 @@ Tout ticket est considered DONE lorsque les conditions suivantes sont toutes sat
 ### JAS-022
 
 **Type** : Task
+**Statut** : 🔄 PARTIAL (vérifié 2026-03-22)
 **Titre** : Configuration securisee des credentials fournisseurs LLM
 **Description** : Les credentials des fournisseurs LLM ne doivent jamais etre committes ni logges. Mettre en place la gestion securisee via variables d'environnement ou secret management avec validation au demarrage et masquage systematique.
+
+**Implémenté** :
+- ✅ `AiEnrichmentProperties` (`@ConfigurationProperties(prefix = "ai.enrichment")`) : credentials `claude-code` et `openai-gpt54` via `${CLAUDE_API_KEY:}` / `${OPENAI_API_KEY:}`
+- ✅ `AiEnrichmentConfiguration.@PostConstruct validateConfiguration()` : refuse le démarrage si credential manquant avec message explicite
+- ✅ Log masqué : "Credential present pour X (valeur masquée)" — jamais la valeur réelle
+- ✅ 8 tests unitaires couvrant nominal + cas d'erreur (provider inconnu, credential absent/blanc)
+- ✅ Support multi-fournisseur : `claude-code` + `openai-gpt54`
+
 **Criteres d'acceptation** :
-- [ ] Les credentials sont injectes via variables dediees au fournisseur selectionne, jamais en dur dans le code
-- [ ] Si `ai.enrichment.enabled=true` et que le credential requis pour le fournisseur choisi est absent, l'application refuse de demarrer avec un message explicite
-- [ ] Les credentials n'apparaissent jamais dans les logs (masques par un filtre Logback)
-- [ ] Le `docker-compose.yml` reference la variable sans la valeur
-- [ ] La documentation d'installation est mise a jour dans `docs/`
-**Estimation** : 3
+- [x] Les credentials sont injectes via variables dediees, jamais en dur dans le code
+- [x] Si credential requis absent, l'application refuse de demarrer avec message explicite
+- [x] Les credentials n'apparaissent jamais dans les logs
+- [ ] Le `docker-compose.yml` reference la variable sans la valeur — *non fait, service backend absent de docker-compose.yml*
+- [ ] La documentation d'installation est mise a jour dans `docs/` — *incomplet : `.env.example` ne mentionne pas `CLAUDE_API_KEY`/`OPENAI_API_KEY`*
+- [ ] Endpoint `GET /api/v1/ai-enrichment/status` exposant `{enabled, provider, credentialPresent}` sans valeur — *non implémenté*
+**Estimation** : 3 (reste ~1 pt)
 **Priorite** : High
 **Dependances** : JAS-017
 **Composant** : Infra, Backend

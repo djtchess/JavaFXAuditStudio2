@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 
+    <!--
+        SECURITE (JAS-022) : les valeurs des credentials IA (CLAUDE_API_KEY, OPENAI_API_KEY)
+        ne doivent jamais atteindre les logs. La garantie est portee par AiEnrichmentConfiguration
+        qui ne logue que la presence/absence du credential, jamais sa valeur.
+        Si un filtre Logback de masquage de secrets est requis ulterieurement, implémenter
+        un MaskingPatternLayout sur les patterns contenant "api-key", "apiKey", "Bearer ".
+    -->
+
     <!-- Appender CONSOLE commun a tous les profils -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>

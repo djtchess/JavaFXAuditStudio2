@@ -6,5 +6,7 @@ public enum AnalysisStatus {
     IN_PROGRESS,
     RUNNING,
     COMPLETED,
-    FAILED
+    FAILED,
+    /** Analyse verrouilee : aucune modification ni reclassification n'est autorisee. */
+    LOCKED
 }

@@ -1,0 +1,23 @@
+package com.example.patient.migration;
+
+import org.springframework.stereotype.Component;
+
+/**
+ * Regles de gestion et decisions metier pour Patient.
+ */
+@Component
+public class PatientPolicy {
+
+    /** Regle metier isEligible : decision BUSINESS detectee */
+    public boolean regleMetierIsEligible(final Object context) {
+        // TODO : implementer la regle metier
+        throw new UnsupportedOperationException("Non implemente : regleMetierIsEligible");
+    }
+
+    /** Regle metier canDelete : validation BUSINESS detectee */
+    public boolean regleMetierCanDelete(final Object context) {
+        // TODO : implementer la regle metier
+        throw new UnsupportedOperationException("Non implemente : regleMetierCanDelete");
+    }
+
+}

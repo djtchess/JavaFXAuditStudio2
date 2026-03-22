@@ -1,0 +1,15 @@
+package com.example.patient.migration;
+
+import org.springframework.stereotype.Component;
+
+/**
+ * Assembleur — mapping entre la couche UI et le domaine pour Patient.
+ */
+@Component
+public class PatientAssembler {
+
+    public Object assemble(final Object formData) {
+        // TODO : mapping UI -> Domain
+        throw new UnsupportedOperationException("assemble non implemente");
+    }
+}

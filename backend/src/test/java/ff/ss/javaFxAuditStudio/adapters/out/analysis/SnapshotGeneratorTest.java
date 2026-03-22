@@ -1,5 +1,9 @@
 package ff.ss.javaFxAuditStudio.adapters.out.analysis;
 
+import ff.ss.javaFxAuditStudio.adapters.out.analysis.generators.AssemblerGenerator;
+import ff.ss.javaFxAuditStudio.adapters.out.analysis.generators.BridgeGenerator;
+import ff.ss.javaFxAuditStudio.adapters.out.analysis.generators.GatewayGenerator;
+import ff.ss.javaFxAuditStudio.adapters.out.analysis.generators.PolicyGenerator;
 import ff.ss.javaFxAuditStudio.adapters.out.analysis.generators.SlimControllerGenerator;
 import ff.ss.javaFxAuditStudio.adapters.out.analysis.generators.UseCaseGenerator;
 import ff.ss.javaFxAuditStudio.adapters.out.analysis.generators.ViewModelGenerator;
@@ -10,7 +14,6 @@ import ff.ss.javaFxAuditStudio.domain.rules.ResponsibilityClass;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -40,6 +43,33 @@ class SnapshotGeneratorTest {
         );
     }
 
+    private static List<BusinessRule> policyRules() {
+        return List.of(
+            rule("RG-005", "Regle metier isEligible : decision BUSINESS detectee",
+                 ResponsibilityClass.BUSINESS, ExtractionCandidate.POLICY),
+            rule("RG-006", "Regle metier canDelete : validation BUSINESS detectee",
+                 ResponsibilityClass.BUSINESS, ExtractionCandidate.POLICY)
+        );
+    }
+
+    private static List<BusinessRule> gatewayRules() {
+        return List.of(
+            rule("RG-007", "Appel HTTP fetchPatientData : acces TECHNICAL detecte",
+                 ResponsibilityClass.TECHNICAL, ExtractionCandidate.GATEWAY),
+            rule("RG-008", "Impression printReport : acces TECHNICAL detecte",
+                 ResponsibilityClass.TECHNICAL, ExtractionCandidate.GATEWAY)
+        );
+    }
+
+    private static List<BusinessRule> bridgeRules() {
+        return List.of(
+            rule("RG-009", "Methode handleMisc : responsabilite UNKNOWN indeterminee",
+                 ResponsibilityClass.UNKNOWN, ExtractionCandidate.NONE),
+            rule("RG-010", "Methode processData : responsabilite UNKNOWN indeterminee",
+                 ResponsibilityClass.UNKNOWN, ExtractionCandidate.NONE)
+        );
+    }
+
     private static BusinessRule rule(
             final String id,
             final String desc,
@@ -66,6 +96,30 @@ class SnapshotGeneratorTest {
     void useCase_matchesSnapshot() throws Exception {
         CodeArtifact artifact = new UseCaseGenerator().generate(BASE, PKG, useCaseRules());
         assertMatchesSnapshot("UseCase", artifact.content());
+    }
+
+    @Test
+    void policy_matchesSnapshot() throws Exception {
+        CodeArtifact artifact = new PolicyGenerator().generate(BASE, PKG, policyRules());
+        assertMatchesSnapshot("Policy", artifact.content());
+    }
+
+    @Test
+    void gateway_matchesSnapshot() throws Exception {
+        CodeArtifact artifact = new GatewayGenerator().generate(BASE, PKG, gatewayRules());
+        assertMatchesSnapshot("Gateway", artifact.content());
+    }
+
+    @Test
+    void bridge_matchesSnapshot() throws Exception {
+        CodeArtifact artifact = new BridgeGenerator().generate(BASE, PKG, bridgeRules());
+        assertMatchesSnapshot("Bridge", artifact.content());
+    }
+
+    @Test
+    void assembler_matchesSnapshot() throws Exception {
+        CodeArtifact artifact = new AssemblerGenerator().generate(BASE, PKG, List.of());
+        assertMatchesSnapshot("Assembler", artifact.content());
     }
 
     // ------------------------------------------------------------------ helpers

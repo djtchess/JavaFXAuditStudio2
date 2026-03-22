@@ -27,6 +27,14 @@ public class RestExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
 
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalState(final IllegalStateException exception) {
+        String correlationId = resolveCorrelationId();
+        LOG.warn("Conflict [correlationId={}, message={}]", correlationId, exception.getMessage());
+        ErrorResponse body = new ErrorResponse(HttpStatus.CONFLICT.value(), exception.getMessage(), correlationId);
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(final Exception exception) {
         String correlationId = resolveCorrelationId();

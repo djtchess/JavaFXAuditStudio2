@@ -1,0 +1,23 @@
+package com.example.patient.migration;
+
+/**
+ * BRIDGE TRANSITOIRE — encapsule les methodes dont la responsabilite
+ * reste indeterminee apres classification automatique.
+ * A supprimer apres classification manuelle et migration complete.
+ * 2 regle(s) non classifiee(s).
+ */
+public class PatientBridge {
+
+    // TODO [RG-009] Methode handleMisc : responsabilite UNKNOWN indeterminee
+    public void methodeHandleMiscResponsabilite() {
+        // Responsabilite a determiner et migrer
+        throw new UnsupportedOperationException("Bridge non migre : methodeHandleMiscResponsabilite");
+    }
+
+    // TODO [RG-010] Methode processData : responsabilite UNKNOWN indeterminee
+    public void methodeProcessDataResponsabilite() {
+        // Responsabilite a determiner et migrer
+        throw new UnsupportedOperationException("Bridge non migre : methodeProcessDataResponsabilite");
+    }
+
+}

@@ -1,0 +1,14 @@
+package com.example.patient.migration;
+
+/**
+ * Port sortant — appels techniques et IO pour Patient.
+ */
+public interface PatientGateway {
+
+    /** Appel HTTP fetchPatientData : acces TECHNICAL detecte */
+    void appelHTTPFetchPatientData(Object request);
+
+    /** Impression printReport : acces TECHNICAL detecte */
+    void impressionPrintReportAcces(Object request);
+
+}

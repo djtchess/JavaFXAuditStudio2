@@ -3,7 +3,6 @@ package ff.ss.javaFxAuditStudio.adapters.out.sanitization;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,6 +49,10 @@ public class SanitizationPipelineAdapter implements SanitizationPort {
         Objects.requireNonNull(bundleId, "bundleId must not be null");
         Objects.requireNonNull(rawSource, "rawSource must not be null");
         Objects.requireNonNull(controllerRef, "controllerRef must not be null");
+        if (rawSource.isBlank()) {
+            throw new IllegalArgumentException(
+                    "rawSource must not be blank for bundle " + bundleId);
+        }
 
         String current = rawSource;
         List<SanitizationTransformation> transformations = new ArrayList<>();
@@ -93,6 +96,42 @@ public class SanitizationPipelineAdapter implements SanitizationPort {
                 controllerRef,
                 current,
                 estimatedTokens,
-                properties.profileVersion());
+                properties.profileVersion(),
+                report);
+    }
+
+    /**
+     * Mode dry-run : applique les sanitizers en sequence, collecte les transformations
+     * et observe la detection de marqueurs sensibles sans jamais lever de
+     * {@link SanitizationRefusedException}.
+     *
+     * <p>Cette methode ne transmet jamais la source au LLM.
+     */
+    @Override
+    public SanitizationReport previewTransformations(
+            final String bundleId,
+            final String rawSource,
+            final String controllerRef) {
+        Objects.requireNonNull(bundleId, "bundleId must not be null");
+        Objects.requireNonNull(rawSource, "rawSource must not be null");
+        Objects.requireNonNull(controllerRef, "controllerRef must not be null");
+
+        String current = rawSource;
+        List<SanitizationTransformation> transformations = new ArrayList<>();
+
+        for (Sanitizer sanitizer : sanitizers) {
+            current = sanitizer.apply(current);
+            SanitizationTransformation t = sanitizer.report();
+            transformations.add(t);
+            LOG.debug("DryRun sanitizer {} applied: {} occurrences", t.ruleType(), t.occurrenceCount());
+        }
+
+        boolean sensitiveRemains = detector.hasSensitiveMarkers(current);
+        LOG.debug("DryRun bundle {} : sensitiveMarkersFound={}", bundleId, sensitiveRemains);
+
+        if (sensitiveRemains) {
+            return SanitizationReport.refused(bundleId, properties.profileVersion(), transformations);
+        }
+        return SanitizationReport.approved(bundleId, properties.profileVersion(), transformations);
     }
 }

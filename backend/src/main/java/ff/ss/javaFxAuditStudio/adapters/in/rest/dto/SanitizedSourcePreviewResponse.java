@@ -2,8 +2,10 @@ package ff.ss.javaFxAuditStudio.adapters.in.rest.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.util.Map;
+
 /**
- * DTO de reponse pour la previsualisation du code sanitise (JAS-031).
+ * DTO de reponse pour la previsualisation du code sanitise (JAS-031 / QW-4).
  */
 @Schema(description = "Previsualisation du code source apres passage dans le pipeline de sanitisation")
 public record SanitizedSourcePreviewResponse(
@@ -24,5 +26,11 @@ public record SanitizedSourcePreviewResponse(
         String sanitizationVersion,
 
         @Schema(description = "Vrai si la sanitisation a ete appliquee, faux si fallback brut")
-        boolean sanitized) {
+        boolean sanitized,
+
+        @Schema(description = "Nombre d'occurrences transformees par type de regle de sanitisation ; absent si pas de rapport")
+        Map<String, Integer> transformationCountsByRuleType,
+
+        @Schema(description = "Vrai si le rapport indique que la source est approuvee pour envoi au LLM ; absent si pas de rapport")
+        Boolean reportApproved) {
 }

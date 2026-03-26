@@ -79,6 +79,20 @@ class SanitizationPipelineAdapterTest {
     }
 
     @Test
+    void should_reject_blank_raw_source_with_illegal_argument_exception() {
+        assertThatThrownBy(() -> adapter.sanitize("bundle-blank", "   ", "MyController"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("rawSource must not be blank");
+    }
+
+    @Test
+    void should_reject_empty_raw_source_with_illegal_argument_exception() {
+        assertThatThrownBy(() -> adapter.sanitize("bundle-empty", "", "MyController"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("rawSource must not be blank");
+    }
+
+    @Test
     void should_apply_all_sanitizers_in_order() {
         // Source avec identifiant metier, URL et email — tous doivent etre traites
         String source = "class InvoiceService { String u = \"https://pay.example.com/v1\"; }";

@@ -2,6 +2,8 @@ package ff.ss.javaFxAuditStudio.domain.ai;
 
 import java.util.Objects;
 
+import ff.ss.javaFxAuditStudio.domain.sanitization.SanitizationReport;
+
 /**
  * Bundle sanitise transmis au fournisseur IA.
  *
@@ -13,13 +15,15 @@ import java.util.Objects;
  * @param sanitizedSource       Code source deja desensibilise
  * @param estimatedTokens       Estimation tokens avant envoi
  * @param sanitizationVersion   Version du pipeline de desensibilisation
+ * @param report                Rapport de sanitisation produit par le pipeline (null si pipeline absent)
  */
 public record SanitizedBundle(
         String bundleId,
         String controllerRef,
         String sanitizedSource,
         int estimatedTokens,
-        String sanitizationVersion) {
+        String sanitizationVersion,
+        SanitizationReport report) {
 
     public SanitizedBundle {
         Objects.requireNonNull(bundleId, "bundleId must not be null");
@@ -29,5 +33,6 @@ public record SanitizedBundle(
         if (estimatedTokens < 0) {
             throw new IllegalArgumentException("estimatedTokens must be >= 0");
         }
+        // report is nullable : absent when pipeline is disabled or in fallback mode
     }
 }

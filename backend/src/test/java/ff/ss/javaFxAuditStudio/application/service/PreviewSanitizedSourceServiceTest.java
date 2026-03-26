@@ -15,6 +15,7 @@ import ff.ss.javaFxAuditStudio.application.ports.out.SourceFileReaderPort;
 import ff.ss.javaFxAuditStudio.domain.ai.SanitizedBundle;
 import ff.ss.javaFxAuditStudio.domain.ai.SanitizedSourcePreviewResult;
 import ff.ss.javaFxAuditStudio.domain.ai.TokenEstimator;
+import ff.ss.javaFxAuditStudio.domain.sanitization.SanitizationRefusedException;
 import ff.ss.javaFxAuditStudio.domain.workbench.AnalysisSession;
 import ff.ss.javaFxAuditStudio.domain.workbench.AnalysisStatus;
 
@@ -24,6 +25,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doThrow;
 
 @ExtendWith(MockitoExtension.class)
 class PreviewSanitizedSourceServiceTest {
@@ -56,7 +58,8 @@ class PreviewSanitizedSourceServiceTest {
                 "C:/tmp/MyController.java",
                 "sanitized source",
                 10,
-                "1.0");
+                "1.0",
+                null);
 
         when(sessionPort.findById("sess-1")).thenReturn(Optional.of(session));
         when(sourceFileReaderPort.read("C:/tmp/MyController.java"))
@@ -82,7 +85,8 @@ class PreviewSanitizedSourceServiceTest {
                 "C:/tmp/MissingController.java",
                 "sanitized source",
                 10,
-                "1.0");
+                "1.0",
+                null);
 
         when(sessionPort.findById("sess-2")).thenReturn(Optional.of(session));
         when(sourceFileReaderPort.read("C:/tmp/MissingController.java"))
@@ -126,5 +130,42 @@ class PreviewSanitizedSourceServiceTest {
         assertThatThrownBy(() -> service.preview("unknown"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("unknown");
+    }
+
+    @Test
+    void preview_should_return_raw_bundle_sanitized_false_when_sanitization_is_refused() {
+        // Cas fallback : la sanitisation leve SanitizationRefusedException (marqueur residuel
+        // ou depassement de plafond) — le service retourne sanitized=false sans propager.
+        AnalysisSession session = sessionWith("sess-5", "C:/tmp/SensitiveController.java");
+
+        when(sessionPort.findById("sess-5")).thenReturn(Optional.of(session));
+        when(sourceFileReaderPort.read("C:/tmp/SensitiveController.java"))
+                .thenReturn(Optional.of("public class SensitiveController { String password; }"));
+        when(sanitizationPort.sanitize(any(), any(), any()))
+                .thenThrow(new SanitizationRefusedException("marqueur sensible residuel"));
+
+        SanitizedSourcePreviewResult result = service.preview("sess-5");
+
+        assertThat(result.sanitized()).isFalse();
+        assertThat(result.bundle().controllerRef()).isEqualTo("C:/tmp/SensitiveController.java");
+        assertThat(result.bundle().sanitizedSource())
+                .isEqualTo("public class SensitiveController { String password; }");
+    }
+
+    @Test
+    void preview_should_propagate_illegal_argument_exception_when_raw_source_is_blank() {
+        // Cas rawSource blank : la sanitisation leve IllegalArgumentException — doit se propager.
+        AnalysisSession session = sessionWith("sess-6", "C:/tmp/EmptyController.java");
+
+        when(sessionPort.findById("sess-6")).thenReturn(Optional.of(session));
+        when(sourceFileReaderPort.read("C:/tmp/EmptyController.java"))
+                .thenReturn(Optional.of("   "));
+        when(sanitizationPort.sanitize(any(), any(), any()))
+                .thenThrow(new IllegalArgumentException(
+                        "rawSource must not be blank for bundle test-bundle"));
+
+        assertThatThrownBy(() -> service.preview("sess-6"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("rawSource must not be blank");
     }
 }

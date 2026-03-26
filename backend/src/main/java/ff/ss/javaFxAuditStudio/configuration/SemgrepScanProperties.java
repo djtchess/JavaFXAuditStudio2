@@ -19,6 +19,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param timeoutSeconds   Timeout du processus en secondes (defaut : 30)
  * @param failOnFindings   Lance une exception si des findings ERROR sont detectes (defaut : false)
  * @param businessTerms    Termes metier supplementaires a detecter (defaut : liste vide)
+ * @param denylist         Termes supplementaires toujours bloques, en complement des businessTerms
+ *                         (configurable via {@code ai.sanitization.semgrep.denylist}, defaut : liste vide)
  */
 @ConfigurationProperties(prefix = "ai.sanitization.semgrep")
 public record SemgrepScanProperties(
@@ -26,13 +28,17 @@ public record SemgrepScanProperties(
         String cliCommand,
         int timeoutSeconds,
         boolean failOnFindings,
-        List<String> businessTerms) {
+        List<String> businessTerms,
+        List<String> denylist) {
 
     public SemgrepScanProperties {
         cliCommand = (cliCommand != null && !cliCommand.isBlank()) ? cliCommand : "semgrep";
         timeoutSeconds = timeoutSeconds > 0 ? timeoutSeconds : 30;
         if (businessTerms == null) {
             businessTerms = List.of();
+        }
+        if (denylist == null) {
+            denylist = List.of();
         }
     }
 }

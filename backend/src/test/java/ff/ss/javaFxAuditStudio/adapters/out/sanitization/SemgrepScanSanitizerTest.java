@@ -209,7 +209,7 @@ class SemgrepScanSanitizerTest {
             final String cliCommand,
             final List<String> businessTerms) {
         SemgrepScanProperties props = new SemgrepScanProperties(
-                enabled, cliCommand, 10, failOnFindings, businessTerms);
+                enabled, cliCommand, 10, failOnFindings, businessTerms, List.of());
         return new SemgrepScanSanitizer(props, objectMapper);
     }
 }

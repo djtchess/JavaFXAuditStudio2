@@ -1,0 +1,18 @@
+rules:
+  - id: hardcoded-secret
+    languages: [java]
+    message: "Secret potentiellement hardcode detecte."
+    severity: ERROR
+    pattern-regex: '(?i)(password|passwd|pwd|secret|apiKey|api_key|token|accessKey|access_key|privateKey)\s*=\s*"[^"]{4,}"'
+
+  - id: internal-ip-url
+    languages: [java]
+    message: "URL reseau prive RFC1918 detectee."
+    severity: WARNING
+    pattern-regex: 'https?://(10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+|192\.168\.\d+\.\d+)[:/"]'
+
+  - id: hardcoded-url
+    languages: [java]
+    message: "URL HTTP hardcodee detectee."
+    severity: WARNING
+    pattern-regex: '"https?://[a-zA-Z0-9._-]+\.[a-zA-Z]{2,}[^"]*"'

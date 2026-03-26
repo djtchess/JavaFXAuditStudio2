@@ -23,6 +23,7 @@ import ff.ss.javaFxAuditStudio.adapters.out.filesystem.FilesystemSourceFileReade
 import ff.ss.javaFxAuditStudio.adapters.out.sanitization.CommentSanitizer;
 import ff.ss.javaFxAuditStudio.adapters.out.sanitization.DataSubstitutionSanitizer;
 import ff.ss.javaFxAuditStudio.adapters.out.sanitization.IdentifierSanitizer;
+import ff.ss.javaFxAuditStudio.adapters.out.sanitization.MultiFileSanitizationAdapter;
 import ff.ss.javaFxAuditStudio.adapters.out.sanitization.OpenRewriteIdentifierSanitizer;
 import ff.ss.javaFxAuditStudio.adapters.out.sanitization.SanitizationPipelineAdapter;
 import ff.ss.javaFxAuditStudio.adapters.out.sanitization.Sanitizer;
@@ -37,6 +38,7 @@ import ff.ss.javaFxAuditStudio.application.ports.out.AiEnrichmentPort;
 import ff.ss.javaFxAuditStudio.application.ports.out.AnalysisSessionPort;
 import ff.ss.javaFxAuditStudio.application.ports.out.ClassificationPersistencePort;
 import ff.ss.javaFxAuditStudio.application.ports.out.LlmAuditPort;
+import ff.ss.javaFxAuditStudio.application.ports.out.MultiFileSanitizationPort;
 import ff.ss.javaFxAuditStudio.application.ports.out.SanitizationPort;
 import ff.ss.javaFxAuditStudio.application.ports.out.SourceFileReaderPort;
 import ff.ss.javaFxAuditStudio.application.service.AiSpringBootGenerationService;
@@ -193,6 +195,14 @@ public class AiEnrichmentOrchestraConfiguration {
                 dataSubstitutionSanitizer,
                 semgrepScanSanitizer);
         return new SanitizationPipelineAdapter(pipeline, sensitiveMarkerDetector, sanitizationProperties);
+    }
+
+    @Bean
+    public MultiFileSanitizationPort multiFileSanitizationPort(
+            final SanitizationPort sanitizationPort,
+            final SecretSanitizer secretSanitizer,
+            final SemgrepScanSanitizer semgrepScanSanitizer) {
+        return new MultiFileSanitizationAdapter(sanitizationPort, secretSanitizer, semgrepScanSanitizer);
     }
 
     // --- Adapter lecture source fichier (IAP-5) ---

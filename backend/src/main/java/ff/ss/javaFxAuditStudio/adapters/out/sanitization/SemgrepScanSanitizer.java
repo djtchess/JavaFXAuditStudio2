@@ -8,8 +8,10 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -17,17 +19,24 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ff.ss.javaFxAuditStudio.configuration.SemgrepScanProperties;
+import ff.ss.javaFxAuditStudio.domain.sanitization.SanitizableFile;
 import ff.ss.javaFxAuditStudio.domain.sanitization.SanitizationRefusedException;
 import ff.ss.javaFxAuditStudio.domain.sanitization.SanitizationRuleType;
 import ff.ss.javaFxAuditStudio.domain.sanitization.SanitizationTransformation;
 import ff.ss.javaFxAuditStudio.domain.sanitization.SemgrepFinding;
 
 /**
- * Sanitizer Semgrep post-pipeline (JAS-018).
+ * Sanitizer Semgrep post-pipeline (JAS-018 / QW-5 / AI-3).
  *
  * <p>Scanne le source sanitise avec Semgrep pour detecter des secrets ou URLs
  * residuels que les sanitizers regex auraient manques. Ne modifie jamais le source :
  * il scanne uniquement et retourne le source inchange.
+ *
+ * <p>Les regles statiques (Java) sont chargees depuis {@code semgrep/sanitization-rules.yaml}
+ * sur le classpath. En cas d'absence de la ressource, un fallback inline est utilise.
+ * Les regles dynamiques ({@code business-term}, {@code denylist-term}) et les regles
+ * non-Java ({@code properties-secret}, {@code yaml-secret}, {@code generic-url})
+ * sont ajoutees a la volee.
  *
  * <p>Mode gracieux : si Semgrep n'est pas installe ou si le processus depasse le
  * timeout, un WARN est emis et le source passe sans blocage.
@@ -39,6 +48,7 @@ public class SemgrepScanSanitizer implements Sanitizer {
     private static final Logger LOG = LoggerFactory.getLogger(SemgrepScanSanitizer.class);
 
     private static final String SEVERITY_ERROR = "ERROR";
+    private static final String RULES_CLASSPATH = "/semgrep/sanitization-rules.yaml";
 
     private final SemgrepScanProperties properties;
     private final ObjectMapper objectMapper;
@@ -54,6 +64,25 @@ public class SemgrepScanSanitizer implements Sanitizer {
 
     @Override
     public String apply(final String source) {
+        return applyWithExtension(source, "java");
+    }
+
+    /**
+     * Applique le scan Semgrep sur un fichier non-Java identifie par son type.
+     *
+     * <p>Cree le fichier temporaire avec l'extension correcte selon le {@code fileType},
+     * ce qui permet a Semgrep d'utiliser les regles {@code languages: [generic]}.
+     * Retourne le source sans modification (scan uniquement).
+     *
+     * @param file fichier candidat (non null)
+     * @return source inchange apres scan
+     */
+    public String applyToFile(final SanitizableFile file) {
+        Objects.requireNonNull(file, "file must not be null");
+        return applyWithExtension(file.content(), file.fileType());
+    }
+
+    String applyWithExtension(final String source, final String fileExtension) {
         Objects.requireNonNull(source, "source must not be null");
         occurrenceCount = 0;
 
@@ -65,7 +94,7 @@ public class SemgrepScanSanitizer implements Sanitizer {
         Path sourceFile = null;
         Path rulesFile = null;
         try {
-            sourceFile = Files.createTempFile("semgrep_src_", ".java");
+            sourceFile = Files.createTempFile("semgrep_src_", "." + fileExtension);
             rulesFile = Files.createTempFile("semgrep_rules_", ".yaml");
 
             Files.writeString(sourceFile, source, StandardCharsets.UTF_8);
@@ -118,7 +147,130 @@ public class SemgrepScanSanitizer implements Sanitizer {
         return SanitizationRuleType.SEMGREP_SECURITY_SCAN;
     }
 
+    // --- Construction des regles YAML ---
+
+    /**
+     * Construit le YAML complet des regles Semgrep :
+     * <ol>
+     *   <li>Regles Java statiques : chargees depuis le classpath ou fallback inline.</li>
+     *   <li>Regles non-Java generiques ({@code properties-secret}, {@code yaml-secret},
+     *       {@code generic-url}) — toujours ajoutees.</li>
+     *   <li>Regles dynamiques : {@code business-term} et {@code denylist-term} selon config.</li>
+     * </ol>
+     */
+    String buildRulesYaml() {
+        Optional<String> classpathYaml = loadRulesFromClasspath();
+        String baseYaml = classpathYaml.orElseGet(this::buildRulesYamlFallback);
+
+        StringBuilder combined = new StringBuilder(baseYaml);
+        appendNonJavaRules(combined);
+        appendBusinessTermRule(combined);
+        appendDenylistRule(combined);
+
+        return combined.toString();
+    }
+
+    /**
+     * Tente de charger les regles statiques depuis le classpath.
+     *
+     * @return le contenu YAML ou {@code Optional.empty()} si la ressource est absente
+     */
+    Optional<String> loadRulesFromClasspath() {
+        try (InputStream stream = getClass().getResourceAsStream(RULES_CLASSPATH)) {
+            if (stream == null) {
+                LOG.debug("Ressource classpath {} absente — utilisation du fallback inline",
+                        RULES_CLASSPATH);
+                return Optional.empty();
+            }
+            String content = new String(stream.readAllBytes(), StandardCharsets.UTF_8);
+            LOG.debug("Regles Semgrep chargees depuis le classpath ({})", RULES_CLASSPATH);
+            return Optional.of(content);
+        } catch (IOException e) {
+            LOG.warn("Erreur lecture ressource classpath {} — fallback inline : {}",
+                    RULES_CLASSPATH, e.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Regles Java inline de secours, identiques au fichier YAML statique.
+     * Utilisees si la ressource classpath est absente.
+     */
+    String buildRulesYamlFallback() {
+        StringBuilder yaml = new StringBuilder();
+        yaml.append("rules:\n");
+        appendStaticRule(yaml, "hardcoded-secret", "[java]", "ERROR",
+                "Secret potentiellement hardcode detecte.",
+                "(?i)(password|passwd|pwd|secret|apiKey|api_key|token|accessKey|access_key|privateKey)\\s*=\\s*\"[^\"]{4,}\"");
+        appendStaticRule(yaml, "internal-ip-url", "[java]", "WARNING",
+                "URL reseau prive RFC1918 detectee.",
+                "https?://(10\\.\\d+\\.\\d+\\.\\d+|172\\.(1[6-9]|2\\d|3[01])\\.\\d+\\.\\d+|192\\.168\\.\\d+\\.\\d+)[:/\"]");
+        appendStaticRule(yaml, "hardcoded-url", "[java]", "WARNING",
+                "URL HTTP hardcodee detectee.",
+                "\"https?://[a-zA-Z0-9._-]+\\.[a-zA-Z]{2,}[^\"]*\"");
+        return yaml.toString();
+    }
+
     // --- Methodes privees ---
+
+    private void appendNonJavaRules(final StringBuilder yaml) {
+        appendStaticRule(yaml, "properties-secret", "[generic]", "ERROR",
+                "Secret detecte dans fichier properties.",
+                "(?i)^\\s*(password|secret|api\\.key|api_key|token)\\s*=\\s*\\S{4,}");
+        appendStaticRule(yaml, "yaml-secret", "[generic]", "ERROR",
+                "Secret detecte dans fichier YAML.",
+                "(?i)^\\s*(password|secret|api-key|api_key|token)\\s*:\\s*\\S{4,}");
+        appendStaticRule(yaml, "generic-url", "[generic]", "WARNING",
+                "URL HTTP detectee dans fichier non-Java.",
+                "https?://[a-zA-Z0-9._-]+\\.[a-zA-Z]{2,}");
+    }
+
+    private void appendStaticRule(
+            final StringBuilder yaml, final String id, final String languages,
+            final String severity, final String message, final String regex) {
+        yaml.append("  - id: ").append(id).append('\n');
+        yaml.append("    languages: ").append(languages).append('\n');
+        yaml.append("    message: \"").append(message).append("\"\n");
+        yaml.append("    severity: ").append(severity).append('\n');
+        yaml.append("    pattern-regex: '").append(regex).append("'\n");
+    }
+
+    private void appendBusinessTermRule(final StringBuilder yaml) {
+        List<String> terms = properties.businessTerms();
+        if (terms == null || terms.isEmpty()) {
+            return;
+        }
+        String regex = buildSafeRegex(terms);
+        yaml.append("  - id: business-term\n");
+        yaml.append("    languages: [java]\n");
+        yaml.append("    message: \"Terme metier sensible detecte.\"\n");
+        yaml.append("    severity: INFO\n");
+        yaml.append("    pattern-regex: '\"[^\"]*(" + regex + ")[^\"]*\"'\n");
+    }
+
+    private void appendDenylistRule(final StringBuilder yaml) {
+        List<String> terms = properties.denylist();
+        if (terms == null || terms.isEmpty()) {
+            return;
+        }
+        String regex = buildSafeRegex(terms);
+        yaml.append("  - id: denylist-term\n");
+        yaml.append("    languages: [java]\n");
+        yaml.append("    message: \"Terme bloque par la denylist detecte.\"\n");
+        yaml.append("    severity: WARNING\n");
+        yaml.append("    pattern-regex: '\"[^\"]*(" + regex + ")[^\"]*\"'\n");
+    }
+
+    /**
+     * Echappe chaque terme avec {@link Pattern#quote} pour prevenir
+     * l'injection de regex malveillante via la configuration.
+     */
+    private static String buildSafeRegex(final List<String> terms) {
+        return terms.stream()
+                .map(Pattern::quote)
+                .reduce((a, b) -> a + "|" + b)
+                .orElse("");
+    }
 
     private List<SemgrepFinding> runSemgrep(
             final Path sourceFile, final Path rulesFile)
@@ -207,28 +359,32 @@ public class SemgrepScanSanitizer implements Sanitizer {
             }
             List<SemgrepFinding> findings = new ArrayList<>();
             for (JsonNode result : results) {
-                String ruleId = textOrEmpty(result, "check_id");
-                int line = 0;
-                JsonNode startNode = result.get("start");
-                if (startNode != null && startNode.has("line")) {
-                    line = startNode.get("line").asInt(0);
-                }
-                String severity = "";
-                String message = "";
-                String snippet = "";
-                JsonNode extra = result.get("extra");
-                if (extra != null) {
-                    severity = textOrEmpty(extra, "severity");
-                    message = textOrEmpty(extra, "message");
-                    snippet = textOrEmpty(extra, "lines");
-                }
-                findings.add(new SemgrepFinding(ruleId, line, severity, message, snippet));
+                findings.add(parseSingleFinding(result));
             }
             return findings;
         } catch (Exception e) {
             LOG.warn("Impossible de parser la sortie JSON de Semgrep : {}", e.getMessage());
             return List.of();
         }
+    }
+
+    private SemgrepFinding parseSingleFinding(final JsonNode result) {
+        String ruleId = textOrEmpty(result, "check_id");
+        int line = 0;
+        JsonNode startNode = result.get("start");
+        if (startNode != null && startNode.has("line")) {
+            line = startNode.get("line").asInt(0);
+        }
+        String severity = "";
+        String message = "";
+        String snippet = "";
+        JsonNode extra = result.get("extra");
+        if (extra != null) {
+            severity = textOrEmpty(extra, "severity");
+            message = textOrEmpty(extra, "message");
+            snippet = textOrEmpty(extra, "lines");
+        }
+        return new SemgrepFinding(ruleId, line, severity, message, snippet);
     }
 
     private void logFindings(final List<SemgrepFinding> findings) {
@@ -241,38 +397,6 @@ public class SemgrepScanSanitizer implements Sanitizer {
                         finding.ruleId(), finding.line(), finding.severity());
             }
         }
-    }
-
-    private String buildRulesYaml() {
-        StringBuilder yaml = new StringBuilder();
-        yaml.append("rules:\n");
-        yaml.append("  - id: hardcoded-secret\n");
-        yaml.append("    languages: [java]\n");
-        yaml.append("    message: \"Secret potentiellement hardcod\u00e9 d\u00e9tect\u00e9.\"\n");
-        yaml.append("    severity: ERROR\n");
-        yaml.append("    pattern-regex: '(?i)(password|passwd|pwd|secret|apiKey|api_key|token|accessKey|access_key|privateKey)\\s*=\\s*\"[^\"]{4,}\"'\n");
-        yaml.append("  - id: internal-ip-url\n");
-        yaml.append("    languages: [java]\n");
-        yaml.append("    message: \"URL r\u00e9seau priv\u00e9 RFC1918 d\u00e9tect\u00e9e.\"\n");
-        yaml.append("    severity: WARNING\n");
-        yaml.append("    pattern-regex: 'https?://(10\\.\\d+\\.\\d+\\.\\d+|172\\.(1[6-9]|2\\d|3[01])\\.\\d+\\.\\d+|192\\.168\\.\\d+\\.\\d+)[:/\"]'\n");
-        yaml.append("  - id: hardcoded-url\n");
-        yaml.append("    languages: [java]\n");
-        yaml.append("    message: \"URL HTTP hardcod\u00e9e d\u00e9tect\u00e9e.\"\n");
-        yaml.append("    severity: WARNING\n");
-        yaml.append("    pattern-regex: '\"https?://[a-zA-Z0-9._-]+\\.[a-zA-Z]{2,}[^\"]*\"'\n");
-
-        List<String> terms = properties.businessTerms();
-        if (terms != null && !terms.isEmpty()) {
-            String regex = String.join("|", terms);
-            yaml.append("  - id: business-term\n");
-            yaml.append("    languages: [java]\n");
-            yaml.append("    message: \"Terme m\u00e9tier sensible d\u00e9tect\u00e9.\"\n");
-            yaml.append("    severity: INFO\n");
-            yaml.append("    pattern-regex: '\"[^\"]*(" + regex + ")[^\"]*\"'\n");
-        }
-
-        return yaml.toString();
     }
 
     private static String textOrEmpty(final JsonNode node, final String field) {

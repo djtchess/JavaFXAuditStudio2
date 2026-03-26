@@ -52,26 +52,12 @@ public class OpenRewriteIdentifierSanitizer implements Sanitizer {
     private static final Logger LOG = LoggerFactory.getLogger(OpenRewriteIdentifierSanitizer.class);
 
     /**
-     * Suffixes metier cibles — alignes sur ceux de {@code IdentifierSanitizer} pour
-     * garantir une couverture coherente entre la passe AST et la passe regex.
-     */
-    private static final String BUSINESS_SUFFIXES =
-            "Service|Manager|Controller|Repository|Gateway|Handler|Processor|Calculator|Engine";
-
-    /**
      * Pattern pour les declarations de classe avec suffixe metier :
      * {@code class CustomerService}, {@code class InvoiceManager}, etc.
-     * Capture le nom complet incluant le suffixe.
+     * Deleguee a {@link BusinessTermDictionary} comme source unique de verite (QW-2).
      */
-    private static final Pattern CLASS_DECL_PATTERN = Pattern.compile(
-            "\\bclass\\s+([A-Z][A-Za-z0-9_]*(?:" + BUSINESS_SUFFIXES + "))\\b");
-
-    /**
-     * Pattern equivalent au niveau de l'identifiant seul, pour les remplacements
-     * en cascade apres la detection initiale (references au nom de classe dans le corps).
-     */
-    private static final Pattern BUSINESS_IDENTIFIER_PATTERN = Pattern.compile(
-            "\\b([A-Z][a-z]+(?:[A-Z][a-z]+)*)(?:" + BUSINESS_SUFFIXES + ")\\b");
+    private static final Pattern CLASS_DECL_PATTERN =
+            BusinessTermDictionary.CLASS_DECLARATION_PATTERN;
 
     private int occurrenceCount;
 
@@ -148,8 +134,7 @@ public class OpenRewriteIdentifierSanitizer implements Sanitizer {
             final AtomicInteger counter,
             final ExecutionContext ctx) {
 
-        Pattern suffixPattern = Pattern.compile(
-                "^[A-Z][A-Za-z0-9_]*(?:" + BUSINESS_SUFFIXES + ")$");
+        Pattern suffixPattern = BusinessTermDictionary.CLASS_NAME_PATTERN;
 
         for (SourceFile sf : sources) {
             if (sf instanceof J.CompilationUnit cu) {

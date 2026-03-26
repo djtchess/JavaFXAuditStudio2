@@ -13,16 +13,19 @@ import ff.ss.javaFxAuditStudio.domain.sanitization.SanitizationTransformation;
  * Remplace les identifiants Java metier par des termes generiques (JAS-018).
  *
  * <p>Cible les noms de classes et variables contenant des termes metier reconnaissables
- * (Service, Manager, Controller, Repository, Gateway, Handler, Processor, Calculator, Engine).
+ * definis dans {@link BusinessTermDictionary}.
  * Les identifiants standards Java (List, String, Object…) ne sont pas affectes.
  *
  * <p>Assemble via {@code @Bean} dans {@code AiEnrichmentOrchestraConfiguration}.
  */
 public class IdentifierSanitizer implements Sanitizer {
 
-    private static final Pattern BUSINESS_SUFFIX_PATTERN = Pattern.compile(
-            "\\b([A-Z][a-z]+(?:[A-Z][a-z]+)*)(?:Service|Manager|Controller|Repository|"
-            + "Gateway|Handler|Processor|Calculator|Engine)\\b");
+    /**
+     * Pattern issu de {@link BusinessTermDictionary} : source unique de verite
+     * pour les suffixes metier reconnus (QW-2).
+     */
+    private static final Pattern BUSINESS_SUFFIX_PATTERN =
+            BusinessTermDictionary.BUSINESS_IDENTIFIER_PATTERN;
 
     private int occurrenceCount;
 

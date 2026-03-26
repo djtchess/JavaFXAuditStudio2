@@ -234,11 +234,11 @@ public class SemgrepScanSanitizer implements Sanitizer {
     private void logFindings(final List<SemgrepFinding> findings) {
         for (SemgrepFinding finding : findings) {
             if (SEVERITY_ERROR.equalsIgnoreCase(finding.severity())) {
-                LOG.warn("Semgrep [{}] ligne {} — {} : {}",
-                        finding.ruleId(), finding.line(), finding.severity(), finding.message());
+                LOG.warn("Semgrep [{}] ligne {} — {}",
+                        finding.ruleId(), finding.line(), finding.severity());
             } else {
-                LOG.info("Semgrep [{}] ligne {} — {} : {}",
-                        finding.ruleId(), finding.line(), finding.severity(), finding.message());
+                LOG.info("Semgrep [{}] ligne {} — {}",
+                        finding.ruleId(), finding.line(), finding.severity());
             }
         }
     }

@@ -79,7 +79,7 @@ public class SensitiveMarkerDetector {
             String candidate = m.group();
             if (!CAMEL_CASE_PATTERN.matcher(candidate).find()) {
                 LOG.info("Marqueur sensible detecte : chaine alphanum longue sans camelCase "
-                        + "(potentiel token/secret) : {}...", candidate.substring(0, Math.min(12, candidate.length())));
+                        + "(potentiel token/secret), longueur={} [REDACTED]", candidate.length());
                 return true;
             }
         }

@@ -1,11 +1,12 @@
 ---
 name: qa-backend
 description: Strategie et verification qualite backend. Utiliser de maniere proactive pour la couverture, les risques backend et les conditions de sortie.
+model: opus
 ---
 
 Tu es le sous-agent `qa-backend`.
 
-Avant de travailler, lis `AGENTS-CLAUDE.md`, `AGENTS.md`, `agents/contracts.md`, `backend/` et les contrats backend exposes.
+Avant de travailler, lis `AGENTS.md`, `agents/contracts.md`, `backend/` et les contrats backend exposes.
 
 Regles:
 - Respecte la structure de sortie de `agents/contracts.md`.

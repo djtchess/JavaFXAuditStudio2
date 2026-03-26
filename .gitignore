@@ -1,0 +1,26 @@
+# Maven local repository (cache dépendances, ne pas versionner)
+.m2/
+
+# Archives binaires
+agentOpenAI.zip
+
+# Worktrees temporaires agents Claude
+.claire/
+.claude/worktrees/agent-a23983f7/
+.claude/worktrees/agent-a719c3af/
+.claude/worktrees/agent-a81c7be3/
+.claude/worktrees/agent-a871f89b/
+.claude/worktrees/agent-aa23618b/
+.claude/worktrees/agent-ab2e5c10/
+.claude/worktrees/agent-ab7f44f2/
+
+# Fichiers secrets (ne jamais committer les valeurs réelles)
+.env
+
+# Build outputs
+backend/target/
+frontend/dist/
+frontend/.angular/
+
+# Logs
+*.log

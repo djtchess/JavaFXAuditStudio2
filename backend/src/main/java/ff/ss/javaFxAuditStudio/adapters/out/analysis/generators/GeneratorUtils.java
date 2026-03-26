@@ -3,9 +3,13 @@ package ff.ss.javaFxAuditStudio.adapters.out.analysis.generators;
 import ff.ss.javaFxAuditStudio.domain.generation.ArtifactType;
 import ff.ss.javaFxAuditStudio.domain.generation.CodeArtifact;
 import ff.ss.javaFxAuditStudio.domain.rules.BusinessRule;
+import ff.ss.javaFxAuditStudio.domain.rules.MethodParameter;
 import ff.ss.javaFxAuditStudio.domain.rules.MethodSignature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
+import java.util.Set;
 
 /**
  * Methodes utilitaires partagees entre tous les generateurs d'artefacts.
@@ -96,6 +100,16 @@ public final class GeneratorUtils {
         // Pattern 1 — handler explicite
         if (desc.startsWith("Methode handler ")) {
             String rest = desc.substring("Methode handler ".length());
+            int colon = rest.indexOf(':');
+            String name = (colon > 0 ? rest.substring(0, colon) : rest).trim();
+            if (isValidIdentifier(name)) {
+                return name;
+            }
+        }
+
+        // Pattern 1b — JAS-020 : methode garde booléenne
+        if (desc.startsWith("Methode garde ")) {
+            String rest = desc.substring("Methode garde ".length());
             int colon = rest.indexOf(':');
             String name = (colon > 0 ? rest.substring(0, colon) : rest).trim();
             if (isValidIdentifier(name)) {
@@ -305,7 +319,8 @@ public final class GeneratorUtils {
         }
         if (lower.endsWith("tableview") || lower.endsWith("listview")
                 || lower.endsWith("treeview")) {
-            return null;
+            // JAS-007 : les vues liste exposent une ObservableList<Object> plutot qu'un TODO
+            return new ViewModelProperty(rawField + "Items", PropertyType.OBSERVABLE_LIST);
         }
 
         // JAS-007 — heuristique par sous-chaine pour les types custom heritant de composants JavaFX
@@ -324,17 +339,18 @@ public final class GeneratorUtils {
     private static ViewModelProperty resolveByHeuristic(
             final String rawField, final String fxmlType, final String lower) {
         // TableView avant ListView et TreeView pour eviter les correspondances "table" ambigues
+        // JAS-007 : les types custom heritant de TableView/ListView/TreeView generent une ObservableList
         if (lower.contains("tableview") || lower.contains("table")) {
             LOG.debug("[JAS-007] Type custom '{}' resolu par heuristique vers 'TableView'", fxmlType);
-            return null; // TODO: ObservableList — meme comportement que TableView standard
+            return new ViewModelProperty(rawField + "Items", PropertyType.OBSERVABLE_LIST);
         }
         if (lower.contains("listview") || lower.contains("list")) {
             LOG.debug("[JAS-007] Type custom '{}' resolu par heuristique vers 'ListView'", fxmlType);
-            return null; // TODO: ObservableList — meme comportement que ListView standard
+            return new ViewModelProperty(rawField + "Items", PropertyType.OBSERVABLE_LIST);
         }
         if (lower.contains("treeview") || lower.contains("tree")) {
             LOG.debug("[JAS-007] Type custom '{}' resolu par heuristique vers 'TreeView'", fxmlType);
-            return null; // TODO: ObservableList — meme comportement que TreeView standard
+            return new ViewModelProperty(rawField + "Items", PropertyType.OBSERVABLE_LIST);
         }
         if (lower.contains("gridpane") || lower.contains("grid")) {
             LOG.debug("[JAS-007] Type custom '{}' resolu par heuristique vers 'GridPane'", fxmlType);
@@ -462,5 +478,72 @@ public final class GeneratorUtils {
                 .map(p -> p.name())
                 .reduce((a, b) -> a + ", " + b)
                 .orElse("");
+    }
+
+    /**
+     * JAS-008 — Retourne la liste de parametres filtree pour le domaine UseCase.
+     * Les types JavaFX UI (ActionEvent, MouseEvent, etc.) sont exclus.
+     * Si la regle n'a pas de signature, retourne une chaine vide.
+     */
+    public static String buildUseCaseParams(final BusinessRule rule) {
+        if (!rule.hasSignature()) {
+            return "";
+        }
+        MethodSignature filtered = JavaFxUiTypeFilter.filterForDomain(rule.signature());
+        return filtered.toParameterList();
+    }
+
+    /**
+     * JAS-008 — Retourne la liste d'arguments filtree pour l'appel useCase.method(args).
+     * Les arguments de type JavaFX UI sont exclus pour ne pas fuiter dans le domaine.
+     * Retourne une chaine vide si aucun argument ou signature absente.
+     */
+    public static String buildUseCaseArgList(final BusinessRule rule) {
+        if (!rule.hasSignature()) {
+            return "";
+        }
+        MethodSignature filtered = JavaFxUiTypeFilter.filterForDomain(rule.signature());
+        return filtered.parameters().stream()
+                .map(MethodParameter::name)
+                .reduce((a, b) -> a + ", " + b)
+                .orElse("");
+    }
+
+    /**
+     * JAS-008 — Collecte les types non-standards des signatures de regles.
+     * Exclut : primitives, java.lang.*, types JavaFX UI, types connus du JDK.
+     * Retourne une liste de noms de types pour lesquels un import est necessaire.
+     */
+    public static List<String> collectTypeHints(final List<BusinessRule> rules) {
+        Set<String> seen = new java.util.LinkedHashSet<>();
+        Set<String> known = Set.of(
+                "void", "boolean", "int", "long", "double", "float", "short", "byte", "char",
+                "Boolean", "Integer", "Long", "Double", "Float", "String", "Object",
+                "List", "Map", "Set", "Optional", "Collection",
+                "LocalDate", "LocalDateTime", "Instant", "BigDecimal"
+        );
+        for (BusinessRule rule : rules) {
+            if (!rule.hasSignature()) continue;
+            MethodSignature sig = JavaFxUiTypeFilter.filterForDomain(rule.signature());
+            for (MethodParameter p : sig.parameters()) {
+                String type = p.type();
+                // Supprimer les generics : List<Patient> -> List
+                int lt = type.indexOf('<');
+                String simple = lt > 0 ? type.substring(0, lt) : type;
+                if (!known.contains(simple) && !JavaFxUiTypeFilter.isJavaFxUiType(simple) && !p.unknown()) {
+                    seen.add(simple);
+                }
+            }
+            // Type de retour non-void
+            String rt = sig.returnType();
+            if (!"void".equals(rt)) {
+                int lt = rt.indexOf('<');
+                String simple = lt > 0 ? rt.substring(0, lt) : rt;
+                if (!known.contains(simple) && !JavaFxUiTypeFilter.isJavaFxUiType(simple)) {
+                    seen.add(simple);
+                }
+            }
+        }
+        return List.copyOf(seen);
     }
 }

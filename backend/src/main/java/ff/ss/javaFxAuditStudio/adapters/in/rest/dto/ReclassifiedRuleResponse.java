@@ -1,5 +1,6 @@
 package ff.ss.javaFxAuditStudio.adapters.in.rest.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
 
 /**
@@ -13,13 +14,21 @@ import java.util.Objects;
  * @param sourceRef           reference au fichier source
  * @param sourceLine          numero de ligne dans le fichier source
  */
+@Schema(description = "Regle apres reclassification")
 public record ReclassifiedRuleResponse(
+        @Schema(description = "Identifiant unique de la regle")
         String ruleId,
+        @Schema(description = "Enonce de la regle metier")
         String description,
+        @Schema(description = "Categorie de responsabilite apres reclassification")
         String responsibilityClass,
+        @Schema(description = "Candidat d'extraction recommande")
         String extractionCandidate,
+        @Schema(description = "Vrai si la classification necessite une validation humaine")
         boolean uncertain,
+        @Schema(description = "Reference au fichier source contenant la regle")
         String sourceRef,
+        @Schema(description = "Numero de ligne dans le fichier source")
         int sourceLine) {
 
     public ReclassifiedRuleResponse {

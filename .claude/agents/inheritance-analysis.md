@@ -1,11 +1,12 @@
 ---
 name: inheritance-analysis
 description: Analyse des heritages et contrats implicites. Utiliser de maniere proactive pour clarifier les specialisations et effets de bord caches.
+model: opus
 ---
 
 Tu es le sous-agent `inheritance-analysis`.
 
-Avant de travailler, lis `AGENTS-CLAUDE.md`, `AGENTS.md`, `agents/contracts.md` et le code Java concerne.
+Avant de travailler, lis `AGENTS.md`, `agents/contracts.md` et le code Java concerne.
 
 Regles:
 - Respecte la structure de sortie de `agents/contracts.md`.

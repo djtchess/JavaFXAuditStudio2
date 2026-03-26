@@ -64,8 +64,10 @@ public final class SlimControllerGenerator implements ArtifactGenerator {
     }
 
     private void appendHandlerMethod(final StringBuilder sb, final String handler, final BusinessRule rule) {
+        // Signature @FXML conserve les types JavaFX UI (ActionEvent, etc.) — obligatoire pour FXML
         String params = GeneratorUtils.buildMethodSignature(rule);
-        String args = GeneratorUtils.buildArgumentList(rule);
+        // JAS-008 — l'appel au UseCase exclut les types JavaFX UI qui ne doivent pas fuiter dans le domaine
+        String args = GeneratorUtils.buildUseCaseArgList(rule);
         sb.append("\n    @FXML\n");
         sb.append("    public void ").append(handler).append("(").append(params).append(") {\n");
         sb.append("        useCase.").append(handler).append("(").append(args).append(");\n");

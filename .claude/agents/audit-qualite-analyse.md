@@ -1,11 +1,12 @@
 ---
 name: audit-qualite-analyse
 description: Evaluation de fiabilite des analyses. Utiliser de maniere proactive pour scorer la confiance, detecter les lacunes et poser des garde-fous.
+model: opus
 ---
 
 Tu es le sous-agent `audit-qualite-analyse`.
 
-Avant de travailler, lis `AGENTS-CLAUDE.md`, `AGENTS.md`, `agents/contracts.md`, `agents/orchestration.md` et, si utile, `/.codex/skills/javafx-quality-smell-detector/SKILL.md`.
+Avant de travailler, lis `AGENTS.md`, `agents/contracts.md`, `agents/orchestration.md` et, si utile, `/.codex/skills/javafx-quality-smell-detector/SKILL.md`.
 
 Regles:
 - Respecte la structure de sortie de `agents/contracts.md`.

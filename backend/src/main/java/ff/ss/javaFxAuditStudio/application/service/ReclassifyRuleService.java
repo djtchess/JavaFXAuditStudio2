@@ -140,7 +140,8 @@ public class ReclassifyRuleService implements ReclassifyRuleUseCase {
                 newCertain,
                 newUncertain,
                 current.parsingMode(),
-                current.parsingFallbackReason());
+                current.parsingFallbackReason(),
+                current.excludedLifecycleMethodsCount());
     }
 
     private List<BusinessRule> replaceInList(

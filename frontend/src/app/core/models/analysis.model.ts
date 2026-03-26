@@ -38,18 +38,32 @@ export interface CartographyResponse {
 
 // --- Classification ---
 
+export interface MethodParameterDto {
+  type: string;
+  name: string;
+  unknown: boolean;
+}
+
+export interface MethodSignatureDto {
+  returnType: string;
+  parameters: MethodParameterDto[];
+  hasUnknowns: boolean;
+}
+
 export interface BusinessRuleDto {
   ruleId: string;
   description: string;
   responsibilityClass: string;
   extractionCandidate: string;
   uncertain: boolean;
+  signature?: MethodSignatureDto;  // null si mode REGEX_FALLBACK
 }
 
 export interface ClassificationResponse {
   controllerRef: string;
   ruleCount: number;
   uncertainCount: number;
+  excludedLifecycleMethodsCount: number;
   rules: BusinessRuleDto[];
   parsingMode: 'AST' | 'REGEX_FALLBACK';
   parsingFallbackReason?: string;
@@ -169,4 +183,73 @@ export interface ReclassificationAuditEntryResponse {
   toCategory: string;
   reason: string;
   timestamp: string;
+}
+
+// --- LLM Audit (JAS-029) ---
+
+export interface LlmAuditEntryResponse {
+  auditId: string;
+  sessionId: string;
+  timestamp: string;          // ISO-8601
+  provider: string;           // "claude-code" | "openai-gpt54" | "none"
+  taskType: string;
+  sanitizationVersion: string;
+  payloadHash: string;        // SHA-256, jamais la source
+  promptTokensEstimate: number;
+  degraded: boolean;
+  degradationReason: string;
+}
+
+export interface AiEnrichmentStatusResponse {
+  enabled: boolean;
+  provider: string;
+  credentialPresent: boolean;
+  timeoutMs: number;
+}
+
+export interface AiEnrichmentResponse {
+  requestId: string;
+  degraded: boolean;
+  degradationReason: string;
+  suggestions: Record<string, string>;
+  tokensUsed: number;
+  provider: string;
+}
+
+/**
+ * Resultat de la revue IA des artefacts generes (JAS-030).
+ */
+export interface ArtifactReviewResponse {
+  requestId: string;
+  degraded: boolean;
+  degradationReason: string;
+  migrationScore: number;
+  artifactReviews: Record<string, string>;
+  uncertainReclassifications: Record<string, string>;
+  globalSuggestions: string[];
+  provider: string;
+}
+
+/**
+ * Résultat de la génération IA des classes Spring Boot cibles (JAS-031).
+ */
+export interface AiCodeGenerationResponse {
+  requestId: string;
+  degraded: boolean;
+  degradationReason: string;
+  generatedClasses: Record<string, string>;
+  tokensUsed: number;
+  provider: string;
+}
+
+/**
+ * Résultat de la prévisualisation du code sanitisé avant envoi au LLM (JAS-031).
+ */
+export interface SanitizedSourcePreviewResponse {
+  sessionId: string;
+  controllerRef: string;
+  sanitizedSource: string;
+  estimatedTokens: number;
+  sanitizationVersion: string;
+  sanitized: boolean;
 }

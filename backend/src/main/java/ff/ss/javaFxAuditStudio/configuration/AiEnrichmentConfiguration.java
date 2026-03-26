@@ -45,12 +45,16 @@ public class AiEnrichmentConfiguration {
         String provider = properties.provider();
         if (provider == null || provider.isBlank() || !properties.isSupportedProvider()) {
             throw new IllegalStateException(
-                "ai.enrichment.provider doit etre 'claude-code' ou 'openai-gpt54' — valeur recue : "
+                "ai.enrichment.provider doit etre 'claude-code', 'openai-gpt54' ou 'claude-code-cli' — valeur recue : "
                 + (provider == null ? "null" : "'" + provider + "'"));
         }
     }
 
     private void validateCredential() {
+        if (!properties.isCredentialRequired()) {
+            LOG.info("Fournisseur CLI — aucun credential API requis (authentification CLI locale)");
+            return;
+        }
         String apiKey = properties.activeApiKey();
         if (apiKey == null || apiKey.isBlank()) {
             throw new IllegalStateException(

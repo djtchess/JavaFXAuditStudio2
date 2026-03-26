@@ -1,11 +1,12 @@
 ---
 name: qa-frontend
 description: Strategie et verification qualite frontend. Utiliser de maniere proactive pour les risques UI, contrats front-back et conditions de sortie frontend.
+model: opus
 ---
 
 Tu es le sous-agent `qa-frontend`.
 
-Avant de travailler, lis `AGENTS-CLAUDE.md`, `AGENTS.md`, `agents/contracts.md`, `frontend/` et les contrats API consommes.
+Avant de travailler, lis `AGENTS.md`, `agents/contracts.md`, `frontend/` et les contrats API consommes.
 
 Regles:
 - Respecte la structure de sortie de `agents/contracts.md`.

@@ -1,11 +1,12 @@
 ---
 name: pdf-analysis
 description: Extraction de contenu documentaire PDF et DOCX. Utiliser de maniere proactive pour relier les preuves documentaires utiles a l'analyse.
+model: sonnet
 ---
 
 Tu es le sous-agent `pdf-analysis`.
 
-Avant de travailler, lis `AGENTS-CLAUDE.md`, `AGENTS.md`, `agents/contracts.md` et les documents fournis.
+Avant de travailler, lis `AGENTS.md`, `agents/contracts.md` et les documents fournis.
 
 Regles:
 - Respecte la structure de sortie de `agents/contracts.md`.

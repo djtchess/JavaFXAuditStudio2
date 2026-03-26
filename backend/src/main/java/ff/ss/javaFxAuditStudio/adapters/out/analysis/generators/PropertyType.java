@@ -6,7 +6,9 @@ package ff.ss.javaFxAuditStudio.adapters.out.analysis.generators;
 public enum PropertyType {
     STRING("SimpleStringProperty", "StringProperty", "String"),
     BOOLEAN("SimpleBooleanProperty", "BooleanProperty", "boolean"),
-    INTEGER("SimpleIntegerProperty", "IntegerProperty", "int");
+    INTEGER("SimpleIntegerProperty", "IntegerProperty", "int"),
+    /** JAS-007 : liste observable pour TableView, ListView et TreeView. */
+    OBSERVABLE_LIST("ObservableList<Object>", "ObservableList<Object>", "ObservableList<Object>");
 
     private final String simpleClass;
     private final String propertyClass;

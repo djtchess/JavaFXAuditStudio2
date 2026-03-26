@@ -1,11 +1,12 @@
 ---
 name: restitution
 description: Restitution exploitable par le produit. Utiliser de maniere proactive pour produire rapport final, priorites, risques et artefacts consommables.
+model: opus
 ---
 
 Tu es le sous-agent `restitution`.
 
-Avant de travailler, lis `AGENTS-CLAUDE.md`, `AGENTS.md`, `agents/contracts.md`, les sorties de `consolidation` et, si utile, `/.codex/skills/javafx-report-writer/SKILL.md`.
+Avant de travailler, lis `AGENTS.md`, `agents/contracts.md`, les sorties de `consolidation` et, si utile, `/.codex/skills/javafx-report-writer/SKILL.md`.
 
 Regles:
 - Respecte la structure de sortie de `agents/contracts.md`.

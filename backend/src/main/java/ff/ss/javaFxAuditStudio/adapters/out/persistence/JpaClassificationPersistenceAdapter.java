@@ -32,7 +32,8 @@ public class JpaClassificationPersistenceAdapter implements ClassificationPersis
                 result.controllerRef(),
                 Instant.now(),
                 result.parsingMode(),
-                result.parsingFallbackReason());
+                result.parsingFallbackReason(),
+                result.excludedLifecycleMethodsCount());
         result.rules().forEach(rule -> entity.getRules().add(toRuleEntity(rule, entity)));
         result.uncertainRules().forEach(rule -> entity.getRules().add(toRuleEntity(rule, entity)));
         ClassificationResultEntity saved = repository.save(entity);
@@ -74,7 +75,8 @@ public class JpaClassificationPersistenceAdapter implements ClassificationPersis
                 certain,
                 uncertain,
                 parsingMode,
-                entity.getParsingFallbackReason());
+                entity.getParsingFallbackReason(),
+                entity.getExcludedLifecycleMethodsCount());
     }
 
     private BusinessRule toRuleDomain(final BusinessRuleEntity e) {

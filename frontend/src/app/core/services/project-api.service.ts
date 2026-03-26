@@ -16,7 +16,7 @@ export class ProjectApiService {
 
   getDashboard(projectId: string): Observable<ProjectDashboardResponse> {
     return this.http.get<ProjectDashboardResponse>(
-      `${this.baseProjects}/${projectId}/dashboard`
+      `${this.baseProjects}/${encodeURIComponent(projectId)}/dashboard`
     );
   }
 

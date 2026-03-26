@@ -82,7 +82,7 @@ public final class ArtifactCompilabilityValidator {
         boolean hasMissing = cu.findAll(com.github.javaparser.ast.type.ClassOrInterfaceType.class)
                 .stream()
                 .map(t -> t.getNameAsString())
-                .filter(name -> !isPrimitive(name) && !isJavaLang(name))
+                .filter(name -> !isPrimitive(name) && !isJavaLang(name) && !isKnownFrameworkType(name))
                 .anyMatch(name -> !imported.contains(name));
         if (hasMissing) {
             warnings.add(ArtifactValidationWarning.MISSING_IMPORT);
@@ -140,6 +140,21 @@ public final class ArtifactCompilabilityValidator {
                     "Boolean", "Byte", "Short", "Character", "Number",
                     "Comparable", "Iterable", "Runnable", "Exception",
                     "RuntimeException", "Enum", "Record", "Class" -> true;
+            default -> false;
+        };
+    }
+
+    /**
+     * JAS-009 — Types de frameworks connus (Spring, JavaFX) qui ne requierent pas
+     * d'import explicite dans l'analyse structurelle des artefacts generes.
+     */
+    private boolean isKnownFrameworkType(final String name) {
+        return switch (name) {
+            case "Component", "Autowired", "Service", "Repository",
+                 "FXML", "ObservableList", "FXCollections",
+                 "SimpleBooleanProperty", "SimpleIntegerProperty", "SimpleStringProperty",
+                 "BooleanProperty", "IntegerProperty", "StringProperty",
+                 "ListProperty", "SimpleListProperty" -> true;
             default -> false;
         };
     }

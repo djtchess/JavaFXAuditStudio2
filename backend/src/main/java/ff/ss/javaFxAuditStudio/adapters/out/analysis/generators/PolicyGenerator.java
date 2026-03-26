@@ -33,7 +33,21 @@ public final class PolicyGenerator implements ArtifactGenerator {
             String method = GeneratorUtils.methodNameFromRule(rule);
             if (seen.add(method)) {
                 sb.append("    /** ").append(rule.description()).append(" */\n");
-                sb.append("    public boolean ").append(method).append("(final Object context) {\n");
+
+                // JAS-020 : utiliser la vraie signature si disponible
+                String returnType = rule.hasSignature()
+                        ? GeneratorUtils.buildReturnType(rule)
+                        : "boolean";
+                String params = rule.hasSignature()
+                        ? GeneratorUtils.buildUseCaseParams(rule)
+                        : "final Object context";
+                // Fallback : si pas de signature ET params vides, mettre Object context
+                if (params.isEmpty() && !rule.hasSignature()) {
+                    params = "final Object context";
+                }
+
+                sb.append("    public ").append(returnType).append(" ").append(method)
+                  .append("(").append(params).append(") {\n");
                 sb.append("        // TODO : implementer la regle metier\n");
                 sb.append("        throw new UnsupportedOperationException(\"Non implemente : ")
                   .append(method).append("\");\n");

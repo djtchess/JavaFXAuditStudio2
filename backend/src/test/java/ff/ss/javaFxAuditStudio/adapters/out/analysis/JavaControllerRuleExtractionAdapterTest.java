@@ -159,4 +159,86 @@ class JavaControllerRuleExtractionAdapterTest {
 
         assertThat(result.rules()).anyMatch(r -> r.responsibilityClass() == ResponsibilityClass.UI);
     }
+
+    @Test
+    void should_exclude_initialize_and_report_count() {
+        JavaControllerRuleExtractionAdapter adapterWithExclusions =
+                new JavaControllerRuleExtractionAdapter(Set.of("initialize"));
+        String content = """
+                public class MyController {
+                    @FXML
+                    public void initialize() {
+                        label.setText("init");
+                    }
+                    @FXML
+                    public void handleSave() {
+                        service.save();
+                    }
+                }
+                """;
+
+        ExtractionResult result = adapterWithExclusions.extract("MyController", content);
+
+        assertThat(result.excludedLifecycleMethodsCount()).isEqualTo(1);
+        assertThat(result.rules()).noneMatch(r -> r.ruleId().contains("initialize"));
+    }
+
+    @Test
+    void should_not_exclude_initializeSpecifique() {
+        JavaControllerRuleExtractionAdapter adapterWithExclusions =
+                new JavaControllerRuleExtractionAdapter(Set.of("initialize"));
+        String content = """
+                public class MyController {
+                    @FXML
+                    public void initializeSpecifique() {
+                        doSetup();
+                    }
+                }
+                """;
+
+        ExtractionResult result = adapterWithExclusions.extract("MyController", content);
+
+        assertThat(result.excludedLifecycleMethodsCount()).isEqualTo(0);
+        assertThat(result.rules()).hasSizeGreaterThanOrEqualTo(1);
+    }
+
+    @Test
+    void should_count_multiple_excluded_methods() {
+        JavaControllerRuleExtractionAdapter adapterWithExclusions =
+                new JavaControllerRuleExtractionAdapter(Set.of("initialize", "dispose", "stop"));
+        String content = """
+                public class MyController {
+                    @FXML
+                    public void initialize() { }
+                    @FXML
+                    public void dispose() { }
+                    @FXML
+                    public void stop() { }
+                    @FXML
+                    public void handleAction() { doAction(); }
+                }
+                """;
+
+        ExtractionResult result = adapterWithExclusions.extract("MyController", content);
+
+        assertThat(result.excludedLifecycleMethodsCount()).isEqualTo(3);
+    }
+
+    @Test
+    void should_return_zero_count_when_no_lifecycle_method() {
+        JavaControllerRuleExtractionAdapter adapterWithExclusions =
+                new JavaControllerRuleExtractionAdapter(Set.of("initialize", "dispose"));
+        String content = """
+                public class MyController {
+                    @FXML
+                    public void handleSave() { service.save(); }
+                    @FXML
+                    public void handleCancel() { close(); }
+                }
+                """;
+
+        ExtractionResult result = adapterWithExclusions.extract("MyController", content);
+
+        assertThat(result.excludedLifecycleMethodsCount()).isEqualTo(0);
+    }
 }

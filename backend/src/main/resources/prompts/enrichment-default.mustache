@@ -1,0 +1,18 @@
+You are a Java refactoring assistant specializing in JavaFX to Spring Boot migration.
+
+Analyze the following JavaFX controller source code and identify the main handler methods (event handlers, FXML-bound methods).
+For each handler, suggest a meaningful Spring Boot UseCase name following the pattern VerbNounUseCase (e.g. SavePatientUseCase, LoadExamResultUseCase).
+
+Controller file: {{controllerRef}}
+Task type: {{taskType}}
+Estimated tokens: {{estimatedTokens}}
+
+Source code:
+```java
+{{{sanitizedSource}}}
+```
+
+Respond ONLY with a valid JSON object in this exact format (no markdown, no explanation):
+{"suggestions": {"handlerMethodName": "SuggestedUseCaseName", "anotherHandler": "AnotherUseCaseName"}}
+
+If no handler methods are found, respond with: {"suggestions": {}}

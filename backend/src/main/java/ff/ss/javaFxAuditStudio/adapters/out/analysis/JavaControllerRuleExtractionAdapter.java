@@ -14,6 +14,9 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Adapter d'extraction de regles de gestion par analyse textuelle (regex) du contenu Java source.
  *
@@ -23,6 +26,8 @@ import java.util.regex.Pattern;
  * <p>Pas d'annotation Spring : instanciation explicite via {@code ClassificationConfiguration}.
  */
 public final class JavaControllerRuleExtractionAdapter implements RuleExtractionPort {
+
+    private static final Logger log = LoggerFactory.getLogger(JavaControllerRuleExtractionAdapter.class);
 
     private static final Pattern FXML_HANDLER_PATTERN =
             Pattern.compile("@FXML\\s+(?:public\\s+)?void\\s+(\\w+)\\s*\\(");
@@ -36,6 +41,12 @@ public final class JavaControllerRuleExtractionAdapter implements RuleExtraction
     private static final Pattern INJECTED_SERVICE_PATTERN =
             Pattern.compile("@(?:Autowired|Inject)\\s+(?:private\\s+)?(\\w+)\\s+(\\w+)\\s*;");
 
+    /** JAS-020 — Pattern de detection des methodes garde booléennes. */
+    private static final Pattern BOOLEAN_GUARD_PATTERN =
+            Pattern.compile(
+                "(?:public|private|protected)\\s+(?:boolean|Boolean)\\s+" +
+                "((?:is|can|has|should)[A-Z]\\w*)\\s*\\(");
+
     private static final String UNKNOWN_REF = "unknown";
 
     private final Set<String> lifecycleExcluded;
@@ -46,7 +57,7 @@ public final class JavaControllerRuleExtractionAdapter implements RuleExtraction
      * Initialise avec un ensemble vide de methodes exclues et des patterns par defaut.
      */
     public JavaControllerRuleExtractionAdapter() {
-        this(Set.of(), new AnalysisProperties.ClassificationPatterns(null, null, null, null, null));
+        this(Set.of(), new AnalysisProperties.ClassificationPatterns(null, null, null, null, null, null));
     }
 
     /**
@@ -55,7 +66,7 @@ public final class JavaControllerRuleExtractionAdapter implements RuleExtraction
      */
     public JavaControllerRuleExtractionAdapter(final Set<String> lifecycleExcluded) {
         this(lifecycleExcluded,
-                new AnalysisProperties.ClassificationPatterns(null, null, null, null, null));
+                new AnalysisProperties.ClassificationPatterns(null, null, null, null, null, null));
     }
 
     /**
@@ -76,28 +87,35 @@ public final class JavaControllerRuleExtractionAdapter implements RuleExtraction
         }
         String ref = (controllerRef == null) ? UNKNOWN_REF : controllerRef;
         List<BusinessRule> rules = new ArrayList<>();
-        extractFxmlHandlers(ref, javaContent, rules);
-        extractNamedHandlers(ref, javaContent, rules);
+        int[] excludedCount = {0};
+        extractFxmlHandlers(ref, javaContent, rules, excludedCount);
+        extractNamedHandlers(ref, javaContent, rules, excludedCount);
         extractFxmlFields(ref, javaContent, rules);
+        extractBooleanGuards(ref, javaContent, rules, excludedCount);  // JAS-020
         extractInjectedServices(ref, javaContent, rules);
-        return ExtractionResult.regexFallback(List.copyOf(rules), "Analyse textuelle regex");
+        if (excludedCount[0] > 0) {
+            log.info("{} methode(s) lifecycle exclue(s) - ref={}", excludedCount[0], ref);
+        }
+        return ExtractionResult.regexFallback(List.copyOf(rules), "Analyse textuelle regex", excludedCount[0]);
     }
 
     private void extractFxmlHandlers(
-            final String ref, final String content, final List<BusinessRule> rules) {
+            final String ref, final String content, final List<BusinessRule> rules,
+            final int[] excludedCount) {
         Matcher matcher = FXML_HANDLER_PATTERN.matcher(content);
         while (matcher.find()) {
-            addHandlerRule(ref, content, matcher.end(), matcher.group(1), rules);
+            addHandlerRule(ref, content, matcher.end(), matcher.group(1), rules, excludedCount);
         }
     }
 
     private void extractNamedHandlers(
-            final String ref, final String content, final List<BusinessRule> rules) {
+            final String ref, final String content, final List<BusinessRule> rules,
+            final int[] excludedCount) {
         Matcher matcher = NAMED_HANDLER_PATTERN.matcher(content);
         while (matcher.find()) {
             String methodName = matcher.group(1);
             if (!isAlreadyExtractedAsFxmlHandler(content, methodName)) {
-                addHandlerRule(ref, content, matcher.end(), methodName, rules);
+                addHandlerRule(ref, content, matcher.end(), methodName, rules, excludedCount);
             }
         }
     }
@@ -107,8 +125,10 @@ public final class JavaControllerRuleExtractionAdapter implements RuleExtraction
             final String content,
             final int bodyStart,
             final String methodName,
-            final List<BusinessRule> rules) {
+            final List<BusinessRule> rules,
+            final int[] excludedCount) {
         if (lifecycleExcluded.contains(methodName)) {
+            excludedCount[0]++;
             return;
         }
         String methodBody = extractApproximateBody(content, bodyStart);
@@ -132,6 +152,34 @@ public final class JavaControllerRuleExtractionAdapter implements RuleExtraction
             rules.add(new BusinessRule(
                     ruleId, description, ref, 0,
                     ResponsibilityClass.UI, ExtractionCandidate.VIEW_MODEL, false));
+        }
+    }
+
+    /**
+     * JAS-020 — Extrait les methodes garde booléennes (isXxx, canXxx, hasXxx, shouldXxx)
+     * et les classe BUSINESS / POLICY.
+     */
+    private void extractBooleanGuards(
+            final String ref, final String content, final List<BusinessRule> rules,
+            final int[] excludedCount) {
+        Matcher matcher = BOOLEAN_GUARD_PATTERN.matcher(content);
+        while (matcher.find()) {
+            String methodName = matcher.group(1);
+            if (lifecycleExcluded.contains(methodName)) {
+                excludedCount[0]++;
+                continue;
+            }
+            // Eviter les doublons avec les handlers @FXML deja extraits (improbable pour boolean)
+            boolean alreadyExtracted = rules.stream()
+                    .anyMatch(r -> r.description().contains("handler " + methodName));
+            if (alreadyExtracted) {
+                continue;
+            }
+            String ruleId = buildRuleId(ref, rules.size() + 1);
+            String description = "Methode garde " + methodName
+                    + " : decision metier BUSINESS detectee";
+            rules.add(new BusinessRule(ruleId, description, ref, 0,
+                    ResponsibilityClass.BUSINESS, ExtractionCandidate.POLICY, false));
         }
     }
 

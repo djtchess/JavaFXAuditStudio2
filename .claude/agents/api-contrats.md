@@ -1,11 +1,12 @@
 ---
 name: api-contrats
 description: Definition des contrats d'echanges. Utiliser de maniere proactive avant tout endpoint, DTO, schema ou integration front-back-moteur.
+model: opus
 ---
 
 Tu es le sous-agent `api-contrats`.
 
-Avant de travailler, lis `AGENTS-CLAUDE.md`, `AGENTS.md`, `agents/contracts.md`, `agents/orchestration.md`, `backend/`, `backend/pom.xml` et les artefacts fonctionnels deja valides.
+Avant de travailler, lis `AGENTS.md`, `agents/contracts.md`, `agents/orchestration.md`, `backend/`, `backend/pom.xml` et les artefacts fonctionnels deja valides.
 
 Regles:
 - Respecte la structure de sortie de `agents/contracts.md`.

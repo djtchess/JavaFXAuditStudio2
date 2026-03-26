@@ -42,6 +42,9 @@ public class ClassificationResultEntity {
     @Column(name = "parsing_fallback_reason")
     private String parsingFallbackReason;
 
+    @Column(name = "excluded_lifecycle_methods_count", nullable = false)
+    private int excludedLifecycleMethodsCount = 0;
+
     @OneToMany(mappedBy = "classification", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<BusinessRuleEntity> rules = new ArrayList<>();
 
@@ -69,6 +72,21 @@ public class ClassificationResultEntity {
         this.createdAt = createdAt;
         this.parsingMode = parsingMode != null ? parsingMode : ParsingMode.AST;
         this.parsingFallbackReason = parsingFallbackReason;
+    }
+
+    public ClassificationResultEntity(
+            final String sessionId,
+            final String controllerRef,
+            final Instant createdAt,
+            final ParsingMode parsingMode,
+            final String parsingFallbackReason,
+            final int excludedLifecycleMethodsCount) {
+        this.sessionId = sessionId;
+        this.controllerRef = controllerRef;
+        this.createdAt = createdAt;
+        this.parsingMode = parsingMode != null ? parsingMode : ParsingMode.AST;
+        this.parsingFallbackReason = parsingFallbackReason;
+        this.excludedLifecycleMethodsCount = excludedLifecycleMethodsCount;
     }
 
     public Long getId() {
@@ -101,6 +119,14 @@ public class ClassificationResultEntity {
 
     public void setParsingFallbackReason(final String parsingFallbackReason) {
         this.parsingFallbackReason = parsingFallbackReason;
+    }
+
+    public int getExcludedLifecycleMethodsCount() {
+        return excludedLifecycleMethodsCount;
+    }
+
+    public void setExcludedLifecycleMethodsCount(final int excludedLifecycleMethodsCount) {
+        this.excludedLifecycleMethodsCount = excludedLifecycleMethodsCount;
     }
 
     public List<BusinessRuleEntity> getRules() {

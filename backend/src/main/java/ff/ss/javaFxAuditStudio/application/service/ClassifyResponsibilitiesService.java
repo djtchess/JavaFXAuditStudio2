@@ -46,16 +46,22 @@ public final class ClassifyResponsibilitiesService implements ClassifyResponsibi
         List<BusinessRule> allRules = extraction.rules();
         ParsingMode parsingMode = extraction.parsingMode();
         String fallbackReason = extraction.fallbackReason();
+        int excludedCount = extraction.excludedLifecycleMethodsCount();
+
+        if (excludedCount > 0) {
+            log.info("Methodes lifecycle exclues de la classification : {} - ref={}",
+                    excludedCount, controllerRef);
+        }
 
         List<BusinessRule> certain = allRules.stream().filter(rule -> !rule.uncertain()).toList();
         List<BusinessRule> uncertain = allRules.stream().filter(BusinessRule::uncertain).toList();
         ClassificationResult result = new ClassificationResult(
-                controllerRef, certain, uncertain, parsingMode, fallbackReason);
+                controllerRef, certain, uncertain, parsingMode, fallbackReason, excludedCount);
 
         classificationPersistencePort.save(sessionId, result);
 
-        log.debug("Classification terminee - {} regles certaines, {} incertaines, mode={}",
-                certain.size(), uncertain.size(), parsingMode);
+        log.debug("Classification terminee - {} regles certaines, {} incertaines, mode={}, lifecycle_exclus={}",
+                certain.size(), uncertain.size(), parsingMode, excludedCount);
         return result;
     }
 

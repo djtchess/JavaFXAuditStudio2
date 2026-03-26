@@ -22,6 +22,15 @@ public final class UseCaseGenerator implements ArtifactGenerator {
         String className = baseName + "UseCase";
         var sb = new StringBuilder();
         GeneratorUtils.addPackage(sb, pkg);
+        // JAS-008 — hints d'imports pour les types domaine non standards
+        List<String> typeHints = GeneratorUtils.collectTypeHints(rules);
+        if (!typeHints.isEmpty()) {
+            sb.append("// Imports suggeres (a ajuster selon le package reel) :\n");
+            for (String type : typeHints) {
+                sb.append("// import ").append(type).append(";\n");
+            }
+            sb.append("\n");
+        }
         sb.append("/**\n");
         sb.append(" * Port d'entree — intentions utilisateur liees a ").append(baseName).append(".\n");
         sb.append(" */\n");
@@ -32,7 +41,8 @@ public final class UseCaseGenerator implements ArtifactGenerator {
             if (seen.add(method)) {
                 sb.append("    /** ").append(rule.description()).append(" */\n");
                 String returnType = GeneratorUtils.buildReturnType(rule);
-                String params = GeneratorUtils.buildMethodSignature(rule);
+                // JAS-008 — les types JavaFX UI sont exclus du port d'entree domaine
+                String params = GeneratorUtils.buildUseCaseParams(rule);
                 if (!rule.hasSignature()) {
                     sb.append("    ").append(returnType).append(" ").append(method)
                       .append("(").append(params).append("); // TODO: verifier signature\n\n");

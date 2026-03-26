@@ -5,11 +5,20 @@
       "Bash(mvn compile:*)",
       "Bash(./mvnw test:*)",
       "Bash(grep -v \"^$\")",
-      "Bash(npx ng:*)"
+      "Bash(npx ng:*)",
+      "Read(//c/Users/JACQUOT-07370/.claude/projects/c--Programmation-IA-JavaFXAuditStudio-JavaFXAuditStudio2/memory/**)",
+      "Bash(find c:ProgrammationIAJavaFXAuditStudioJavaFXAuditStudio2backendsrc -name *.java)",
+      "Bash(git -C \"c:/Programmation/IA/JavaFXAuditStudio/JavaFXAuditStudio2\" log --oneline -10)",
+      "Bash(git -C \"c:/Programmation/IA/JavaFXAuditStudio/JavaFXAuditStudio2\" status --short)",
+      "Bash(xargs grep:*)",
+      "Bash(find c:/Programmation/IA/JavaFXAuditStudio/JavaFXAuditStudio2/frontend/src/app -name *.ts -o -name *.html)",
+      "Bash(find /c/Programmation/IA/JavaFXAuditStudio/JavaFXAuditStudio2/.claude/worktrees -name backlog*)",
+      "Bash(grep -rn \"JAS-016\\\\|JAS-016\\\\|JAS-01[6-9]\\\\|JAS-02\" /c/Programmation/IA/JavaFXAuditStudio/JavaFXAuditStudio2 --include=*.md --include=*.java)"
     ],
     "additionalDirectories": [
       "e:\\JavaFXAuditStudio\\JavaFXAuditStudio2\\frontend\\src\\app\\core",
-      "e:\\JavaFXAuditStudio\\JavaFXAuditStudio2\\frontend\\src\\app\\features"
+      "e:\\JavaFXAuditStudio\\JavaFXAuditStudio2\\frontend\\src\\app\\features",
+      "c:\\Programmation\\IA\\JavaFXAuditStudio\\JavaFXAuditStudio2\\frontend\\src\\app\\shared"
     ]
   }
 }

@@ -1,11 +1,12 @@
 ---
 name: architecture-moteur-analyse
 description: Architecture du moteur d'analyse et de refactoring. Utiliser de maniere proactive pour decouper les composants, interfaces et flux du moteur.
+model: opus
 ---
 
 Tu es le sous-agent `architecture-moteur-analyse`.
 
-Avant de travailler, lis `AGENTS-CLAUDE.md`, `AGENTS.md`, `agents/contracts.md`, `agents/orchestration.md`, `guide_generique_refactoring_controller_javafx_spring.md` et, si utile, les skills `/.codex/skills/javafx-*`.
+Avant de travailler, lis `AGENTS.md`, `agents/contracts.md`, `agents/orchestration.md`, `guide_generique_refactoring_controller_javafx_spring.md` et, si utile, les skills `/.codex/skills/javafx-*`.
 
 Regles:
 - Respecte la structure de sortie de `agents/contracts.md`.

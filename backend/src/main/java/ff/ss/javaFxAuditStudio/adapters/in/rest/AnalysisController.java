@@ -4,6 +4,11 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -44,6 +49,7 @@ import ff.ss.javaFxAuditStudio.domain.workbench.AnalysisSession;
 import ff.ss.javaFxAuditStudio.domain.workbench.AnalysisStatus;
 import ff.ss.javaFxAuditStudio.domain.workbench.OrchestratedAnalysisResult;
 
+@Tag(name = "Analyse", description = "Sessions d'analyse JavaFX et orchestration du pipeline")
 @RestController
 @RequestMapping("/api/v1/analysis")
 public class AnalysisController {
@@ -97,6 +103,11 @@ public class AnalysisController {
         this.exportArtifactsUseCase = exportArtifactsUseCase;
     }
 
+    @Operation(summary = "Creer une session d'analyse", description = "Soumet des fichiers source JavaFX pour analyse. Cree une session en statut CREATED.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "201", description = "Session creee"),
+        @ApiResponse(responseCode = "400", description = "Requete invalide")
+    })
     @PostMapping("/sessions")
     @ResponseStatus(HttpStatus.CREATED)
     public AnalysisSessionResponse submitSession(@RequestBody final SubmitAnalysisRequest request) {
@@ -118,8 +129,15 @@ public class AnalysisController {
         return analysisSessionResponseMapper.toResponse(session);
     }
 
+    @Operation(summary = "Cartographie FXML", description = "Retourne l'inventaire des composants FXML et les bindings handlers de la session.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Cartographie disponible"),
+        @ApiResponse(responseCode = "404", description = "Session introuvable")
+    })
     @GetMapping("/sessions/{sessionId}/cartography")
-    public CartographyResponse getCartography(@PathVariable final String sessionId) {
+    public CartographyResponse getCartography(
+            @Parameter(name = "sessionId", description = "Identifiant de la session", required = true)
+            @PathVariable final String sessionId) {
         AnalysisSession session = analysisSessionPort.findById(sessionId)
                 .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Session introuvable : " + sessionId));
@@ -127,8 +145,15 @@ public class AnalysisController {
                 cartographyUseCase.handle(sessionId, session.controllerName(), session.sourceSnippetRef()));
     }
 
+    @Operation(summary = "Regles metier classifiees", description = "Retourne la liste des regles metier extraites et leur categorie (USE_CASE, GATEWAY, POLICY, VIEW_MODEL, LIFECYCLE).")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Classification disponible"),
+        @ApiResponse(responseCode = "404", description = "Session introuvable")
+    })
     @GetMapping("/sessions/{sessionId}/classification")
-    public ClassificationResponse getClassification(@PathVariable final String sessionId) {
+    public ClassificationResponse getClassification(
+            @Parameter(name = "sessionId", description = "Identifiant de la session", required = true)
+            @PathVariable final String sessionId) {
         AnalysisSession session = analysisSessionPort.findById(sessionId)
                 .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Session introuvable : " + sessionId));
@@ -136,8 +161,15 @@ public class AnalysisController {
                 classifyResponsibilitiesUseCase.handle(sessionId, session.controllerName()));
     }
 
+    @Operation(summary = "Plan de migration", description = "Retourne le plan de migration par lots et la compilabilite des artefacts.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Plan disponible"),
+        @ApiResponse(responseCode = "404", description = "Session introuvable")
+    })
     @GetMapping("/sessions/{sessionId}/plan")
-    public MigrationPlanResponse getMigrationPlan(@PathVariable final String sessionId) {
+    public MigrationPlanResponse getMigrationPlan(
+            @Parameter(name = "sessionId", description = "Identifiant de la session", required = true)
+            @PathVariable final String sessionId) {
         AnalysisSession session = analysisSessionPort.findById(sessionId)
                 .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Session introuvable : " + sessionId));
@@ -145,8 +177,15 @@ public class AnalysisController {
                 produceMigrationPlanUseCase.handle(sessionId, session.controllerName()));
     }
 
+    @Operation(summary = "Artefacts generes", description = "Retourne les artefacts de code Java generes (UseCase, Gateway, ViewModel, Policy, tests).")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Artefacts disponibles"),
+        @ApiResponse(responseCode = "404", description = "Session introuvable")
+    })
     @GetMapping("/sessions/{sessionId}/artifacts")
-    public ArtifactsResponse getArtifacts(@PathVariable final String sessionId) {
+    public ArtifactsResponse getArtifacts(
+            @Parameter(name = "sessionId", description = "Identifiant de la session", required = true)
+            @PathVariable final String sessionId) {
         AnalysisSession session = analysisSessionPort.findById(sessionId)
                 .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Session introuvable : " + sessionId));
@@ -154,8 +193,15 @@ public class AnalysisController {
                 generateArtifactsUseCase.handle(sessionId, session.controllerName()));
     }
 
+    @Operation(summary = "Rapport de restitution", description = "Retourne le rapport synthetique de l'analyse avec les recommandations.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Rapport disponible"),
+        @ApiResponse(responseCode = "404", description = "Session introuvable")
+    })
     @GetMapping("/sessions/{sessionId}/report")
-    public RestitutionReportResponse getReport(@PathVariable final String sessionId) {
+    public RestitutionReportResponse getReport(
+            @Parameter(name = "sessionId", description = "Identifiant de la session", required = true)
+            @PathVariable final String sessionId) {
         AnalysisSession session = analysisSessionPort.findById(sessionId)
                 .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Session introuvable : " + sessionId));
@@ -163,8 +209,15 @@ public class AnalysisController {
                 produceRestitutionUseCase.handle(sessionId, session.controllerName()));
     }
 
+    @Operation(summary = "Exporter les artefacts", description = "Exporte les fichiers Java generes dans un repertoire cible.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Export effectue"),
+        @ApiResponse(responseCode = "400", description = "Requete invalide"),
+        @ApiResponse(responseCode = "404", description = "Session introuvable")
+    })
     @PostMapping("/sessions/{sessionId}/artifacts/export")
     public ExportArtifactsResponse exportArtifacts(
+            @Parameter(name = "sessionId", description = "Identifiant de la session", required = true)
             @PathVariable final String sessionId,
             @RequestBody final ExportArtifactsRequest request) {
         ExportResult result = exportArtifactsUseCase.export(sessionId, request.targetDirectory());
@@ -181,8 +234,15 @@ public class AnalysisController {
      *       (seul {@code CREATED} est accepte).</li>
      * </ul>
      */
+    @Operation(summary = "Executer le pipeline complet", description = "Lance l'orchestration complete : cartographie, classification, generation et restitution. Retourne 202 si la session est deja en cours.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Analyse terminee"),
+        @ApiResponse(responseCode = "404", description = "Session introuvable"),
+        @ApiResponse(responseCode = "409", description = "Session deja en cours ou terminee")
+    })
     @PostMapping("/sessions/{sessionId}/run")
     public ResponseEntity<OrchestratedAnalysisResultResponse> runPipeline(
+            @Parameter(name = "sessionId", description = "Identifiant de la session", required = true)
             @PathVariable final String sessionId) {
 
         Optional<AnalysisSession> sessionOpt = analysisSessionPort.findById(sessionId);

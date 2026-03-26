@@ -1,0 +1,146 @@
+{
+  "version": "1.0",
+  "description": "Corpus sanitise JAS-021 — aucun terme metier reel",
+  "handlers": [
+    {
+      "id": "h-001",
+      "controllerRef": "Component_1",
+      "sanitizedSource": "@FXML void onAction1() { component1.save(formData); }",
+      "taskType": "NAMING",
+      "expectedSuggestion": "SaveDataUseCase"
+    },
+    {
+      "id": "h-002",
+      "controllerRef": "Component_2",
+      "sanitizedSource": "@FXML void onAction2() { component2.delete(selectedItem); }",
+      "taskType": "NAMING",
+      "expectedSuggestion": "DeleteItemUseCase"
+    },
+    {
+      "id": "h-003",
+      "controllerRef": "Component_3",
+      "sanitizedSource": "@FXML void onAction3() { component3.search(criteria); }",
+      "taskType": "NAMING",
+      "expectedSuggestion": "SearchItemsUseCase"
+    },
+    {
+      "id": "h-004",
+      "controllerRef": "Component_4",
+      "sanitizedSource": "@FXML void onAction4() { component4.validate(form); }",
+      "taskType": "NAMING",
+      "expectedSuggestion": "ValidateFormUseCase"
+    },
+    {
+      "id": "h-005",
+      "controllerRef": "Component_5",
+      "sanitizedSource": "@FXML void onAction5() { component5.export(data); }",
+      "taskType": "NAMING",
+      "expectedSuggestion": "ExportDataUseCase"
+    },
+    {
+      "id": "h-006",
+      "controllerRef": "Component_6",
+      "sanitizedSource": "@FXML void onAction6() { component6.load(id); }",
+      "taskType": "NAMING",
+      "expectedSuggestion": "LoadItemUseCase"
+    },
+    {
+      "id": "h-007",
+      "controllerRef": "Component_7",
+      "sanitizedSource": "@FXML void onAction7() { component7.submit(request); }",
+      "taskType": "NAMING",
+      "expectedSuggestion": "SubmitRequestUseCase"
+    },
+    {
+      "id": "h-008",
+      "controllerRef": "Component_8",
+      "sanitizedSource": "@FXML void onAction8() { component8.cancel(task); }",
+      "taskType": "NAMING",
+      "expectedSuggestion": "CancelTaskUseCase"
+    },
+    {
+      "id": "h-009",
+      "controllerRef": "Component_9",
+      "sanitizedSource": "@FXML void onAction9() { component9.refresh(); }",
+      "taskType": "NAMING",
+      "expectedSuggestion": "RefreshDataUseCase"
+    },
+    {
+      "id": "h-010",
+      "controllerRef": "Component_10",
+      "sanitizedSource": "@FXML void onAction10() { component10.print(document); }",
+      "taskType": "NAMING",
+      "expectedSuggestion": "PrintDocumentUseCase"
+    },
+    {
+      "id": "h-011",
+      "controllerRef": "Component_11",
+      "sanitizedSource": "@FXML void onAction11() { labelResult.setText(component11.compute()); }",
+      "taskType": "DESCRIPTION",
+      "expectedSuggestion": "Updates result label with computed value"
+    },
+    {
+      "id": "h-012",
+      "controllerRef": "Component_12",
+      "sanitizedSource": "@FXML void onAction12() { tableView.setItems(component12.list()); }",
+      "taskType": "DESCRIPTION",
+      "expectedSuggestion": "Loads and displays list in table view"
+    },
+    {
+      "id": "h-013",
+      "controllerRef": "Component_13",
+      "sanitizedSource": "@FXML void onAction13() { if (component13.isAllowed()) { panel.setVisible(true); } }",
+      "taskType": "DESCRIPTION",
+      "expectedSuggestion": "Shows panel when user is authorized"
+    },
+    {
+      "id": "h-014",
+      "controllerRef": "Component_14",
+      "sanitizedSource": "@FXML void onAction14() { component14.archive(selectedItems); }",
+      "taskType": "NAMING",
+      "expectedSuggestion": "ArchiveItemsUseCase"
+    },
+    {
+      "id": "h-015",
+      "controllerRef": "Component_15",
+      "sanitizedSource": "@FXML void onAction15() { component15.approve(workflow); }",
+      "taskType": "NAMING",
+      "expectedSuggestion": "ApproveWorkflowUseCase"
+    },
+    {
+      "id": "h-016",
+      "controllerRef": "Component_16",
+      "sanitizedSource": "@FXML void onAction16() { component16.reject(workflow); }",
+      "taskType": "NAMING",
+      "expectedSuggestion": "RejectWorkflowUseCase"
+    },
+    {
+      "id": "h-017",
+      "controllerRef": "Component_17",
+      "sanitizedSource": "@FXML void onAction17() { component17.open(file); }",
+      "taskType": "NAMING",
+      "expectedSuggestion": "OpenFileUseCase"
+    },
+    {
+      "id": "h-018",
+      "controllerRef": "Component_18",
+      "sanitizedSource": "@FXML void onAction18() { component18.close(); }",
+      "taskType": "NAMING",
+      "expectedSuggestion": "CloseSessionUseCase"
+    },
+    {
+      "id": "h-019",
+      "controllerRef": "Component_19",
+      "sanitizedSource": "@FXML void onAction19() { component19.reset(form); }",
+      "taskType": "NAMING",
+      "expectedSuggestion": "ResetFormUseCase"
+    },
+    {
+      "id": "h-020",
+      "controllerRef": "Component_20",
+      "sanitizedSource": "@FXML void onAction20() { component20.generate(report); }",
+      "taskType": "NAMING",
+      "expectedSuggestion": "GenerateReportUseCase"
+    }
+  ]
+}

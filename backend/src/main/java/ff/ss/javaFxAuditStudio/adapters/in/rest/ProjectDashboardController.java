@@ -3,6 +3,11 @@ package ff.ss.javaFxAuditStudio.adapters.in.rest;
 import ff.ss.javaFxAuditStudio.adapters.in.rest.dto.ProjectDashboardResponse;
 import ff.ss.javaFxAuditStudio.application.ports.in.GetProjectDashboardUseCase;
 import ff.ss.javaFxAuditStudio.domain.workbench.ProjectDashboard;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +23,7 @@ import java.util.List;
  * GET /api/v1/projects/{projectId}/dashboard
  * GET /api/v1/projects
  */
+@Tag(name = "Tableau de bord")
 @RestController
 @RequestMapping("/api/v1/projects")
 public class ProjectDashboardController {
@@ -30,8 +36,14 @@ public class ProjectDashboardController {
         this.useCase = useCase;
     }
 
+    @Operation(summary = "Tableau de bord projet", description = "Retourne les metriques de progression pour un projet : nombre de sessions, repartition par statut, regles par categorie, taux de reclassification.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Dashboard disponible"),
+        @ApiResponse(responseCode = "404", description = "Projet introuvable")
+    })
     @GetMapping("/{projectId}/dashboard")
     public ResponseEntity<ProjectDashboardResponse> getDashboard(
+            @Parameter(name = "projectId", description = "Identifiant du projet (nom du controller)", required = true)
             @PathVariable final String projectId) {
         log.debug("[dashboard] GET /api/v1/projects/{}/dashboard", projectId);
         return useCase.get(projectId)
@@ -40,6 +52,10 @@ public class ProjectDashboardController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @Operation(summary = "Lister les projets", description = "Retourne la liste des identifiants de projets connus.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Liste des projets")
+    })
     @GetMapping
     public ResponseEntity<List<String>> listProjects() {
         log.debug("[dashboard] GET /api/v1/projects");

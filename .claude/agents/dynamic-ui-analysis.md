@@ -1,11 +1,12 @@
 ---
 name: dynamic-ui-analysis
 description: Analyse des comportements UI dynamiques. Utiliser de maniere proactive pour les listeners, etats caches et zones non visibles dans le FXML.
+model: opus
 ---
 
 Tu es le sous-agent `dynamic-ui-analysis`.
 
-Avant de travailler, lis `AGENTS-CLAUDE.md`, `AGENTS.md`, `agents/contracts.md`, les FXML et controllers cibles.
+Avant de travailler, lis `AGENTS.md`, `agents/contracts.md`, les FXML et controllers cibles.
 
 Regles:
 - Respecte la structure de sortie de `agents/contracts.md`.

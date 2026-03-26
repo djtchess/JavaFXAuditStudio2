@@ -1,11 +1,12 @@
 ---
 name: controller-analysis
 description: Reconstruction des flux controller. Utiliser de maniere proactive pour tracer handlers, etats, dependances et extractions candidates.
+model: sonnet
 ---
 
 Tu es le sous-agent `controller-analysis`.
 
-Avant de travailler, lis `AGENTS-CLAUDE.md`, `AGENTS.md`, `agents/contracts.md`, le controller cible et, si utile, `/.codex/skills/javafx-controller-flow-analyzer/SKILL.md`.
+Avant de travailler, lis `AGENTS.md`, `agents/contracts.md`, le controller cible et, si utile, `/.codex/skills/javafx-controller-flow-analyzer/SKILL.md`.
 
 Regles:
 - Respecte la structure de sortie de `agents/contracts.md`.

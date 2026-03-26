@@ -48,14 +48,14 @@ public final class JavaParserRuleExtractionAdapter implements RuleExtractionPort
 
     public JavaParserRuleExtractionAdapter(final RuleExtractionPort fallback) {
         this(fallback, Set.of(),
-                new AnalysisProperties.ClassificationPatterns(null, null, null, null, null));
+                new AnalysisProperties.ClassificationPatterns(null, null, null, null, null, null));
     }
 
     public JavaParserRuleExtractionAdapter(
             final RuleExtractionPort fallback,
             final Set<String> lifecycleExcluded) {
         this(fallback, lifecycleExcluded,
-                new AnalysisProperties.ClassificationPatterns(null, null, null, null, null));
+                new AnalysisProperties.ClassificationPatterns(null, null, null, null, null, null));
     }
 
     public JavaParserRuleExtractionAdapter(
@@ -75,8 +75,9 @@ public final class JavaParserRuleExtractionAdapter implements RuleExtractionPort
         String ref = (controllerRef == null) ? UNKNOWN_REF : controllerRef;
         try {
             CompilationUnit cu = StaticJavaParser.parse(javaContent);
-            List<BusinessRule> rules = extractFromAst(ref, cu);
-            return ExtractionResult.ast(rules);
+            int[] excludedCount = {0};
+            List<BusinessRule> rules = extractFromAst(ref, cu, excludedCount);
+            return ExtractionResult.ast(rules, excludedCount[0]);
         } catch (Exception e) {
             String causeMessage = buildCauseMessage(ref, e);
             return ExtractionResult.regexFallback(
@@ -104,7 +105,8 @@ public final class JavaParserRuleExtractionAdapter implements RuleExtractionPort
         return e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
     }
 
-    private List<BusinessRule> extractFromAst(final String ref, final CompilationUnit cu) {
+    private List<BusinessRule> extractFromAst(
+            final String ref, final CompilationUnit cu, final int[] excludedCount) {
         List<BusinessRule> rules = new ArrayList<>();
         List<String> injectedTypes = collectInjectedTypes(cu);
         addFxmlFieldRules(ref, cu, rules);
@@ -112,10 +114,14 @@ public final class JavaParserRuleExtractionAdapter implements RuleExtractionPort
         for (MethodDeclaration method : methods) {
             if (lifecycleExcluded.contains(method.getNameAsString())) {
                 log.debug("Methode lifecycle ignoree - ref={}, methode={}", ref, method.getNameAsString());
+                excludedCount[0]++;
                 continue;
             }
             BusinessRule rule = analyzeMethod(ref, method, injectedTypes, rules.size() + 1);
             rules.add(rule);
+        }
+        if (excludedCount[0] > 0) {
+            log.info("{} methode(s) lifecycle exclue(s) de l'analyse - ref={}", excludedCount[0], ref);
         }
         return List.copyOf(rules);
     }
@@ -164,7 +170,12 @@ public final class JavaParserRuleExtractionAdapter implements RuleExtractionPort
         int complexity = computeCyclomaticComplexity(method);
         boolean isFxml = method.getAnnotationByName("FXML").isPresent();
         String bodyText = method.getBody().map(Object::toString).orElse("");
-        ResponsibilityClass rc = classifyMethod(isFxml, bodyText, injectedTypes);
+        ResponsibilityClass rc;
+        if (isGuardMethod(method)) {
+            rc = ResponsibilityClass.BUSINESS;
+        } else {
+            rc = classifyMethod(isFxml, bodyText, injectedTypes);
+        }
         ExtractionCandidate ec = candidateFor(rc);
         boolean uncertain = (rc == ResponsibilityClass.UNKNOWN);
         String description = buildDescription(methodName, method, isFxml, rc, complexity);
@@ -281,6 +292,27 @@ public final class JavaParserRuleExtractionAdapter implements RuleExtractionPort
         return false;
     }
 
+    /**
+     * JAS-020 — Detecte si une methode est une methode garde : retour boolean ET nom
+     * commencant par un prefixe de guard (is, can, has, should par defaut).
+     * Ces methodes representent des decisions metier et vont vers la Policy.
+     */
+    private boolean isGuardMethod(final MethodDeclaration method) {
+        String returnType = method.getTypeAsString();
+        if (!"boolean".equals(returnType) && !"Boolean".equals(returnType)) {
+            return false;
+        }
+        String name = method.getNameAsString();
+        for (String prefix : patterns.effectivePolicyGuardPrefixes()) {
+            if (name.length() > prefix.length()
+                    && name.startsWith(prefix)
+                    && Character.isUpperCase(name.charAt(prefix.length()))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private int computeCyclomaticComplexity(final MethodDeclaration method) {
         int complexity = 1;
         complexity += method.findAll(IfStmt.class).size();
@@ -323,6 +355,18 @@ public final class JavaParserRuleExtractionAdapter implements RuleExtractionPort
             final boolean isFxml,
             final ResponsibilityClass rc,
             final int complexity) {
+        // JAS-020 : format special pour les gardes booléennes
+        String returnTypeStr = method.getTypeAsString();
+        if ("boolean".equals(returnTypeStr) || "Boolean".equals(returnTypeStr)) {
+            for (String prefix : patterns.effectivePolicyGuardPrefixes()) {
+                if (methodName.length() > prefix.length()
+                        && methodName.startsWith(prefix)
+                        && Character.isUpperCase(methodName.charAt(prefix.length()))) {
+                    return "Methode garde " + methodName + " : decision metier BUSINESS detectee [complexite=" + complexity + "]";
+                }
+            }
+        }
+
         // Format "Methode handler X" pour les handlers @FXML — aligne sur le format
         // du fallback regex et les patterns de methodNameFromRule() du generateur.
         if (isFxml) {

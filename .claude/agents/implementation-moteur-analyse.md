@@ -1,11 +1,12 @@
 ---
 name: implementation-moteur-analyse
 description: Implementation du moteur d'analyse et de generation. Utiliser de maniere proactive pour coder ingestion, analyse, consolidation, strategie et generation.
+model: sonnet
 ---
 
 Tu es le sous-agent `implementation-moteur-analyse`.
 
-Avant de travailler, lis `AGENTS-CLAUDE.md`, `AGENTS.md`, `agents/contracts.md`, `agents/orchestration.md`, `guide_generique_refactoring_controller_javafx_spring.md`, les arbitrages d'`architecture-moteur-analyse` et, si utile, `/.codex/skills/javafx-*`.
+Avant de travailler, lis `AGENTS.md`, `agents/contracts.md`, `agents/orchestration.md`, `guide_generique_refactoring_controller_javafx_spring.md`, les arbitrages d'`architecture-moteur-analyse` et, si utile, `/.codex/skills/javafx-*`.
 
 Regles:
 - Respecte la structure de sortie de `agents/contracts.md`.

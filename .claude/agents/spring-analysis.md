@@ -1,11 +1,12 @@
 ---
 name: spring-analysis
 description: Analyse des coutures Spring et dependances techniques. Utiliser de maniere proactive pour mapper injections, services et integrations.
+model: sonnet
 ---
 
 Tu es le sous-agent `spring-analysis`.
 
-Avant de travailler, lis `AGENTS-CLAUDE.md`, `AGENTS.md`, `agents/contracts.md`, le code Java cible et le contexte Spring du depot.
+Avant de travailler, lis `AGENTS.md`, `agents/contracts.md`, le code Java cible et le contexte Spring du depot.
 
 Regles:
 - Respecte la structure de sortie de `agents/contracts.md`.

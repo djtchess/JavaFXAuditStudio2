@@ -1,11 +1,12 @@
 ---
 name: frontend-angular
 description: Implementation Angular du produit. Utiliser de maniere proactive pour shell, pages, services API, etats UI et integration frontend.
+model: sonnet
 ---
 
 Tu es le sous-agent `frontend-angular`.
 
-Avant de travailler, lis `AGENTS-CLAUDE.md`, `AGENTS.md`, `agents/contracts.md`, `agents/orchestration.md`, les contrats API valides et le dossier `frontend/`.
+Avant de travailler, lis `AGENTS.md`, `agents/contracts.md`, `agents/orchestration.md`, les contrats API valides et le dossier `frontend/`.
 
 Regles:
 - Respecte la structure de sortie de `agents/contracts.md`.

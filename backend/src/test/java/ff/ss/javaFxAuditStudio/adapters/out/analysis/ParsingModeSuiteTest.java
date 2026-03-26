@@ -20,7 +20,7 @@ class ParsingModeSuiteTest {
 
     /** Patterns par defaut : tous null => les methodes effective*() retournent leurs valeurs par defaut. */
     private static final AnalysisProperties.ClassificationPatterns DEFAULT_PATTERNS =
-            new AnalysisProperties.ClassificationPatterns(null, null, null, null, null);
+            new AnalysisProperties.ClassificationPatterns(null, null, null, null, null, null);
 
     private static String loadSample(final String name) throws IOException, URISyntaxException {
         var url = ParsingModeSuiteTest.class.getClassLoader().getResource("samples/" + name);

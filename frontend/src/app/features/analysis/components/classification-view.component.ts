@@ -7,7 +7,7 @@ import {
   signal,
 } from '@angular/core';
 
-import { ClassificationResponse, BusinessRuleDto, ReclassifiedRuleResponse } from '../../../core/models/analysis.model';
+import { ClassificationResponse, BusinessRuleDto, MethodParameterDto, ReclassifiedRuleResponse } from '../../../core/models/analysis.model';
 import { ClassificationBadgeComponent } from '../../../shared/components/classification-badge.component';
 import { ReclassifyModalComponent } from './reclassify-modal.component';
 import { ReclassificationHistoryPanelComponent } from './reclassification-history-panel.component';
@@ -192,8 +192,85 @@ const RESPONSIBILITY_COLORS: Record<string, string> = {
     .history-wrapper {
       margin-top: 0.5rem;
     }
+
+    .regex-banner {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.7rem 1rem;
+      margin-bottom: 1rem;
+      background: #fff7ed;
+      border: 1px solid #f97316;
+      border-radius: 10px;
+      color: #9a3412;
+      font-size: 0.88rem;
+      font-weight: 500;
+    }
+
+    .banner-icon { font-size: 1.1rem; }
+
+    .banner-reason { color: #b45309; font-style: italic; }
+
+    .metric-chip {
+      display: inline-block;
+      padding: 0.2rem 0.55rem;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+
+    .lifecycle-chip {
+      background: rgba(245, 158, 11, 0.1);
+      color: #92400e;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .confidence-badge {
+      display: inline-block;
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+
+    .confidence-badge.low {
+      background: #fef2f2;
+      border: 1px solid #fca5a5;
+      color: #991b1b;
+    }
+
+    .method-signature {
+      display: block;
+      font-family: monospace;
+      font-size: 0.78rem;
+      color: var(--slate);
+      background: rgba(18, 35, 56, 0.04);
+      border-radius: 6px;
+      padding: 0.18rem 0.45rem;
+      margin-top: 0.25rem;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .unknown-hint {
+      font-family: sans-serif;
+      font-size: 0.72rem;
+      color: #9ca3af;
+      margin-left: 0.35rem;
+      font-style: italic;
+    }
   `,
   template: `
+    @if (isRegexFallback()) {
+      <div class="regex-banner">
+        <span class="banner-icon">&#9888;</span>
+        Analyse en mode regex — précision réduite
+        @if (data().parsingFallbackReason) {
+          <span class="banner-reason">({{ data().parsingFallbackReason }})</span>
+        }
+      </div>
+    }
+
     <div class="summary-bar">
       @for (entry of classCounts(); track entry.className) {
         <span
@@ -208,6 +285,11 @@ const RESPONSIBILITY_COLORS: Record<string, string> = {
       @if (data().uncertainCount > 0) {
         <span class="uncertain-badge">{{ data().uncertainCount }} incertaines</span>
       }
+      @if (data().excludedLifecycleMethodsCount > 0) {
+        <span class="metric-chip lifecycle-chip">
+          {{ data().excludedLifecycleMethodsCount }} lifecycle exclus
+        </span>
+      }
     </div>
 
     @if (filteredRules().length === 0) {
@@ -217,7 +299,17 @@ const RESPONSIBILITY_COLORS: Record<string, string> = {
         @for (rule of filteredRules(); track rule.ruleId) {
           <div class="rule-row">
             <span class="rule-id">{{ rule.ruleId }}</span>
-            <span class="rule-desc">{{ rule.description }}</span>
+            <span class="rule-desc">
+              {{ rule.description }}
+              @if (rule.signature) {
+                <code class="method-signature">
+                  {{ rule.signature.returnType }} ({{ formatParams(rule.signature.parameters) }})
+                  @if (rule.signature.hasUnknowns) {
+                    <span class="unknown-hint">types partiels</span>
+                  }
+                </code>
+              }
+            </span>
             <div class="rule-badges">
               <jas-classification-badge
                 [responsibilityClass]="rule.responsibilityClass"
@@ -230,6 +322,9 @@ const RESPONSIBILITY_COLORS: Record<string, string> = {
               }
               @if (isReclassified(rule.ruleId)) {
                 <span class="mini-badge modified-badge">Modifie</span>
+              }
+              @if (isRegexFallback()) {
+                <span class="confidence-badge low">Faible</span>
               }
             </div>
             <div class="rule-actions">
@@ -281,6 +376,10 @@ export class ClassificationViewComponent {
   readonly data = input.required<ClassificationResponse>();
   readonly sessionId = input.required<string>();
 
+  readonly isRegexFallback = computed(() =>
+    this.data().parsingMode === 'REGEX_FALLBACK'
+  );
+
   protected readonly filterBy = signal<string | null>(null);
   protected readonly openModalForRuleId = signal<string | null>(null);
   protected readonly openHistoryForRuleId = signal<string | null>(null);
@@ -310,6 +409,10 @@ export class ClassificationViewComponent {
     }
     return this.localRules().filter(r => r.responsibilityClass === filter);
   });
+
+  protected formatParams(params: MethodParameterDto[]): string {
+    return params.map(p => `${p.type} ${p.name}`).join(', ');
+  }
 
   protected getColor(responsibilityClass: string): string {
     return RESPONSIBILITY_COLORS[responsibilityClass] ?? RESPONSIBILITY_COLORS['UNKNOWN'];

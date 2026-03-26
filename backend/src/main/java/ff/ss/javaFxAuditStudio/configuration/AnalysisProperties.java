@@ -34,7 +34,8 @@ public record AnalysisProperties(
             List<String> applicationKeywords,
             List<String> businessKeywords,
             List<String> technicalKeywords,
-            List<String> serviceCallSuffixes) {
+            List<String> serviceCallSuffixes,
+            List<String> policyGuardPrefixes) {
 
         /** Retourne les mots-cles UI ou une liste par defaut si null. */
         public List<String> effectiveUiKeywords() {
@@ -75,6 +76,12 @@ public record AnalysisProperties(
                 "Processor.", "processor.", "Executor.", "executor.", "Calculateur.", "calculateur.",
                 "Gestionnaire.", "gestionnaire.", "Moteur.", "moteur."
             );
+        }
+
+        /** JAS-020 — Prefixes de methodes garde indiquant une decision metier (Policy). */
+        public List<String> effectivePolicyGuardPrefixes() {
+            return policyGuardPrefixes != null ? policyGuardPrefixes
+                    : List.of("is", "can", "has", "should");
         }
     }
 }

@@ -16,6 +16,7 @@ import { ClassificationViewComponent } from './components/classification-view.co
 import { MigrationPlanViewComponent } from './components/migration-plan-view.component';
 import { ArtifactsViewComponent } from './components/artifacts-view.component';
 import { ReportViewComponent } from './components/report-view.component';
+import { AiEnrichmentViewComponent } from './components/ai-enrichment-view.component';
 
 interface StepState<T> {
   isLoading: boolean;
@@ -35,6 +36,7 @@ function emptyStep<T>(): StepState<T> {
     MigrationPlanViewComponent,
     ArtifactsViewComponent,
     ReportViewComponent,
+    AiEnrichmentViewComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
@@ -424,6 +426,16 @@ function emptyStep<T>(): StepState<T> {
               }
             </div>
           }
+        </section>
+
+        <!-- Analyse IA -->
+        <section class="step-card">
+          <div class="step-header">
+            <h2>Analyse IA</h2>
+          </div>
+          <div class="step-body">
+            <jas-ai-enrichment-view [sessionId]="sessionId" />
+          </div>
         </section>
 
       </div>

@@ -9,12 +9,13 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DatePipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { interval } from 'rxjs';
-import { switchMap } from 'rxjs/operators';
 
 import { ProjectApiService } from '../../core/services/project-api.service';
 import { ProjectDashboardResponse } from '../../core/models/analysis.model';
 import { CategoryBarChartComponent } from '../../shared/components/category-bar-chart.component';
+import { MigrationScoreWidgetComponent } from '../../shared/components/migration-score-widget.component';
 
 /**
  * Page dashboard de progression de migration par projet.
@@ -24,7 +25,7 @@ import { CategoryBarChartComponent } from '../../shared/components/category-bar-
 @Component({
   selector: 'jas-project-dashboard',
   standalone: true,
-  imports: [DatePipe, CategoryBarChartComponent],
+  imports: [DatePipe, FormsModule, CategoryBarChartComponent, MigrationScoreWidgetComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     .pd-container {
@@ -187,6 +188,46 @@ import { CategoryBarChartComponent } from '../../shared/components/category-bar-
       font-weight: 600;
       margin-bottom: 0.5rem;
     }
+
+    .pd-session-input-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+
+    .pd-session-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--slate, #1e293b);
+      white-space: nowrap;
+    }
+
+    .pd-session-input {
+      flex: 1;
+      min-width: 220px;
+      max-width: 400px;
+      padding: 0.45rem 0.85rem;
+      border: 1.5px solid var(--line, #e2e8f0);
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-family: monospace;
+      color: var(--slate, #1e293b);
+      background: white;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .pd-session-input:focus {
+      border-color: var(--slate, #1e293b);
+    }
+
+    .pd-session-hint {
+      font-size: 0.78rem;
+      color: var(--ink-soft, #94a3b8);
+      font-style: italic;
+    }
   `,
   template: `
     <div class="pd-container">
@@ -266,6 +307,27 @@ import { CategoryBarChartComponent } from '../../shared/components/category-bar-
             </ol>
           </div>
         }
+
+        <div class="pd-section">
+          <h2 class="pd-section-title">Score de migration</h2>
+          <div class="pd-session-input-row">
+            <label class="pd-session-label" for="pd-session-id-input">Session :</label>
+            <input
+              id="pd-session-id-input"
+              class="pd-session-input"
+              type="text"
+              placeholder="Identifiant de session (ex: abc-123)"
+              [ngModel]="reviewSessionId()"
+              (ngModelChange)="reviewSessionId.set($event)"
+            />
+            @if (!reviewSessionId()) {
+              <span class="pd-session-hint">Entrez un identifiant de session pour lancer la revue</span>
+            }
+          </div>
+          @if (reviewSessionId()) {
+            <jas-migration-score-widget [sessionId]="reviewSessionId()" />
+          }
+        </div>
       }
     </div>
   `,
@@ -280,6 +342,7 @@ export class ProjectDashboardComponent implements OnInit {
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
   readonly lastRefreshed = signal<Date | null>(null);
+  readonly reviewSessionId = signal<string>('');
 
   constructor() {
     effect(() => {

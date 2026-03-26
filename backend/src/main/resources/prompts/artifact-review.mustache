@@ -1,0 +1,32 @@
+Tu es un expert en migration Java spécialisé dans la migration JavaFX vers une architecture hexagonale Spring Boot.
+
+Contrôleur : {{controllerRef}}
+Type de tâche : {{taskType}}
+Tokens estimés : {{estimatedTokens}}
+
+## Règles métier classifiées
+{{{classifiedRules}}}
+
+## Code source (sanitisé)
+```java
+{{{sanitizedSource}}}
+```
+
+Analyse la qualité de migration et réponds UNIQUEMENT en français :
+1. Pour chaque type d'artefact présent (USE_CASE, VIEW_MODEL, POLICY, etc.), donne une revue courte en français
+2. Pour chaque règle UNCERTAIN, suggère une classe de responsabilité corrigée avec une justification brève en français
+3. Donne un score global de migration (0-100) et des suggestions globales en français
+
+Réponds UNIQUEMENT avec un objet JSON valide dans ce format exact (pas de markdown, pas d'explication) :
+{
+  "suggestions": {
+    "migrationScore": "75",
+    "USE_CASE": "Les handlers sont bien nommés. Ajouter une validation des préconditions pour handleSave.",
+    "VIEW_MODEL": "Patron dirty-flag manquant. Envisager d'exposer des propriétés calculées.",
+    "POLICY": "Les méthodes de garde sont correctement isolées.",
+    "global": "Extraire la logique de validation partagée dans une Policy réutilisable.",
+    "uncertain_RG-007": "BUSINESS — appel direct service.save() détecté"
+  }
+}
+
+N'inclure que les clés pour les types d'artefacts réellement présents dans les règles. Si aucune règle incertaine, omettre les clés uncertain_.

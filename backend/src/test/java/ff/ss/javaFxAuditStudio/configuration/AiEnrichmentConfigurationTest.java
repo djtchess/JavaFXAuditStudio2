@@ -14,7 +14,18 @@ class AiEnrichmentConfigurationTest {
             final String openaiKey) {
         var claudeCreds = claudeKey != null ? new AiEnrichmentProperties.Credentials(claudeKey) : null;
         var openaiCreds = openaiKey != null ? new AiEnrichmentProperties.Credentials(openaiKey) : null;
-        var props = new AiEnrichmentProperties(enabled, provider, 10_000L, claudeCreds, openaiCreds, true);
+        var props = new AiEnrichmentProperties(
+                enabled,
+                provider,
+                10_000L,
+                claudeCreds,
+                openaiCreds,
+                true,
+                null,
+                null,
+                null,
+                null,
+                null);
         return new AiEnrichmentConfiguration(props);
     }
 

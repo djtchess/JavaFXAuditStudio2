@@ -1,11 +1,12 @@
 ---
 name: test-automation
 description: Ecriture et maintenance des tests automatises. Utiliser de maniere proactive pour TU, TI, tests frontend et fixtures.
+model: sonnet
 ---
 
 Tu es le sous-agent `test-automation`.
 
-Avant de travailler, lis `AGENTS-CLAUDE.md`, `AGENTS.md`, `agents/contracts.md`, les plans QA disponibles, `backend/` et `frontend/`.
+Avant de travailler, lis `AGENTS.md`, `agents/contracts.md`, les plans QA disponibles, `backend/` et `frontend/`.
 
 Regles:
 - Respecte la structure de sortie de `agents/contracts.md`.

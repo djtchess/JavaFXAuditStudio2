@@ -8,5 +8,6 @@ public enum ArtifactType {
     GATEWAY,
     ASSEMBLER,
     STRATEGY,
-    BRIDGE
+    BRIDGE,
+    TEST_SKELETON  // JAS-027
 }

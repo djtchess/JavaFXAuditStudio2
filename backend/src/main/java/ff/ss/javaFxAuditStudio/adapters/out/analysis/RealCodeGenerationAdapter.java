@@ -7,6 +7,7 @@ import ff.ss.javaFxAuditStudio.adapters.out.analysis.generators.GeneratorUtils;
 import ff.ss.javaFxAuditStudio.adapters.out.analysis.generators.PolicyGenerator;
 import ff.ss.javaFxAuditStudio.adapters.out.analysis.generators.SlimControllerGenerator;
 import ff.ss.javaFxAuditStudio.adapters.out.analysis.generators.StrategyArtifactGenerator;
+import ff.ss.javaFxAuditStudio.adapters.out.analysis.generators.TestSkeletonGenerator;
 import ff.ss.javaFxAuditStudio.adapters.out.analysis.generators.UseCaseGenerator;
 import ff.ss.javaFxAuditStudio.adapters.out.analysis.generators.ViewModelGenerator;
 import ff.ss.javaFxAuditStudio.application.generation.ArtifactGenerator;
@@ -41,7 +42,9 @@ public final class RealCodeGenerationAdapter implements CodeGenerationPort {
     private final AssemblerGenerator assemblerGenerator;
     private final StrategyArtifactGenerator strategyArtifactGenerator;
     private final BridgeGenerator bridgeGenerator;
+    private final TestSkeletonGenerator testSkeletonGenerator;
     private final ArtifactCompilabilityValidator compilabilityValidator;
+    private final ImportDeduplicator importDeduplicator;
 
     /**
      * Constructeur de compatibilite pour les tests unitaires hors contexte Spring.
@@ -56,7 +59,9 @@ public final class RealCodeGenerationAdapter implements CodeGenerationPort {
         this.assemblerGenerator = new AssemblerGenerator();
         this.strategyArtifactGenerator = new StrategyArtifactGenerator();
         this.bridgeGenerator = new BridgeGenerator();
+        this.testSkeletonGenerator = new TestSkeletonGenerator();
         this.compilabilityValidator = new ArtifactCompilabilityValidator();
+        this.importDeduplicator = new ImportDeduplicator();
     }
 
     /**
@@ -74,7 +79,9 @@ public final class RealCodeGenerationAdapter implements CodeGenerationPort {
         this.assemblerGenerator = extractGenerator(generators, AssemblerGenerator.class);
         this.strategyArtifactGenerator = extractGenerator(generators, StrategyArtifactGenerator.class);
         this.bridgeGenerator = extractGenerator(generators, BridgeGenerator.class);
+        this.testSkeletonGenerator = extractGenerator(generators, TestSkeletonGenerator.class);
         this.compilabilityValidator = new ArtifactCompilabilityValidator();
+        this.importDeduplicator = new ImportDeduplicator();
     }
 
     private static <T extends ArtifactGenerator> T extractGenerator(
@@ -111,6 +118,7 @@ public final class RealCodeGenerationAdapter implements CodeGenerationPort {
         addAssemblerIfPresent(artifacts, baseName, pkg, grouped);
         addStrategyIfPresent(artifacts, baseName, pkg, strategyRules);
         addBridgeIfNeeded(artifacts, baseName, pkg, classifiedRules);
+        addTestSkeletonIfPresent(artifacts, baseName, pkg, classifiedRules);
 
         return List.copyOf(artifacts);
     }
@@ -123,7 +131,9 @@ public final class RealCodeGenerationAdapter implements CodeGenerationPort {
     }
 
     private void addValidated(final List<CodeArtifact> artifacts, final CodeArtifact artifact) {
-        artifacts.add(compilabilityValidator.validate(artifact));
+        // JAS-009 : deduplication et promotion des hints avant validation
+        CodeArtifact deduped = importDeduplicator.dedup(artifact);
+        artifacts.add(compilabilityValidator.validate(deduped));
     }
 
     private void addUseCaseIfPresent(
@@ -186,6 +196,19 @@ public final class RealCodeGenerationAdapter implements CodeGenerationPort {
                 .toList();
         if (!unknownRules.isEmpty()) {
             addValidated(artifacts, bridgeGenerator.generate(baseName, pkg, classifiedRules));
+        }
+    }
+
+    private void addTestSkeletonIfPresent(
+            final List<CodeArtifact> artifacts,
+            final String baseName,
+            final String pkg,
+            final List<BusinessRule> classifiedRules) {
+        boolean hasTestableRules = classifiedRules.stream().anyMatch(r ->
+                r.extractionCandidate() == ExtractionCandidate.USE_CASE
+                || r.extractionCandidate() == ExtractionCandidate.POLICY);
+        if (hasTestableRules) {
+            addValidated(artifacts, testSkeletonGenerator.generate(baseName, pkg, classifiedRules));
         }
     }
 }

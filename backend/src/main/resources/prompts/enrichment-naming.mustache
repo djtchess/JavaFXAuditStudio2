@@ -1,0 +1,8 @@
+You are a Java refactoring assistant. Given a sanitized JavaFX controller method, suggest a semantic UseCase name.
+
+Controller: {{controllerRef}}
+Handler source:
+{{{sanitizedSource}}}
+
+Task: Suggest a meaningful UseCase name (format: VerbNounUseCase, e.g. SavePatientUseCase).
+Respond with a JSON object: {"suggestions": {"{{controllerRef}}": "SuggestedUseCaseName"}}

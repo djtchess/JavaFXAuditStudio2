@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Generateur du ViewModel.
@@ -28,6 +29,20 @@ public final class ViewModelGenerator implements ArtifactGenerator {
         sb.append("import javafx.beans.property.BooleanProperty;\n");
         sb.append("import javafx.beans.property.IntegerProperty;\n");
         sb.append("import javafx.beans.property.StringProperty;\n");
+        // JAS-007 : ajout conditionnel des imports ObservableList si des champs liste sont detectes
+        boolean hasObservableList = rules.stream()
+                .filter(r -> !r.description().startsWith("Methode handler"))
+                .map(r -> {
+                    String rawField = GeneratorUtils.fieldNameFromRule(r);
+                    String fxmlType = GeneratorUtils.extractFxmlType(r.description());
+                    return GeneratorUtils.fxmlTypeToProperty(rawField, fxmlType);
+                })
+                .filter(Objects::nonNull)
+                .anyMatch(vmp -> vmp.type() == PropertyType.OBSERVABLE_LIST);
+        if (hasObservableList) {
+            sb.append("import javafx.collections.FXCollections;\n");
+            sb.append("import javafx.collections.ObservableList;\n");
+        }
         sb.append("import org.springframework.stereotype.Component;\n\n");
         sb.append("/**\n");
         sb.append(" * ViewModel de presentation pour ").append(baseName).append(".\n");
@@ -49,9 +64,10 @@ public final class ViewModelGenerator implements ArtifactGenerator {
                 String fxmlType = GeneratorUtils.extractFxmlType(rule.description());
                 ViewModelProperty vmp = GeneratorUtils.fxmlTypeToProperty(rawField, fxmlType);
                 if (vmp == null) {
+                    // Filet de securite : ne devrait plus arriver pour TableView/ListView/TreeView
                     if (seenFields.add(rawField)) {
                         sb.append("    // TODO [").append(rawField).append("]")
-                          .append(" : ObservableList ou propriete specifique a definir")
+                          .append(" : propriete specifique a definir")
                           .append(" (").append(fxmlType).append(")\n\n");
                     }
                     continue;
@@ -61,18 +77,27 @@ public final class ViewModelGenerator implements ArtifactGenerator {
                 }
                 PropertyType pt = vmp.type();
                 sb.append("    /** ").append(rule.description()).append(" */\n");
-                sb.append("    private final ").append(pt.simpleClass()).append(" ")
-                  .append(vmp.fieldName())
-                  .append(" = new ").append(pt.simpleClass()).append("();\n\n");
-                sb.append("    public ").append(pt.propertyClass()).append(" ")
-                  .append(vmp.fieldName()).append("Property() {\n");
-                sb.append("        return ").append(vmp.fieldName()).append(";\n    }\n\n");
-                sb.append("    public ").append(pt.javaType()).append(" get")
-                  .append(GeneratorUtils.capitalize(vmp.fieldName())).append("() {\n");
-                sb.append("        return ").append(vmp.fieldName()).append(".get();\n    }\n\n");
-                sb.append("    public void set").append(GeneratorUtils.capitalize(vmp.fieldName()))
-                  .append("(final ").append(pt.javaType()).append(" value) {\n");
-                sb.append("        ").append(vmp.fieldName()).append(".set(value);\n    }\n\n");
+                if (pt == PropertyType.OBSERVABLE_LIST) {
+                    // JAS-007 : generation du champ ObservableList — pas de setter, la liste est modifiee en place
+                    sb.append("    private final ObservableList<Object> ").append(vmp.fieldName())
+                      .append(" = FXCollections.observableArrayList();\n\n");
+                    sb.append("    public ObservableList<Object> get")
+                      .append(GeneratorUtils.capitalize(vmp.fieldName())).append("() {\n");
+                    sb.append("        return ").append(vmp.fieldName()).append(";\n    }\n\n");
+                } else {
+                    sb.append("    private final ").append(pt.simpleClass()).append(" ")
+                      .append(vmp.fieldName())
+                      .append(" = new ").append(pt.simpleClass()).append("();\n\n");
+                    sb.append("    public ").append(pt.propertyClass()).append(" ")
+                      .append(vmp.fieldName()).append("Property() {\n");
+                    sb.append("        return ").append(vmp.fieldName()).append(";\n    }\n\n");
+                    sb.append("    public ").append(pt.javaType()).append(" get")
+                      .append(GeneratorUtils.capitalize(vmp.fieldName())).append("() {\n");
+                    sb.append("        return ").append(vmp.fieldName()).append(".get();\n    }\n\n");
+                    sb.append("    public void set").append(GeneratorUtils.capitalize(vmp.fieldName()))
+                      .append("(final ").append(pt.javaType()).append(" value) {\n");
+                    sb.append("        ").append(vmp.fieldName()).append(".set(value);\n    }\n\n");
+                }
             }
         }
         sb.append("}\n");

@@ -1,11 +1,12 @@
 ---
 name: javafx-screen-cartographer
 description: Cartographie FXML specialisee. Utiliser de maniere proactive pour analyser la structure d'un ecran JavaFX et ses zones fonctionnelles visibles.
+model: sonnet
 ---
 
 Tu es le sous-agent `javafx-screen-cartographer`, equivalent Claude du skill `/.codex/skills/javafx-screen-cartographer/`.
 
-Avant de travailler, lis `AGENTS-CLAUDE.md`, `AGENTS.md`, `agents/contracts.md` et `/.codex/skills/javafx-screen-cartographer/SKILL.md`.
+Avant de travailler, lis `AGENTS.md`, `agents/contracts.md` et `/.codex/skills/javafx-screen-cartographer/SKILL.md`.
 
 Regles:
 - Respecte la structure de sortie de `agents/contracts.md`.

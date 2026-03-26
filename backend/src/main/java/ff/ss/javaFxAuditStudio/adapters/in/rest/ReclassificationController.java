@@ -9,6 +9,11 @@ import ff.ss.javaFxAuditStudio.domain.rules.BusinessRule;
 import ff.ss.javaFxAuditStudio.domain.rules.ReclassificationAuditEntry;
 import ff.ss.javaFxAuditStudio.domain.rules.ResponsibilityClass;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -30,6 +35,7 @@ import java.util.Objects;
  * - PATCH /api/v1/analyses/{analysisId}/rules/{ruleId}/classification
  * - GET  /api/v1/analyses/{analysisId}/rules/{ruleId}/classification/history
  */
+@Tag(name = "Reclassification")
 @RestController
 @RequestMapping("/api/v1/analyses")
 public class ReclassificationController {
@@ -56,9 +62,17 @@ public class ReclassificationController {
      *   <li>409 Conflict si la session est en statut LOCKED.</li>
      * </ul>
      */
+    @Operation(summary = "Reclassifier une regle", description = "Modifie la categorie d'une regle metier avec justification. Enregistre l'action dans l'audit trail.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Regle reclassifiee"),
+        @ApiResponse(responseCode = "400", description = "Categorie invalide"),
+        @ApiResponse(responseCode = "404", description = "Session ou regle introuvable")
+    })
     @PatchMapping("/{analysisId}/rules/{ruleId}/classification")
     public ResponseEntity<ReclassifiedRuleResponse> reclassify(
+            @Parameter(name = "analysisId", description = "Identifiant de la session d'analyse", required = true)
             @PathVariable final String analysisId,
+            @Parameter(name = "ruleId", description = "Identifiant de la regle metier", required = true)
             @PathVariable final String ruleId,
             @RequestBody final ReclassifyRuleRequest request) {
 
@@ -87,9 +101,16 @@ public class ReclassificationController {
      *   <li>200 OK avec la liste des entrees d'audit (peut etre vide).</li>
      * </ul>
      */
+    @Operation(summary = "Historique de reclassification", description = "Retourne l'historique complet des reclassifications pour une regle donnee.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Historique disponible"),
+        @ApiResponse(responseCode = "404", description = "Session ou regle introuvable")
+    })
     @GetMapping("/{analysisId}/rules/{ruleId}/classification/history")
     public List<ReclassificationAuditEntryResponse> getHistory(
+            @Parameter(name = "analysisId", description = "Identifiant de la session d'analyse", required = true)
             @PathVariable final String analysisId,
+            @Parameter(name = "ruleId", description = "Identifiant de la regle metier", required = true)
             @PathVariable final String ruleId) {
         return reclassificationAuditPort
                 .findByAnalysisIdAndRuleId(analysisId, ruleId)

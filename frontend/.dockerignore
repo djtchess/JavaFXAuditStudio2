@@ -1,0 +1,9 @@
+node_modules
+dist
+.angular
+.git
+.idea
+.claude
+coverage
+*.log
+*.spec.ts

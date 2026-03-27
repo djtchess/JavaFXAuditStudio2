@@ -2,25 +2,63 @@
   <main class="page-shell">
     <section class="hero-panel">
       <div class="hero-copy">
-        <p class="eyebrow">JavaFX Audit Studio</p>
-        <h1>Refactoring cockpit for overloaded JavaFX controllers</h1>
+        <p class="eyebrow">Mission Control</p>
+        <h1>Un cockpit de refactoring moderne pour controllers JavaFX surcharges</h1>
         <p class="lead">
-          Le frontend Angular pilote l'analyse, le backend Spring Boot orchestre les use cases,
-          et les agents specialistes isolent progressivement ViewModel, UseCases, Policies,
-          Gateways, Assemblers et Strategies.
+          L'interface Angular coordonne l'analyse, les diagnostics et la projection de migration
+          dans une experience plus proche d'une station de pilotage que d'un simple dashboard.
+        </p>
+
+        <div class="hero-actions">
+          <a class="cta primary" routerLink="/analysis">Lancer une analyse</a>
+          <a class="cta" routerLink="/projects">Explorer les projets</a>
+        </div>
+
+        <p class="hero-note">
+          Angular reste client du backend hexagonal et de ses contrats valides, sans dupliquer la
+          logique experte de refactoring.
         </p>
       </div>
 
-      <div class="hero-stack">
-        <span>Angular 21.2.x</span>
-        <span>Spring Boot 4.0.3</span>
-        <span>JDK 21</span>
-      </div>
+      <aside class="telemetry-panel" aria-label="Synthese du cockpit">
+        @if (viewModel.overview; as overview) {
+          <div class="telemetry-grid">
+            <article class="telemetry-card">
+              <p class="telemetry-label">Lots</p>
+              <strong>{{ overview.lots.length }}</strong>
+              <span>rails de migration actives</span>
+            </article>
+            <article class="telemetry-card">
+              <p class="telemetry-label">Agents</p>
+              <strong>{{ overview.agents.length }}</strong>
+              <span>specialistes mobilisables</span>
+            </article>
+            <article class="telemetry-card accent">
+              <p class="telemetry-label">Stack</p>
+              <strong>Angular 21 / Spring 4</strong>
+              <span>client, API, moteur d'analyse</span>
+            </article>
+          </div>
+        } @else {
+          <div class="telemetry-grid skeleton">
+            <article class="telemetry-card">
+              <p class="telemetry-label">Signal</p>
+              <strong>Boot</strong>
+              <span>initialisation du cockpit</span>
+            </article>
+            <article class="telemetry-card">
+              <p class="telemetry-label">Connexion</p>
+              <strong>Awaiting data</strong>
+              <span>workbench overview</span>
+            </article>
+          </div>
+        }
+      </aside>
     </section>
 
     @if (viewModel.isLoading) {
       <section class="status-panel loading">
-        <p>Chargement du workbench...</p>
+        <p>Chargement du workbench et synchronisation des signaux de pilotage...</p>
       </section>
     } @else if (viewModel.errorMessage) {
       <section class="status-panel error">
@@ -37,19 +75,41 @@
         <article class="summary-card">
           <p class="card-label">Frontend cible</p>
           <h2>{{ overview.frontendTarget }}</h2>
+          <p>Console conversationnelle, tableaux de diagnostic et visualisation des trajectoires.</p>
         </article>
 
         <article class="summary-card">
           <p class="card-label">Backend cible</p>
           <h2>{{ overview.backendTarget }}</h2>
+          <p>Hexagone applicatif, orchestration de cas d'usage et adapters clairement bornes.</p>
         </article>
+      </section>
+
+      <section class="lane-grid">
+        <a class="lane-card" routerLink="/analysis">
+          <p class="card-label">Launchpad</p>
+          <h2>Initialiser une session</h2>
+          <p>Alimente le pipeline d'analyse avec les sources JavaFX a inspecter.</p>
+        </a>
+
+        <a class="lane-card" routerLink="/projects">
+          <p class="card-label">Portfolio</p>
+          <h2>Suivre les projets</h2>
+          <p>Observe les scores, categories de regles et ordre de lots recommande.</p>
+        </a>
+
+        <a class="lane-card" routerLink="/monitoring">
+          <p class="card-label">Observabilite</p>
+          <h2>Monitorer le pipeline</h2>
+          <p>Controle le volume de sessions, les statuts et les temps moyens par etape.</p>
+        </a>
       </section>
 
       <section class="content-grid">
         <article class="panel">
           <div class="panel-heading">
-            <p class="card-label">Lots de migration</p>
-            <h2>Trajectoire progressive</h2>
+            <p class="card-label">Trajectoire</p>
+            <h2>Rails de migration progressive</h2>
           </div>
 
           <div class="lot-list">
@@ -68,8 +128,8 @@
 
         <article class="panel">
           <div class="panel-heading">
-            <p class="card-label">Agents actifs</p>
-            <h2>Pilotage et execution</h2>
+            <p class="card-label">Execution</p>
+            <h2>Agents mobilises</h2>
           </div>
 
           <div class="agent-list">

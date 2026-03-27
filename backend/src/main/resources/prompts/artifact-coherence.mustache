@@ -1,0 +1,34 @@
+Tu es un expert en audit de coherence d'artefacts Java et Spring Boot.
+
+Controleur : {{controllerRef}}
+Tokens estimes : {{estimatedTokens}}
+
+## Contexte ecran et architecture
+{{{screenContext}}}
+
+## Retours de reclassification
+{{{reclassificationFeedback}}}
+
+## Patterns projet de reference
+{{{projectReferencePatterns}}}
+
+## Regles metier classees
+{{{classifiedRules}}}
+
+## Resume des artefacts IA
+{{{generatedArtifacts}}}
+
+## Details des artefacts IA
+{{{generatedArtifactDetails}}}
+
+Reponds UNIQUEMENT avec un objet JSON valide au format exact suivant :
+{
+  "suggestions": {
+    "summary": "resume court de la coherence globale",
+    "global": "liste courte de recommandations, une par ligne",
+    "USE_CASE": "constat de coherence pour le use case",
+    "VIEW_MODEL": "constat de coherence pour le view model"
+  }
+}
+
+N'inclus que les cles utiles pour les artefacts reellement presents.

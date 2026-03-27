@@ -14,6 +14,11 @@ public interface AnalysisSessionRepository extends JpaRepository<AnalysisSession
     @Query("SELECT COUNT(s) FROM AnalysisSessionEntity s WHERE s.controllerName = :projectId AND s.status = :status")
     long countByControllerNameAndStatus(@Param("projectId") String projectId, @Param("status") String status);
 
+    @Query("SELECT COUNT(s) FROM AnalysisSessionEntity s WHERE s.controllerName = :projectId AND s.status IN :statuses")
+    long countByControllerNameAndStatusIn(
+            @Param("projectId") String projectId,
+            @Param("statuses") List<String> statuses);
+
     @Query("SELECT DISTINCT s.controllerName FROM AnalysisSessionEntity s ORDER BY s.controllerName")
     List<String> findDistinctControllerNames();
 }

@@ -29,104 +29,188 @@ import { MigrationScoreWidgetComponent } from '../../shared/components/migration
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     .pd-container {
-      max-width: 1200px;
+      width: min(1240px, calc(100% - 2rem));
       margin: 0 auto;
-      padding: 2rem 1.5rem;
+      padding: 2rem 0 4rem;
+      display: grid;
+      gap: 1.15rem;
+      color: #d6e4f5;
+    }
+
+    .pd-hero {
+      position: relative;
+      overflow: hidden;
+      border-radius: 28px;
+      border: 1px solid rgba(117, 148, 188, 0.28);
+      background:
+        radial-gradient(circle at 84% 18%, rgba(64, 216, 255, 0.26), transparent 34%),
+        radial-gradient(circle at 12% 82%, rgba(255, 170, 72, 0.2), transparent 37%),
+        linear-gradient(140deg, rgba(7, 18, 33, 0.96), rgba(7, 24, 44, 0.9));
+      box-shadow:
+        0 28px 48px rgba(2, 8, 22, 0.48),
+        inset 0 0 0 1px rgba(183, 214, 255, 0.08);
+      padding: 1.45rem 1.4rem;
+      animation: pdFadeIn 420ms ease-out;
+    }
+
+    .pd-hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(to right, rgba(140, 188, 245, 0.05) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(140, 188, 245, 0.05) 1px, transparent 1px);
+      background-size: 28px 28px;
+      pointer-events: none;
     }
 
     .pd-header {
+      position: relative;
+      z-index: 1;
       display: flex;
       align-items: center;
       justify-content: space-between;
       flex-wrap: wrap;
       gap: 1rem;
-      margin-bottom: 2rem;
+      margin-bottom: 1.15rem;
     }
 
     .pd-title {
-      font-size: 1.4rem;
+      margin: 0.25rem 0 0;
+      font-family: "Segoe UI Variable Display", "Bahnschrift", "Trebuchet MS", sans-serif;
+      font-size: clamp(1.6rem, 3.8vw, 2.85rem);
       font-weight: 700;
-      color: var(--slate, #1e293b);
-      margin: 0;
+      letter-spacing: 0.04em;
+      color: #f6fbff;
     }
 
     .pd-meta {
-      font-size: 0.78rem;
-      color: var(--ink-soft, #94a3b8);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(185, 213, 244, 0.82);
+    }
+
+    .pd-meta::before {
+      content: '';
+      width: 0.45rem;
+      height: 0.45rem;
+      border-radius: 50%;
+      background: #4ce0c3;
+      box-shadow: 0 0 0.65rem rgba(76, 224, 195, 0.72);
+    }
+
+    .pd-kicker {
+      margin: 0;
+      text-transform: uppercase;
+      letter-spacing: 0.17em;
+      font-size: 0.7rem;
+      color: rgba(173, 205, 241, 0.86);
+    }
+
+    .pd-subtitle {
+      position: relative;
+      z-index: 1;
+      margin: 0;
+      color: rgba(208, 226, 248, 0.9);
+      max-width: 78ch;
+      line-height: 1.58;
+      font-size: 0.94rem;
     }
 
     .pd-project-selector {
+      position: relative;
+      z-index: 1;
       display: flex;
       flex-wrap: wrap;
-      gap: 0.5rem;
-      margin-bottom: 1.5rem;
+      gap: 0.62rem;
+      margin-top: 1rem;
     }
 
     .pd-project-btn {
-      padding: 0.3rem 0.85rem;
+      padding: 0.4rem 0.86rem;
       border-radius: 999px;
-      border: 1.5px solid var(--line, #e2e8f0);
-      background: white;
-      font-size: 0.82rem;
+      border: 1px solid rgba(120, 152, 194, 0.48);
+      background: rgba(13, 36, 62, 0.7);
+      color: #cfe4fb;
+      font-size: 0.8rem;
+      letter-spacing: 0.02em;
       font-weight: 600;
       cursor: pointer;
-      transition: background 0.15s, border-color 0.15s;
+      transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.2s;
     }
 
     .pd-project-btn.active {
-      background: var(--slate, #1e293b);
-      color: white;
-      border-color: var(--slate, #1e293b);
+      background: linear-gradient(130deg, rgba(80, 212, 255, 0.26), rgba(255, 173, 75, 0.2));
+      color: #f6fbff;
+      border-color: rgba(135, 225, 255, 0.75);
+      box-shadow: 0 0 0 1px rgba(135, 225, 255, 0.25) inset;
     }
 
     .pd-project-btn:not(.active):hover {
-      background: var(--accent-soft, #f1f5f9);
-      border-color: var(--slate, #1e293b);
+      background: rgba(16, 47, 78, 0.86);
+      border-color: rgba(146, 212, 247, 0.72);
+      transform: translateY(-1px);
     }
 
     .pd-cards {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(178px, 1fr));
       gap: 1rem;
-      margin-bottom: 2rem;
     }
 
     .pd-card {
-      background: white;
-      border: 1px solid var(--line, #e2e8f0);
-      border-radius: 12px;
-      padding: 1.2rem 1rem;
-      text-align: center;
+      padding: 1.12rem 1.04rem 1.16rem;
+      border-radius: 20px;
+      border: 1px solid rgba(109, 140, 180, 0.26);
+      background:
+        linear-gradient(145deg, rgba(7, 22, 41, 0.95), rgba(6, 17, 32, 0.92));
+      box-shadow:
+        inset 0 0 0 1px rgba(175, 215, 255, 0.06),
+        0 16px 26px rgba(3, 9, 23, 0.38);
+      animation: pdSlideUp 420ms ease-out both;
     }
 
     .pd-card-value {
-      font-size: 2rem;
+      margin: 0;
+      font-family: "Georgia", "Times New Roman", serif;
+      font-size: clamp(1.65rem, 4.5vw, 2.35rem);
       font-weight: 700;
-      color: var(--slate, #1e293b);
+      color: #f6fbff;
       line-height: 1.1;
+      font-variant-numeric: tabular-nums;
     }
 
     .pd-card-label {
+      margin-top: 0.32rem;
       font-size: 0.75rem;
-      color: var(--ink-soft, #94a3b8);
-      margin-top: 0.25rem;
+      color: rgba(173, 203, 236, 0.83);
       text-transform: uppercase;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.1em;
     }
 
     .pd-section {
-      background: white;
-      border: 1px solid var(--line, #e2e8f0);
-      border-radius: 12px;
-      padding: 1.5rem;
-      margin-bottom: 1.5rem;
+      border-radius: 22px;
+      border: 1px solid rgba(111, 149, 189, 0.25);
+      padding: 1.2rem 1.1rem;
+      background:
+        radial-gradient(circle at top right, rgba(64, 216, 255, 0.11), transparent 38%),
+        linear-gradient(135deg, rgba(8, 24, 43, 0.95), rgba(9, 18, 35, 0.95));
+      box-shadow:
+        inset 0 0 0 1px rgba(168, 206, 247, 0.05),
+        0 18px 32px rgba(2, 8, 22, 0.35);
     }
 
     .pd-section-title {
-      font-size: 1rem;
+      font-size: 0.94rem;
       font-weight: 600;
-      color: var(--slate, #1e293b);
-      margin: 0 0 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.13em;
+      color: rgba(189, 215, 242, 0.92);
+      margin: 0 0 1.05rem;
     }
 
     .pd-lot-list {
@@ -135,52 +219,60 @@ import { MigrationScoreWidgetComponent } from '../../shared/components/migration
       margin: 0;
       display: flex;
       flex-direction: column;
-      gap: 0.4rem;
+      gap: 0.45rem;
     }
 
     .pd-lot-item {
       display: flex;
       align-items: center;
       gap: 0.6rem;
-      font-size: 0.88rem;
-      color: var(--slate, #1e293b);
+      font-size: 0.86rem;
+      color: #dbe9f8;
+      border: 1px solid rgba(111, 149, 188, 0.23);
+      border-radius: 14px;
+      padding: 0.5rem 0.6rem;
+      background: rgba(10, 31, 54, 0.64);
     }
 
     .pd-lot-index {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 1.5rem;
-      height: 1.5rem;
+      width: 1.55rem;
+      height: 1.55rem;
       border-radius: 50%;
-      background: var(--accent-soft, #f1f5f9);
+      background: linear-gradient(120deg, rgba(87, 221, 255, 0.33), rgba(255, 178, 83, 0.26));
       font-size: 0.72rem;
       font-weight: 700;
-      color: var(--ink-soft, #64748b);
+      color: #f4f9ff;
       flex-shrink: 0;
     }
 
     .pd-error {
-      padding: 1rem 1.5rem;
-      background: #fef2f2;
-      border: 1px solid #fecaca;
-      border-radius: 8px;
-      color: #dc2626;
-      font-size: 0.88rem;
-      margin-bottom: 1.5rem;
+      padding: 0.85rem 1rem;
+      background: rgba(78, 23, 21, 0.7);
+      border: 1px solid rgba(252, 136, 122, 0.45);
+      border-radius: 14px;
+      color: #ffd1c8;
+      font-size: 0.86rem;
     }
 
     .pd-loading {
-      text-align: center;
-      padding: 3rem;
-      color: var(--ink-soft, #94a3b8);
+      padding: 1.6rem 1.1rem;
+      color: #cadef4;
       font-size: 0.9rem;
+      border-radius: 16px;
+      border: 1px solid rgba(111, 149, 189, 0.26);
+      background: rgba(7, 24, 44, 0.84);
     }
 
     .pd-empty {
       text-align: center;
-      padding: 4rem 2rem;
-      color: var(--ink-soft, #94a3b8);
+      padding: 2.8rem 1.3rem;
+      border-radius: 18px;
+      border: 1px dashed rgba(116, 155, 195, 0.48);
+      background: rgba(7, 24, 44, 0.8);
+      color: rgba(193, 218, 245, 0.87);
     }
 
     .pd-empty-title {
@@ -200,7 +292,7 @@ import { MigrationScoreWidgetComponent } from '../../shared/components/migration
     .pd-session-label {
       font-size: 0.85rem;
       font-weight: 600;
-      color: var(--slate, #1e293b);
+      color: rgba(199, 222, 247, 0.88);
       white-space: nowrap;
     }
 
@@ -208,54 +300,101 @@ import { MigrationScoreWidgetComponent } from '../../shared/components/migration
       flex: 1;
       min-width: 220px;
       max-width: 400px;
-      padding: 0.45rem 0.85rem;
-      border: 1.5px solid var(--line, #e2e8f0);
-      border-radius: 8px;
+      padding: 0.5rem 0.86rem;
+      border: 1px solid rgba(113, 148, 189, 0.45);
+      border-radius: 10px;
       font-size: 0.85rem;
       font-family: monospace;
-      color: var(--slate, #1e293b);
-      background: white;
+      color: #f6fbff;
+      background: rgba(10, 31, 54, 0.72);
       outline: none;
-      transition: border-color 0.15s;
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
 
     .pd-session-input:focus {
-      border-color: var(--slate, #1e293b);
+      border-color: rgba(136, 223, 255, 0.9);
+      box-shadow: 0 0 0 2px rgba(101, 214, 255, 0.2);
     }
 
     .pd-session-hint {
       font-size: 0.78rem;
-      color: var(--ink-soft, #94a3b8);
+      color: rgba(188, 214, 241, 0.77);
       font-style: italic;
+    }
+
+    @keyframes pdFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes pdSlideUp {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 900px) {
+      .pd-container {
+        width: min(1240px, calc(100% - 1rem));
+      }
+
+      .pd-hero {
+        padding: 1.15rem 1rem;
+      }
+
+      .pd-card {
+        border-radius: 16px;
+      }
     }
   `,
   template: `
     <div class="pd-container">
-      <div class="pd-header">
-        <h1 class="pd-title">Dashboard de progression</h1>
-        @if (lastRefreshed()) {
-          <span class="pd-meta">
-            Actualisé le {{ lastRefreshed() | date:'HH:mm:ss' }}
-          </span>
+      <section class="pd-hero">
+        <div class="pd-header">
+          <div>
+            <p class="pd-kicker">Migration Command Center</p>
+            <h1 class="pd-title">Dashboard de progression</h1>
+          </div>
+          @if (lastRefreshed()) {
+            <span class="pd-meta">
+              Actualise a {{ lastRefreshed() | date:'HH:mm:ss' }}
+            </span>
+          }
+        </div>
+
+        <p class="pd-subtitle">
+          Visualisez les signaux de migration, priorisez les lots recommandes et lancez les revues
+          de session depuis un cockpit unifie.
+        </p>
+
+        @if (projects().length > 1) {
+          <div class="pd-project-selector" role="group" aria-label="Selection du projet">
+            @for (project of projects(); track project) {
+              <button
+                class="pd-project-btn"
+                [class.active]="selectedProject() === project"
+                (click)="selectProject(project)"
+              >
+                {{ project }}
+              </button>
+            }
+          </div>
         }
-      </div>
+      </section>
 
       @if (error()) {
         <div class="pd-error" role="alert">{{ error() }}</div>
-      }
-
-      @if (projects().length > 1) {
-        <div class="pd-project-selector" role="group" aria-label="Sélection du projet">
-          @for (project of projects(); track project) {
-            <button
-              class="pd-project-btn"
-              [class.active]="selectedProject() === project"
-              (click)="selectProject(project)"
-            >
-              {{ project }}
-            </button>
-          }
-        </div>
       }
 
       @if (loading()) {
@@ -263,7 +402,7 @@ import { MigrationScoreWidgetComponent } from '../../shared/components/migration
       } @else if (!dashboard() && !error()) {
         <div class="pd-empty">
           <p class="pd-empty-title">Aucun projet disponible</p>
-          <p>Lancez une première analyse pour voir apparaître les données ici.</p>
+          <p>Lancez une premiere analyse pour voir apparaitre les donnees ici.</p>
         </div>
       } @else if (dashboard(); as dash) {
         <div class="pd-cards">
@@ -277,7 +416,7 @@ import { MigrationScoreWidgetComponent } from '../../shared/components/migration
           </div>
           <div class="pd-card">
             <div class="pd-card-value">{{ dash.completedCount }}</div>
-            <div class="pd-card-label">Complétées</div>
+            <div class="pd-card-label">Completees</div>
           </div>
           <div class="pd-card">
             <div class="pd-card-value">{{ dash.uncertainCount }}</div>
@@ -285,18 +424,18 @@ import { MigrationScoreWidgetComponent } from '../../shared/components/migration
           </div>
           <div class="pd-card">
             <div class="pd-card-value">{{ dash.reclassifiedCount }}</div>
-            <div class="pd-card-label">Reclassifiées</div>
+            <div class="pd-card-label">Reclassifiees</div>
           </div>
         </div>
 
         <div class="pd-section">
-          <h2 class="pd-section-title">Règles par catégorie</h2>
+          <h2 class="pd-section-title">Regles par categorie</h2>
           <jas-category-bar-chart [data]="dash.rulesByCategory" />
         </div>
 
         @if (dash.recommendedLotOrder.length > 0) {
           <div class="pd-section">
-            <h2 class="pd-section-title">Ordre recommandé des lots</h2>
+            <h2 class="pd-section-title">Ordre recommande des lots</h2>
             <ol class="pd-lot-list">
               @for (lot of dash.recommendedLotOrder; track lot; let i = $index) {
                 <li class="pd-lot-item">
@@ -321,7 +460,9 @@ import { MigrationScoreWidgetComponent } from '../../shared/components/migration
               (ngModelChange)="reviewSessionId.set($event)"
             />
             @if (!reviewSessionId()) {
-              <span class="pd-session-hint">Entrez un identifiant de session pour lancer la revue</span>
+              <span class="pd-session-hint">
+                Entrez un identifiant de session pour lancer la revue
+              </span>
             }
           </div>
           @if (reviewSessionId()) {

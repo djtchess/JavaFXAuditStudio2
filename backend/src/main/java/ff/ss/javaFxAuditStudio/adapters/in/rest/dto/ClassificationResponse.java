@@ -19,15 +19,65 @@ public record ClassificationResponse(
         @Schema(description = "Raison du fallback si mode secondaire utilise", nullable = true)
         String parsingFallbackReason,
         @Schema(description = "Methodes lifecycle exclues de l'extraction")
-        int excludedLifecycleMethodsCount) {
+        int excludedLifecycleMethodsCount,
+        @Schema(description = "Logique d'etat detectee dans le controller")
+        StateMachineDto stateMachine,
+        @Schema(description = "Dependances detectees autour du controller")
+        List<DependencyDto> dependencies,
+        @Schema(description = "Resume differentiel entre le cache et le source courant")
+        DeltaAnalysisDto deltaAnalysis) {
 
     public ClassificationResponse {
         Objects.requireNonNull(controllerRef, "controllerRef must not be null");
         Objects.requireNonNull(rules, "rules must not be null");
         Objects.requireNonNull(parsingMode, "parsingMode must not be null");
+        Objects.requireNonNull(stateMachine, "stateMachine must not be null");
+        Objects.requireNonNull(dependencies, "dependencies must not be null");
+        Objects.requireNonNull(deltaAnalysis, "deltaAnalysis must not be null");
         rules = List.copyOf(rules);
+        dependencies = List.copyOf(dependencies);
         // parsingFallbackReason peut etre null si mode AST
     }
+
+    @Schema(description = "Transition de logique d'etat detectee")
+    public record StateTransitionDto(
+            @Schema(description = "Etat source")
+            String fromState,
+            @Schema(description = "Etat cible")
+            String toState,
+            @Schema(description = "Methode declenchante")
+            String trigger) {}
+
+    @Schema(description = "Logique d'etat detectee dans le controller")
+    public record StateMachineDto(
+            @Schema(description = "Statut de detection (ABSENT, POSSIBLE, CONFIRMED)")
+            String status,
+            @Schema(description = "Niveau de confiance entre 0.0 et 1.0")
+            double confidence,
+            @Schema(description = "Etats identifies")
+            List<String> states,
+            @Schema(description = "Transitions detectees")
+            List<StateTransitionDto> transitions) {}
+
+    @Schema(description = "Dependance detectee autour du controller")
+    public record DependencyDto(
+            @Schema(description = "Nature de la dependance")
+            String kind,
+            @Schema(description = "Cible de la dependance")
+            String target,
+            @Schema(description = "Point de detection")
+            String via) {}
+
+    @Schema(description = "Resume differentiel entre le cache et le source courant")
+    public record DeltaAnalysisDto(
+            @Schema(description = "Nombre de regles ajoutees")
+            int addedRules,
+            @Schema(description = "Nombre de regles supprimees")
+            int removedRules,
+            @Schema(description = "Nombre de regles recategorisees")
+            int changedRules,
+            @Schema(description = "Vrai si le source courant diverge du cache")
+            boolean hasChanges) {}
 
     /**
      * DTO representant un parametre de methode extrait d'un controller JavaFX.

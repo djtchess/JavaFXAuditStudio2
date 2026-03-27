@@ -1,5 +1,9 @@
 package ff.ss.javaFxAuditStudio.domain.rules;
 
+import ff.ss.javaFxAuditStudio.domain.analysis.ControllerDependency;
+import ff.ss.javaFxAuditStudio.domain.analysis.DeltaAnalysisSummary;
+import ff.ss.javaFxAuditStudio.domain.analysis.StateMachineInsight;
+
 import java.util.List;
 import java.util.Objects;
 
@@ -14,6 +18,9 @@ import java.util.Objects;
  * @param parsingMode                  mode de parsing utilise lors de l'extraction
  * @param parsingFallbackReason        raison du fallback regex, null si mode AST
  * @param excludedLifecycleMethodsCount nombre de methodes lifecycle ignorees lors de l'extraction
+ * @param stateMachine                 logique d'etat detectee
+ * @param dependencies                 dependances detectees autour du controller
+ * @param deltaAnalysis                synthese differentielle entre cache et source courant
  */
 public record ClassificationResult(
         String controllerRef,
@@ -21,18 +28,25 @@ public record ClassificationResult(
         List<BusinessRule> uncertainRules,
         ParsingMode parsingMode,
         String parsingFallbackReason,
-        int excludedLifecycleMethodsCount) {
+        int excludedLifecycleMethodsCount,
+        StateMachineInsight stateMachine,
+        List<ControllerDependency> dependencies,
+        DeltaAnalysisSummary deltaAnalysis) {
 
     public ClassificationResult {
         Objects.requireNonNull(controllerRef, "controllerRef must not be null");
         Objects.requireNonNull(rules, "rules must not be null");
         Objects.requireNonNull(uncertainRules, "uncertainRules must not be null");
         Objects.requireNonNull(parsingMode, "parsingMode must not be null");
+        Objects.requireNonNull(stateMachine, "stateMachine must not be null");
+        Objects.requireNonNull(dependencies, "dependencies must not be null");
+        Objects.requireNonNull(deltaAnalysis, "deltaAnalysis must not be null");
         if (excludedLifecycleMethodsCount < 0) {
             throw new IllegalArgumentException("excludedLifecycleMethodsCount must be >= 0");
         }
         rules = List.copyOf(rules);
         uncertainRules = List.copyOf(uncertainRules);
+        dependencies = List.copyOf(dependencies);
         // parsingFallbackReason peut etre null si mode AST
     }
 
@@ -51,7 +65,16 @@ public record ClassificationResult(
             final List<BusinessRule> uncertainRules,
             final ParsingMode parsingMode,
             final String parsingFallbackReason) {
-        this(controllerRef, rules, uncertainRules, parsingMode, parsingFallbackReason, 0);
+        this(
+                controllerRef,
+                rules,
+                uncertainRules,
+                parsingMode,
+                parsingFallbackReason,
+                0,
+                StateMachineInsight.absent(),
+                List.of(),
+                DeltaAnalysisSummary.none());
     }
 
     /**
@@ -65,7 +88,35 @@ public record ClassificationResult(
             final String controllerRef,
             final List<BusinessRule> rules,
             final List<BusinessRule> uncertainRules) {
-        this(controllerRef, rules, uncertainRules, ParsingMode.AST, null, 0);
+        this(
+                controllerRef,
+                rules,
+                uncertainRules,
+                ParsingMode.AST,
+                null,
+                0,
+                StateMachineInsight.absent(),
+                List.of(),
+                DeltaAnalysisSummary.none());
+    }
+
+    public ClassificationResult(
+            final String controllerRef,
+            final List<BusinessRule> rules,
+            final List<BusinessRule> uncertainRules,
+            final ParsingMode parsingMode,
+            final String parsingFallbackReason,
+            final int excludedLifecycleMethodsCount) {
+        this(
+                controllerRef,
+                rules,
+                uncertainRules,
+                parsingMode,
+                parsingFallbackReason,
+                excludedLifecycleMethodsCount,
+                StateMachineInsight.absent(),
+                List.of(),
+                DeltaAnalysisSummary.none());
     }
 
     /**

@@ -17,6 +17,27 @@ class GeneratorUtilsNamingTest {
     }
 
     @Test
+    void methodNameFromRule_extractsPolicyNameFromSemanticRule() {
+        BusinessRule rule = rule("Regle metier isEligible : decision BUSINESS detectee");
+
+        assertThat(GeneratorUtils.methodNameFromRule(rule)).isEqualTo("isEligible");
+    }
+
+    @Test
+    void methodNameFromRule_extractsGatewayNameFromTechnicalRule() {
+        BusinessRule rule = rule("Appel HTTP fetchPatientData : acces TECHNICAL detecte");
+
+        assertThat(GeneratorUtils.methodNameFromRule(rule)).isEqualTo("fetchPatientData");
+    }
+
+    @Test
+    void methodNameFromRule_extractsPrintNameFromTechnicalRule() {
+        BusinessRule rule = rule("Impression printReport : acces TECHNICAL detecte");
+
+        assertThat(GeneratorUtils.methodNameFromRule(rule)).isEqualTo("printReport");
+    }
+
+    @Test
     void cleanMethodName_removesTechnicalAffixesWhenRequested() {
         assertThat(GeneratorUtils.cleanMethodName("onSave")).isEqualTo("save");
         assertThat(GeneratorUtils.cleanMethodName("handleDeleteAction")).isEqualTo("delete");

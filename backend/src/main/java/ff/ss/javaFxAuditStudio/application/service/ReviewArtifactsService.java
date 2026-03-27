@@ -12,7 +12,9 @@ import org.slf4j.LoggerFactory;
 import ff.ss.javaFxAuditStudio.application.ports.in.ReviewArtifactsUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.out.AiEnrichmentPort;
 import ff.ss.javaFxAuditStudio.application.ports.out.AnalysisSessionPort;
+import ff.ss.javaFxAuditStudio.application.ports.out.CartographyPersistencePort;
 import ff.ss.javaFxAuditStudio.application.ports.out.ClassificationPersistencePort;
+import ff.ss.javaFxAuditStudio.application.ports.out.ReclassificationAuditPort;
 import ff.ss.javaFxAuditStudio.application.ports.out.SanitizationPort;
 import ff.ss.javaFxAuditStudio.application.ports.out.SourceFileReaderPort;
 import ff.ss.javaFxAuditStudio.domain.ai.AiEnrichmentRequest;
@@ -20,6 +22,7 @@ import ff.ss.javaFxAuditStudio.domain.ai.AiEnrichmentResult;
 import ff.ss.javaFxAuditStudio.domain.ai.ArtifactReviewResult;
 import ff.ss.javaFxAuditStudio.domain.ai.SanitizedBundle;
 import ff.ss.javaFxAuditStudio.domain.ai.TaskType;
+import ff.ss.javaFxAuditStudio.domain.cartography.ControllerCartography;
 import ff.ss.javaFxAuditStudio.domain.rules.ClassificationResult;
 import ff.ss.javaFxAuditStudio.domain.sanitization.SanitizationRefusedException;
 import ff.ss.javaFxAuditStudio.domain.workbench.AnalysisSession;
@@ -31,6 +34,8 @@ public class ReviewArtifactsService implements ReviewArtifactsUseCase {
 
     private final AnalysisSessionPort sessionPort;
     private final ClassificationPersistencePort classificationPort;
+    private final CartographyPersistencePort cartographyPort;
+    private final ReclassificationAuditPort reclassificationAuditPort;
     private final AiEnrichmentPort aiEnrichmentPort;
     private final SanitizationPort sanitizationPort;
     private final SourceFileReaderPort sourceFileReaderPort;
@@ -40,7 +45,7 @@ public class ReviewArtifactsService implements ReviewArtifactsUseCase {
             final ClassificationPersistencePort classificationPort,
             final AiEnrichmentPort aiEnrichmentPort,
             final SanitizationPort sanitizationPort) {
-        this(sessionPort, classificationPort, aiEnrichmentPort, sanitizationPort, null);
+        this(sessionPort, classificationPort, null, null, aiEnrichmentPort, sanitizationPort, null);
     }
 
     public ReviewArtifactsService(
@@ -49,8 +54,21 @@ public class ReviewArtifactsService implements ReviewArtifactsUseCase {
             final AiEnrichmentPort aiEnrichmentPort,
             final SanitizationPort sanitizationPort,
             final SourceFileReaderPort sourceFileReaderPort) {
+        this(sessionPort, classificationPort, null, null, aiEnrichmentPort, sanitizationPort, sourceFileReaderPort);
+    }
+
+    public ReviewArtifactsService(
+            final AnalysisSessionPort sessionPort,
+            final ClassificationPersistencePort classificationPort,
+            final CartographyPersistencePort cartographyPort,
+            final ReclassificationAuditPort reclassificationAuditPort,
+            final AiEnrichmentPort aiEnrichmentPort,
+            final SanitizationPort sanitizationPort,
+            final SourceFileReaderPort sourceFileReaderPort) {
         this.sessionPort = Objects.requireNonNull(sessionPort);
         this.classificationPort = Objects.requireNonNull(classificationPort);
+        this.cartographyPort = cartographyPort;
+        this.reclassificationAuditPort = reclassificationAuditPort;
         this.aiEnrichmentPort = Objects.requireNonNull(aiEnrichmentPort);
         this.sanitizationPort = sanitizationPort;
         this.sourceFileReaderPort = sourceFileReaderPort;
@@ -76,6 +94,7 @@ public class ReviewArtifactsService implements ReviewArtifactsUseCase {
         String controllerRef = session.controllerName();
         String rawSource = LlmServiceSupport.readSourceFile(controllerRef, sourceFileReaderPort);
         String formattedRules = LlmServiceSupport.formatRules(classification);
+        ControllerCartography cartography = loadCartography(sessionId);
 
         SanitizedBundle bundle;
         try {
@@ -91,10 +110,35 @@ public class ReviewArtifactsService implements ReviewArtifactsUseCase {
                 bundle,
                 TaskType.ARTIFACT_REVIEW,
                 PROMPT_TEMPLATE,
-                Map.of("classifiedRules", formattedRules));
+                buildExtraContext(session, classification, formattedRules, cartography));
 
         AiEnrichmentResult result = aiEnrichmentPort.enrich(request);
         return mapToReview(result);
+    }
+
+    private ControllerCartography loadCartography(final String sessionId) {
+        if (cartographyPort == null) {
+            return null;
+        }
+        java.util.Optional<ControllerCartography> cartography = cartographyPort.findBySessionId(sessionId);
+        if (cartography == null) {
+            return null;
+        }
+        return cartography.orElse(null);
+    }
+
+    private Map<String, Object> buildExtraContext(
+            final AnalysisSession session,
+            final ClassificationResult classification,
+            final String formattedRules,
+            final ControllerCartography cartography) {
+        Map<String, Object> context = new HashMap<>();
+        context.put("classifiedRules", formattedRules);
+        context.put("screenContext", LlmServiceSupport.formatScreenContext(session, classification, cartography));
+        context.put("reclassificationFeedback",
+                LlmServiceSupport.formatReclassificationFeedback(
+                        session.sessionId(), classification, reclassificationAuditPort));
+        return context;
     }
 
     private ArtifactReviewResult mapToReview(final AiEnrichmentResult result) {

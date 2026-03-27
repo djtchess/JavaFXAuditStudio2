@@ -52,7 +52,7 @@ class RoutingAiEnrichmentAdapterTest {
                 new AiCircuitBreaker(5, 50, Duration.ofSeconds(1)));
         AiEnrichmentRequest request = new AiEnrichmentRequest(
                 "req-1",
-                new SanitizedBundle("bundle-1", "MyController", "class A {}", 16, "1.0"),
+                new SanitizedBundle("bundle-1", "MyController", "class A {}", 16, "1.0", null),
                 TaskType.NAMING,
                 "enrichment-naming",
                 Map.of());

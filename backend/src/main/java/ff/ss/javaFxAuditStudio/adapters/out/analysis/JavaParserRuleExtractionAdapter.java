@@ -2,6 +2,11 @@ package ff.ss.javaFxAuditStudio.adapters.out.analysis;
 
 import ff.ss.javaFxAuditStudio.application.ports.out.RuleExtractionPort;
 import ff.ss.javaFxAuditStudio.configuration.AnalysisProperties;
+import ff.ss.javaFxAuditStudio.domain.analysis.ControllerDependency;
+import ff.ss.javaFxAuditStudio.domain.analysis.DependencyKind;
+import ff.ss.javaFxAuditStudio.domain.analysis.DetectionStatus;
+import ff.ss.javaFxAuditStudio.domain.analysis.StateMachineInsight;
+import ff.ss.javaFxAuditStudio.domain.analysis.StateTransition;
 import ff.ss.javaFxAuditStudio.domain.rules.BusinessRule;
 import ff.ss.javaFxAuditStudio.domain.rules.ExtractionCandidate;
 import ff.ss.javaFxAuditStudio.domain.rules.ExtractionResult;
@@ -15,8 +20,13 @@ import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
+import com.github.javaparser.ast.expr.AssignExpr;
 import com.github.javaparser.ast.expr.BinaryExpr;
+import com.github.javaparser.ast.expr.BooleanLiteralExpr;
 import com.github.javaparser.ast.expr.ConditionalExpr;
+import com.github.javaparser.ast.expr.FieldAccessExpr;
+import com.github.javaparser.ast.expr.NameExpr;
+import com.github.javaparser.ast.expr.ObjectCreationExpr;
 import com.github.javaparser.ast.stmt.CatchClause;
 import com.github.javaparser.ast.stmt.ForStmt;
 import com.github.javaparser.ast.stmt.ForEachStmt;
@@ -28,6 +38,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -41,6 +52,9 @@ public final class JavaParserRuleExtractionAdapter implements RuleExtractionPort
 
     private static final Logger log = LoggerFactory.getLogger(JavaParserRuleExtractionAdapter.class);
     private static final String UNKNOWN_REF = "unknown";
+    private static final List<String> STATE_FIELD_SUFFIXES = List.of("Mode", "State", "Step", "Stage");
+    private static final List<String> SHARED_SERVICE_SUFFIXES = List.of(
+            "Service", "Manager", "Handler", "Validator", "Facade", "Processor");
 
     private final RuleExtractionPort fallback;
     private final Set<String> lifecycleExcluded;
@@ -48,14 +62,16 @@ public final class JavaParserRuleExtractionAdapter implements RuleExtractionPort
 
     public JavaParserRuleExtractionAdapter(final RuleExtractionPort fallback) {
         this(fallback, Set.of(),
-                new AnalysisProperties.ClassificationPatterns(null, null, null, null, null, null));
+                new AnalysisProperties.ClassificationPatterns(
+                        null, null, null, null, null, null, null, null));
     }
 
     public JavaParserRuleExtractionAdapter(
             final RuleExtractionPort fallback,
             final Set<String> lifecycleExcluded) {
         this(fallback, lifecycleExcluded,
-                new AnalysisProperties.ClassificationPatterns(null, null, null, null, null, null));
+                new AnalysisProperties.ClassificationPatterns(
+                        null, null, null, null, null, null, null, null));
     }
 
     public JavaParserRuleExtractionAdapter(
@@ -77,12 +93,18 @@ public final class JavaParserRuleExtractionAdapter implements RuleExtractionPort
             CompilationUnit cu = StaticJavaParser.parse(javaContent);
             int[] excludedCount = {0};
             List<BusinessRule> rules = extractFromAst(ref, cu, excludedCount);
-            return ExtractionResult.ast(rules, excludedCount[0]);
+            StateMachineInsight stateMachine = detectStateMachine(cu);
+            List<ControllerDependency> dependencies = detectDependencies(cu, ref);
+            return ExtractionResult.ast(rules, excludedCount[0], stateMachine, dependencies);
         } catch (Exception e) {
             String causeMessage = buildCauseMessage(ref, e);
+            ExtractionResult fallbackResult = fallback.extract(controllerRef, javaContent);
             return ExtractionResult.regexFallback(
-                    fallback.extract(controllerRef, javaContent).rules(),
-                    causeMessage);
+                    fallbackResult.rules(),
+                    causeMessage,
+                    fallbackResult.excludedLifecycleMethodsCount(),
+                    fallbackResult.stateMachine(),
+                    fallbackResult.dependencies());
         }
     }
 
@@ -303,10 +325,22 @@ public final class JavaParserRuleExtractionAdapter implements RuleExtractionPort
             return false;
         }
         String name = method.getNameAsString();
+        if (isUiGuardMethod(name)) {
+            return false;
+        }
         for (String prefix : patterns.effectivePolicyGuardPrefixes()) {
             if (name.length() > prefix.length()
                     && name.startsWith(prefix)
                     && Character.isUpperCase(name.charAt(prefix.length()))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isUiGuardMethod(final String methodName) {
+        for (String uiGuardName : patterns.effectiveUiGuardMethodNames()) {
+            if (uiGuardName.equals(methodName)) {
                 return true;
             }
         }
@@ -397,5 +431,154 @@ public final class JavaParserRuleExtractionAdapter implements RuleExtractionPort
             name = name.substring(0, name.length() - 5);
         }
         return name;
+    }
+
+    private StateMachineInsight detectStateMachine(final CompilationUnit cu) {
+        List<String> stateFields = collectStateFields(cu);
+        if (stateFields.size() < 2) {
+            return StateMachineInsight.absent();
+        }
+        List<StateTransition> transitions = collectTransitions(cu, stateFields);
+        double confidence = Math.min(1.0d, 0.20d + (stateFields.size() * 0.20d) + (transitions.size() * 0.15d));
+        DetectionStatus status = confidence >= patterns.effectiveStateMachineConfidenceThreshold()
+                ? DetectionStatus.CONFIRMED
+                : DetectionStatus.POSSIBLE;
+        return new StateMachineInsight(
+                status,
+                confidence,
+                stateFields.stream().map(this::normalizeStateName).toList(),
+                transitions);
+    }
+
+    private List<String> collectStateFields(final CompilationUnit cu) {
+        LinkedHashSet<String> stateFields = new LinkedHashSet<>();
+        List<FieldDeclaration> fields = cu.findAll(FieldDeclaration.class);
+        for (FieldDeclaration field : fields) {
+            String typeName = field.getCommonType().asString();
+            if (!"boolean".equals(typeName) && !"Boolean".equals(typeName)) {
+                continue;
+            }
+            field.getVariables().forEach(variable -> {
+                String fieldName = variable.getNameAsString();
+                if (looksLikeStateField(fieldName)) {
+                    stateFields.add(fieldName);
+                }
+            });
+        }
+        return List.copyOf(stateFields);
+    }
+
+    private boolean looksLikeStateField(final String fieldName) {
+        if (!fieldName.startsWith("is") || fieldName.length() <= 2) {
+            return false;
+        }
+        for (String suffix : STATE_FIELD_SUFFIXES) {
+            if (fieldName.endsWith(suffix)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private List<StateTransition> collectTransitions(
+            final CompilationUnit cu,
+            final List<String> stateFields) {
+        LinkedHashSet<StateTransition> transitions = new LinkedHashSet<>();
+        List<MethodDeclaration> methods = cu.findAll(MethodDeclaration.class);
+        for (MethodDeclaration method : methods) {
+            List<String> activated = new ArrayList<>();
+            List<String> deactivated = new ArrayList<>();
+            List<AssignExpr> assignments = method.findAll(AssignExpr.class);
+            for (AssignExpr assignment : assignments) {
+                String target = assignmentTarget(assignment);
+                if (!stateFields.contains(target) || !(assignment.getValue() instanceof BooleanLiteralExpr literal)) {
+                    continue;
+                }
+                if (literal.getValue()) {
+                    activated.add(target);
+                } else {
+                    deactivated.add(target);
+                }
+            }
+            if (!activated.isEmpty()) {
+                String fromState = deactivated.isEmpty()
+                        ? "CURRENT"
+                        : normalizeStateName(deactivated.get(0));
+                String trigger = method.getNameAsString();
+                for (String activatedState : activated) {
+                    transitions.add(new StateTransition(
+                            fromState,
+                            normalizeStateName(activatedState),
+                            trigger));
+                }
+            }
+        }
+        return List.copyOf(transitions);
+    }
+
+    private String assignmentTarget(final AssignExpr assignment) {
+        if (assignment.getTarget() instanceof NameExpr nameExpr) {
+            return nameExpr.getNameAsString();
+        }
+        if (assignment.getTarget() instanceof FieldAccessExpr fieldAccessExpr) {
+            return fieldAccessExpr.getNameAsString();
+        }
+        return "";
+    }
+
+    private String normalizeStateName(final String fieldName) {
+        String normalized = fieldName.substring(2);
+        for (String suffix : STATE_FIELD_SUFFIXES) {
+            if (normalized.endsWith(suffix) && normalized.length() > suffix.length()) {
+                normalized = normalized.substring(0, normalized.length() - suffix.length());
+                break;
+            }
+        }
+        return normalized;
+    }
+
+    private List<ControllerDependency> detectDependencies(
+            final CompilationUnit cu,
+            final String controllerRef) {
+        LinkedHashSet<ControllerDependency> dependencies = new LinkedHashSet<>();
+        String currentController = shortControllerRef(controllerRef);
+        List<FieldDeclaration> fields = cu.findAll(FieldDeclaration.class);
+        for (FieldDeclaration field : fields) {
+            String typeName = field.getCommonType().asString();
+            field.getVariables().forEach(variable -> {
+                if (typeName.endsWith("Controller") && !typeName.equals(currentController)) {
+                    dependencies.add(new ControllerDependency(
+                            DependencyKind.DIRECT_CONTROLLER,
+                            typeName,
+                            "field:" + variable.getNameAsString()));
+                }
+                if (isSharedServiceType(typeName)) {
+                    dependencies.add(new ControllerDependency(
+                            DependencyKind.SHARED_SERVICE,
+                            typeName,
+                            "field:" + variable.getNameAsString()));
+                }
+            });
+        }
+        List<ObjectCreationExpr> creations = cu.findAll(ObjectCreationExpr.class);
+        for (ObjectCreationExpr creation : creations) {
+            String typeName = creation.getType().getNameAsString();
+            if (typeName.endsWith("Controller") && !typeName.equals(currentController)) {
+                dependencies.add(new ControllerDependency(
+                        DependencyKind.DIRECT_CONTROLLER,
+                        typeName,
+                        "new:" + typeName));
+            }
+        }
+        return List.copyOf(dependencies);
+    }
+
+    private boolean isSharedServiceType(final String typeName) {
+        for (String suffix : SHARED_SERVICE_SUFFIXES) {
+            if (typeName.endsWith(suffix)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

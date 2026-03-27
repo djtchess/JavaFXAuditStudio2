@@ -16,3 +16,21 @@ rules:
     message: "URL HTTP hardcodee detectee."
     severity: WARNING
     pattern-regex: '"https?://[a-zA-Z0-9._-]+\.[a-zA-Z]{2,}[^"]*"'
+
+  - id: internal-host-url
+    languages: [java]
+    message: "URL interne ou corporate detectee."
+    severity: WARNING
+    pattern-regex: '"https?://[a-zA-Z0-9._-]+\.(internal|intra|corp|lan)[^"]*"'
+
+  - id: jdbc-connection-string
+    languages: [java]
+    message: "Chaine de connexion JDBC detectee."
+    severity: WARNING
+    pattern-regex: '"jdbc:(postgresql|mysql|oracle|sqlserver|h2):[^"]*"'
+
+  - id: private-key-marker
+    languages: [java]
+    message: "Marqueur de cle privee detecte."
+    severity: ERROR
+    pattern-regex: '"-----BEGIN (RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----"'

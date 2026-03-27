@@ -15,11 +15,11 @@ import { ReclassificationApiService } from '../../../core/services/reclassificat
 import { ReclassifiedRuleResponse } from '../../../core/models/analysis.model';
 
 const CATEGORY_COLORS: Record<string, string> = {
-  UI: '#3b82f6',
-  APPLICATION: '#10b981',
-  BUSINESS: '#f59e0b',
-  TECHNICAL: '#6b7280',
-  UNKNOWN: '#ef4444',
+  UI: '#3d86c6',
+  APPLICATION: '#0f766e',
+  BUSINESS: '#b96a2c',
+  TECHNICAL: '#627487',
+  UNKNOWN: '#a23c1c',
 };
 
 const CATEGORIES = ['UI', 'APPLICATION', 'BUSINESS', 'TECHNICAL', 'UNKNOWN'] as const;
@@ -36,7 +36,7 @@ const CATEGORIES = ['UI', 'APPLICATION', 'BUSINESS', 'TECHNICAL', 'UNKNOWN'] as 
     .overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.45);
+      background: rgba(3, 8, 14, 0.62);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -45,7 +45,7 @@ const CATEGORIES = ['UI', 'APPLICATION', 'BUSINESS', 'TECHNICAL', 'UNKNOWN'] as 
     }
 
     .modal {
-      background: white;
+      background: var(--panel-soft-alt);
       border-radius: 20px;
       padding: 2rem;
       width: min(520px, 100%);
@@ -59,13 +59,13 @@ const CATEGORIES = ['UI', 'APPLICATION', 'BUSINESS', 'TECHNICAL', 'UNKNOWN'] as 
       margin: 0;
       font-size: 1.1rem;
       font-weight: 700;
-      color: #122338;
+      color: var(--surface-ink-strong);
     }
 
     .modal-subtitle {
       margin: 0;
       font-size: 0.85rem;
-      color: #6b7280;
+      color: var(--surface-ink-soft);
       font-style: italic;
     }
 
@@ -91,7 +91,7 @@ const CATEGORIES = ['UI', 'APPLICATION', 'BUSINESS', 'TECHNICAL', 'UNKNOWN'] as 
     }
 
     .category-btn.selected {
-      border-color: #122338;
+      border-color: var(--surface-ink-strong);
       transform: scale(1.06);
     }
 
@@ -99,7 +99,7 @@ const CATEGORIES = ['UI', 'APPLICATION', 'BUSINESS', 'TECHNICAL', 'UNKNOWN'] as 
       display: block;
       font-size: 0.85rem;
       font-weight: 600;
-      color: #374151;
+      color: var(--surface-ink);
       margin-bottom: 0.4rem;
     }
 
@@ -107,7 +107,7 @@ const CATEGORIES = ['UI', 'APPLICATION', 'BUSINESS', 'TECHNICAL', 'UNKNOWN'] as 
       width: 100%;
       min-height: 4rem;
       padding: 0.6rem 0.8rem;
-      border: 1px solid #d1d5db;
+      border: 1px solid var(--surface-line);
       border-radius: 10px;
       font-size: 0.85rem;
       resize: vertical;
@@ -116,7 +116,7 @@ const CATEGORIES = ['UI', 'APPLICATION', 'BUSINESS', 'TECHNICAL', 'UNKNOWN'] as 
     }
 
     .reason-textarea:focus {
-      outline: 2px solid #3b82f6;
+      outline: 2px solid rgba(101, 223, 255, 0.35);
       border-color: transparent;
     }
 
@@ -125,7 +125,7 @@ const CATEGORIES = ['UI', 'APPLICATION', 'BUSINESS', 'TECHNICAL', 'UNKNOWN'] as 
       border-radius: 10px;
       background: rgba(239, 68, 68, 0.08);
       border: 1px solid rgba(239, 68, 68, 0.3);
-      color: #dc2626;
+      color: var(--surface-danger);
       font-size: 0.85rem;
       font-weight: 600;
     }
@@ -135,7 +135,7 @@ const CATEGORIES = ['UI', 'APPLICATION', 'BUSINESS', 'TECHNICAL', 'UNKNOWN'] as 
       border-radius: 10px;
       background: rgba(245, 158, 11, 0.08);
       border: 1px solid rgba(245, 158, 11, 0.3);
-      color: #92400e;
+      color: var(--surface-warning);
       font-size: 0.85rem;
     }
 
@@ -149,7 +149,7 @@ const CATEGORIES = ['UI', 'APPLICATION', 'BUSINESS', 'TECHNICAL', 'UNKNOWN'] as 
       padding: 0.55rem 1.4rem;
       border: none;
       border-radius: 999px;
-      background: #122338;
+      background: linear-gradient(135deg, rgba(16, 38, 56, 1), rgba(42, 82, 116, 1));
       color: white;
       font-weight: 700;
       font-size: 0.88rem;
@@ -168,10 +168,10 @@ const CATEGORIES = ['UI', 'APPLICATION', 'BUSINESS', 'TECHNICAL', 'UNKNOWN'] as 
 
     .btn-cancel {
       padding: 0.55rem 1.2rem;
-      border: 1px solid #d1d5db;
+      border: 1px solid var(--surface-line);
       border-radius: 999px;
-      background: white;
-      color: #374151;
+      background: rgba(255, 255, 255, 0.74);
+      color: var(--surface-ink);
       font-weight: 600;
       font-size: 0.88rem;
       cursor: pointer;
@@ -179,7 +179,7 @@ const CATEGORIES = ['UI', 'APPLICATION', 'BUSINESS', 'TECHNICAL', 'UNKNOWN'] as 
     }
 
     .btn-cancel:hover {
-      background: #f9fafb;
+      background: var(--surface-chip);
     }
   `,
   template: `

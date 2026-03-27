@@ -109,7 +109,8 @@ class ClaudeCodeAiEnrichmentAdapterTest {
                 "MyController",
                 "@FXML void onSave() { service.save(); }",
                 42,
-                "1.0");
+                "1.0",
+                null);
         return new AiEnrichmentRequest(
                 UUID.randomUUID().toString(),
                 bundle,
@@ -236,7 +237,8 @@ class ClaudeCodeAiEnrichmentAdapterTest {
                 "MyController",
                 "@FXML void onSave() { service.save(); }",
                 42,
-                "1.0");
+                "1.0",
+                null);
         AiEnrichmentRequest request = new AiEnrichmentRequest(
                 UUID.randomUUID().toString(),
                 bundle,

@@ -10,9 +10,9 @@ import { AnalysisApiService } from '../../../core/services/analysis-api.service'
     .warning-banner {
       padding: 0.7rem 1rem;
       border-radius: 12px;
-      background: rgba(245, 158, 11, 0.08);
-      border: 1px solid rgba(245, 158, 11, 0.3);
-      color: #92400e;
+      background: var(--surface-warning-soft);
+      border: 1px solid rgba(185, 106, 44, 0.24);
+      color: var(--surface-warning);
       font-size: 0.85rem;
       margin-bottom: 1rem;
     }
@@ -38,34 +38,41 @@ import { AnalysisApiService } from '../../../core/services/analysis-api.service'
       flex: 1;
       min-width: 220px;
       padding: 0.4rem 0.8rem;
-      border: 1px solid var(--line);
-      border-radius: 8px;
+      border: 1px solid var(--surface-line);
+      border-radius: 10px;
       font-size: 0.82rem;
-      background: rgba(255,255,255,0.8);
-      color: var(--ink);
+      background: rgba(255, 255, 255, 0.72);
+      color: var(--surface-ink);
       font-family: monospace;
     }
 
     .export-input:focus {
-      outline: 2px solid var(--slate);
+      outline: 2px solid rgba(101, 223, 255, 0.4);
       outline-offset: 1px;
     }
 
     .export-btn {
-      padding: 0.4rem 1rem;
-      border: 1px solid var(--line);
+      padding: 0.42rem 1rem;
+      border: 1px solid rgba(16, 38, 56, 0.12);
       border-radius: 999px;
-      background: var(--slate);
+      background: linear-gradient(135deg, rgba(16, 38, 56, 1), rgba(42, 82, 116, 1));
       color: white;
-      font-weight: 600;
+      font-weight: 700;
       font-size: 0.82rem;
       cursor: pointer;
       white-space: nowrap;
-      transition: opacity 0.15s;
+      transition: opacity 0.15s, transform 0.15s;
     }
 
-    .export-btn:hover:not(:disabled) { opacity: 0.8; }
-    .export-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .export-btn:hover:not(:disabled) {
+      opacity: 0.88;
+      transform: translateY(-1px);
+    }
+
+    .export-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
 
     .export-result {
       width: 100%;
@@ -75,8 +82,13 @@ import { AnalysisApiService } from '../../../core/services/analysis-api.service'
       font-size: 0.8rem;
     }
 
-    .export-ok  { color: #16a34a; }
-    .export-err { color: #dc2626; }
+    .export-ok {
+      color: var(--surface-success);
+    }
+
+    .export-err {
+      color: var(--surface-danger);
+    }
 
     .tabs-bar {
       display: flex;
@@ -87,25 +99,36 @@ import { AnalysisApiService } from '../../../core/services/analysis-api.service'
 
     .tab-btn {
       padding: 0.35rem 0.85rem;
-      border: 1px solid var(--line);
+      border: 1px solid var(--surface-line);
       border-radius: 999px;
-      background: rgba(255, 255, 255, 0.6);
-      color: var(--ink-soft);
+      background: rgba(255, 255, 255, 0.5);
+      color: var(--surface-ink-soft);
       font-weight: 600;
       font-size: 0.82rem;
       cursor: pointer;
       transition: background 0.15s, color 0.15s, border-color 0.15s;
     }
 
-    .tab-btn:hover { background: var(--accent-soft); color: var(--slate); }
-    .tab-btn.active { background: var(--slate); color: white; border-color: var(--slate); }
+    .tab-btn:hover {
+      background: var(--surface-chip);
+      color: var(--surface-ink-strong);
+    }
 
-    .artifacts-grid { display: grid; gap: 0.5rem; }
+    .tab-btn.active {
+      background: rgba(16, 38, 56, 0.1);
+      color: var(--surface-ink-strong);
+      border-color: rgba(42, 82, 116, 0.18);
+    }
+
+    .artifacts-grid {
+      display: grid;
+      gap: 0.5rem;
+    }
 
     .artifact-card {
-      border-radius: 12px;
-      border: 1px solid var(--line);
-      background: rgba(255, 255, 255, 0.6);
+      border-radius: 14px;
+      border: 1px solid var(--surface-line);
+      background: rgba(255, 255, 255, 0.48);
       overflow: hidden;
     }
 
@@ -121,7 +144,7 @@ import { AnalysisApiService } from '../../../core/services/analysis-api.service'
       font-weight: 700;
       font-size: 0.9rem;
       font-family: monospace;
-      color: var(--slate);
+      color: var(--surface-ink-strong);
       flex: 1;
     }
 
@@ -129,8 +152,8 @@ import { AnalysisApiService } from '../../../core/services/analysis-api.service'
       display: inline-block;
       padding: 0.18rem 0.55rem;
       border-radius: 999px;
-      background: rgba(99, 102, 241, 0.1);
-      color: #6366f1;
+      background: rgba(61, 134, 198, 0.12);
+      color: #3d86c6;
       font-size: 0.72rem;
       font-weight: 600;
     }
@@ -139,28 +162,64 @@ import { AnalysisApiService } from '../../../core/services/analysis-api.service'
       display: inline-block;
       padding: 0.18rem 0.55rem;
       border-radius: 999px;
-      background: rgba(245, 158, 11, 0.1);
-      color: #d97706;
+      background: var(--surface-warning-soft);
+      color: var(--surface-warning);
       font-size: 0.72rem;
       font-weight: 600;
     }
 
     .code-toggle {
       padding: 0.22rem 0.65rem;
-      border: 1px solid var(--line);
+      border: 1px solid var(--surface-line);
       border-radius: 999px;
       background: transparent;
-      color: var(--ink-soft);
+      color: var(--surface-ink-soft);
       font-size: 0.75rem;
       cursor: pointer;
-      transition: background 0.12s;
+      transition: background 0.12s, color 0.12s;
     }
 
-    .code-toggle:hover { background: var(--accent-soft); color: var(--slate); }
+    .code-toggle:hover {
+      background: var(--surface-chip);
+      color: var(--surface-ink-strong);
+    }
+
+    .artifact-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      flex-wrap: wrap;
+    }
+
+    .artifact-action-btn {
+      padding: 0.22rem 0.65rem;
+      border: 1px solid var(--surface-line);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.7);
+      color: var(--surface-ink-soft);
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: background 0.12s, color 0.12s;
+    }
+
+    .artifact-action-btn:hover {
+      background: var(--surface-chip);
+      color: var(--surface-ink-strong);
+    }
+
+    .artifact-feedback {
+      padding: 0.35rem 0.9rem 0.7rem;
+      font-size: 0.75rem;
+      color: var(--surface-success);
+    }
+
+    .artifact-feedback.error {
+      color: var(--surface-danger);
+    }
 
     .code-block {
-      background: #1e1e2e;
-      color: #cdd6f4;
+      background: var(--surface-code-bg);
+      color: var(--surface-code-ink);
       font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
       font-size: 0.78rem;
       line-height: 1.55;
@@ -174,17 +233,17 @@ import { AnalysisApiService } from '../../../core/services/analysis-api.service'
 
     .empty-msg {
       padding: 0.6rem 0;
-      color: var(--ink-soft);
+      color: var(--surface-ink-soft);
       font-size: 0.85rem;
       font-style: italic;
     }
 
     .needs-review-badge {
-      background: #fff7ed;
-      color: #c2410c;
-      border: 1px solid #fed7aa;
-      border-radius: 4px;
-      padding: 0.15rem 0.4rem;
+      background: var(--surface-warning-soft);
+      color: var(--surface-warning);
+      border: 1px solid rgba(185, 106, 44, 0.24);
+      border-radius: 999px;
+      padding: 0.15rem 0.45rem;
       font-size: 0.68rem;
       font-weight: 700;
       white-space: nowrap;
@@ -198,17 +257,17 @@ import { AnalysisApiService } from '../../../core/services/analysis-api.service'
 
     .warning-item {
       font-size: 0.72rem;
-      color: #c2410c;
+      color: var(--surface-warning);
       margin-bottom: 0.15rem;
     }
 
     .needs-review-summary {
       padding: 0.5rem 1rem;
-      background: rgba(194, 65, 12, 0.06);
-      border: 1px solid rgba(194, 65, 12, 0.2);
+      background: var(--surface-warning-soft);
+      border: 1px solid rgba(185, 106, 44, 0.22);
       border-radius: 8px;
       font-size: 0.82rem;
-      color: #c2410c;
+      color: var(--surface-warning);
       margin-bottom: 0.75rem;
     }
   `,
@@ -224,18 +283,17 @@ import { AnalysisApiService } from '../../../core/services/analysis-api.service'
 
     @if (needsReviewCount() > 0) {
       <div class="needs-review-summary">
-        ⚠ {{ needsReviewCount() }} artefact(s) nécessitent révision (voir les badges ci-dessous)
+        Attention : {{ needsReviewCount() }} artefact(s) necessitent une revision.
       </div>
     }
 
-    <!-- Panneau export -->
     <div class="export-panel">
       <input
         class="export-input"
         type="text"
         [value]="exportDir()"
         (input)="exportDir.set($any($event.target).value)"
-        placeholder="Répertoire cible (ex: C:\\monprojet\\src\\main\\java\\migration)"
+        placeholder="Repertoire cible (ex: C:\\monprojet\\src\\main\\java\\migration)"
       />
       <button
         class="export-btn"
@@ -247,16 +305,15 @@ import { AnalysisApiService } from '../../../core/services/analysis-api.service'
       @if (exportResult(); as result) {
         <div class="export-result">
           @if (result.exportedFiles.length > 0) {
-            <span class="export-ok">✓ {{ result.exportedFiles.length }} fichier(s) exporté(s) dans {{ result.targetDirectory }}</span>
+            <span class="export-ok">OK {{ result.exportedFiles.length }} fichier(s) exporte(s) dans {{ result.targetDirectory }}</span>
           }
           @for (e of result.errors; track e) {
-            <span class="export-err">✗ {{ e }}</span>
+            <span class="export-err">Erreur {{ e }}</span>
           }
         </div>
       }
     </div>
 
-    <!-- Onglets par lot -->
     @if (lotNumbers().length > 1) {
       <div class="tabs-bar">
         @for (lot of lotNumbers(); track lot) {
@@ -284,21 +341,40 @@ import { AnalysisApiService } from '../../../core/services/analysis-api.service'
                 <span class="bridge-badge">Bridge</span>
               }
               @if (art.generationStatus === 'WARNING') {
-                <span class="needs-review-badge">⚠ À VÉRIFIER</span>
+                <span class="needs-review-badge">A verifier</span>
               }
-              <button
-                class="code-toggle"
-                (click)="toggleCode(art.artifactId)"
-              >
-                {{ expandedArtifact() === art.artifactId ? 'Masquer' : 'Voir le code' }}
-              </button>
+              <div class="artifact-actions">
+                <button
+                  class="artifact-action-btn"
+                  (click)="copyArtifact(art)"
+                >
+                  Copier
+                </button>
+                <button
+                  class="artifact-action-btn"
+                  (click)="downloadArtifact(art)"
+                >
+                  Telecharger
+                </button>
+                <button
+                  class="code-toggle"
+                  (click)="toggleCode(art.artifactId)"
+                >
+                  {{ expandedArtifact() === art.artifactId ? 'Masquer' : 'Voir le code' }}
+                </button>
+              </div>
             </div>
             @if (art.generationWarnings.length > 0) {
               <ul class="warning-list">
                 @for (w of art.generationWarnings; track w) {
-                  <li class="warning-item">⚠ {{ formatWarning(w) }}</li>
+                  <li class="warning-item">Attention {{ formatWarning(w) }}</li>
                 }
               </ul>
+            }
+            @if (artifactFeedback()[art.artifactId]) {
+              <div class="artifact-feedback" [class.error]="artifactFeedback()[art.artifactId]?.startsWith('Erreur')">
+                {{ artifactFeedback()[art.artifactId] }}
+              </div>
             }
             @if (expandedArtifact() === art.artifactId) {
               <pre class="code-block">{{ art.content }}</pre>
@@ -320,6 +396,7 @@ export class ArtifactsViewComponent {
   protected readonly exportDir = signal('');
   protected readonly isExporting = signal(false);
   protected readonly exportResult = signal<{ targetDirectory: string; exportedFiles: string[]; errors: string[] } | null>(null);
+  protected readonly artifactFeedback = signal<Record<string, string>>({});
 
   protected readonly lotNumbers = computed((): number[] => {
     const lots = new Set<number>();
@@ -339,16 +416,40 @@ export class ArtifactsViewComponent {
 
   protected formatWarning(warning: string): string {
     const translations: Record<string, string> = {
-      'DUPLICATE_METHOD_NAME': 'Noms de méthodes dupliqués',
+      'DUPLICATE_METHOD_NAME': 'Noms de methodes dupliques',
       'MISSING_IMPORT': 'Import(s) potentiellement manquant(s)',
-      'EMPTY_BODY': 'Artefact sans méthode significative',
-      'PARSE_ERROR': 'Erreur de syntaxe Java détectée',
+      'EMPTY_BODY': 'Artefact sans methode significative',
+      'PARSE_ERROR': 'Erreur de syntaxe Java detectee',
     };
     return translations[warning] ?? warning;
   }
 
   protected toggleCode(artifactId: string): void {
     this.expandedArtifact.update(current => current === artifactId ? null : artifactId);
+  }
+
+  protected copyArtifact(artifact: CodeArtifactDto): void {
+    const copied = this.copyTextToClipboard(artifact.content);
+    this.setArtifactFeedback(
+      artifact.artifactId,
+      copied ? 'Code copie dans le presse-papiers' : 'Erreur lors de la copie du code',
+    );
+  }
+
+  protected downloadArtifact(artifact: CodeArtifactDto): void {
+    const fileName = `${artifact.className}.java`;
+    try {
+      const blob = new Blob([artifact.content], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = fileName;
+      anchor.click();
+      URL.revokeObjectURL(url);
+      this.setArtifactFeedback(artifact.artifactId, `Fichier ${fileName} telecharge`);
+    } catch {
+      this.setArtifactFeedback(artifact.artifactId, 'Erreur lors du telechargement du fichier');
+    }
   }
 
   protected doExport(): void {
@@ -360,9 +461,42 @@ export class ArtifactsViewComponent {
         this.isExporting.set(false);
       },
       error: () => {
-        this.exportResult.set({ targetDirectory: this.exportDir(), exportedFiles: [], errors: ['Erreur lors de la communication avec le serveur'] });
+        this.exportResult.set({
+          targetDirectory: this.exportDir(),
+          exportedFiles: [],
+          errors: ['Erreur lors de la communication avec le serveur']
+        });
         this.isExporting.set(false);
       },
     });
+  }
+
+  private copyTextToClipboard(content: string): boolean {
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(content).catch(() => undefined);
+      return true;
+    }
+
+    try {
+      const textarea = document.createElement('textarea');
+      textarea.value = content;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  private setArtifactFeedback(artifactId: string, message: string): void {
+    this.artifactFeedback.update(current => ({
+      ...current,
+      [artifactId]: message,
+    }));
   }
 }

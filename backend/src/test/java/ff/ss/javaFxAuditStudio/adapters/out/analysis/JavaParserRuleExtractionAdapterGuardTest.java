@@ -164,4 +164,22 @@ class JavaParserRuleExtractionAdapterGuardTest {
         assertThat(gardes.get(0).responsibilityClass()).isEqualTo(ResponsibilityClass.BUSINESS);
         assertThat(gardes.get(0).extractionCandidate()).isEqualTo(ExtractionCandidate.POLICY);
     }
+
+    @Test
+    void isVisible_doitEtreExclueDesPolicies() {
+        String source = """
+                public class VisibilityController {
+                    private boolean isVisible() {
+                        return node != null;
+                    }
+                }
+                """;
+
+        ExtractionResult result = adapter.extract("VisibilityController.java", source);
+
+        boolean policyGuard = result.rules().stream()
+                .anyMatch(r -> r.description().contains("isVisible")
+                        && r.extractionCandidate() == ExtractionCandidate.POLICY);
+        assertThat(policyGuard).isFalse();
+    }
 }

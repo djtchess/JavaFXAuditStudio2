@@ -3,6 +3,14 @@ package ff.ss.javaFxAuditStudio.application.service;
 import ff.ss.javaFxAuditStudio.application.ports.out.ClassificationPersistencePort;
 import ff.ss.javaFxAuditStudio.application.ports.out.RuleExtractionPort;
 import ff.ss.javaFxAuditStudio.application.ports.out.SourceReaderPort;
+import ff.ss.javaFxAuditStudio.domain.analysis.ControllerDependency;
+import ff.ss.javaFxAuditStudio.domain.analysis.DeltaAnalysisSummary;
+import ff.ss.javaFxAuditStudio.domain.analysis.DependencyKind;
+import ff.ss.javaFxAuditStudio.domain.analysis.DetectionStatus;
+import ff.ss.javaFxAuditStudio.domain.analysis.StateMachineInsight;
+import ff.ss.javaFxAuditStudio.domain.analysis.StateTransition;
+import ff.ss.javaFxAuditStudio.domain.ingestion.SourceInput;
+import ff.ss.javaFxAuditStudio.domain.ingestion.SourceInputType;
 import ff.ss.javaFxAuditStudio.domain.rules.BusinessRule;
 import ff.ss.javaFxAuditStudio.domain.rules.ClassificationResult;
 import ff.ss.javaFxAuditStudio.domain.rules.ExtractionCandidate;
@@ -106,5 +114,140 @@ class ClassifyResponsibilitiesServiceTest {
         assertThat(result.parsingMode()).isEqualTo(ParsingMode.REGEX_FALLBACK);
         assertThat(result.parsingFallbackReason()).isEqualTo("Parse error at line 5");
         assertThat(result.rules()).hasSize(1);
+    }
+
+    @Test
+    void handle_enrichesCachedClassificationWithLiveAnalysisAndDelta() {
+        BusinessRule cachedSaveRule;
+        BusinessRule cachedDeleteRule;
+        BusinessRule liveSaveRule;
+        BusinessRule liveCreateRule;
+        ClassificationPersistencePort persistencePort;
+        SourceReaderPort sourceReaderPort;
+        RuleExtractionPort port;
+        ClassifyResponsibilitiesService service;
+        ClassificationResult result;
+
+        cachedSaveRule = new BusinessRule(
+                "RG-010",
+                "Methode handler onSave : sauvegarde initiale",
+                "com/example/MyController.java",
+                0,
+                ResponsibilityClass.APPLICATION,
+                ExtractionCandidate.USE_CASE,
+                false);
+        cachedDeleteRule = new BusinessRule(
+                "RG-011",
+                "Methode handler onDelete : suppression initiale",
+                "com/example/MyController.java",
+                0,
+                ResponsibilityClass.APPLICATION,
+                ExtractionCandidate.USE_CASE,
+                false);
+        liveSaveRule = new BusinessRule(
+                "RG-010-live",
+                "Methode handler onSave : sauvegarde initiale",
+                "com/example/MyController.java",
+                0,
+                ResponsibilityClass.BUSINESS,
+                ExtractionCandidate.POLICY,
+                false);
+        liveCreateRule = new BusinessRule(
+                "RG-012",
+                "Methode handler onCreate : creation initiale",
+                "com/example/MyController.java",
+                0,
+                ResponsibilityClass.APPLICATION,
+                ExtractionCandidate.USE_CASE,
+                false);
+
+        persistencePort = new ClassificationPersistencePort() {
+            @Override
+            public ClassificationResult save(final String sessionId, final ClassificationResult result) {
+                return result;
+            }
+
+            @Override
+            public Optional<ClassificationResult> findBySessionId(final String sessionId) {
+                return Optional.of(new ClassificationResult(
+                        "com/example/MyController.java",
+                        List.of(cachedSaveRule, cachedDeleteRule),
+                        List.of(),
+                        ParsingMode.AST,
+                        null,
+                        0,
+                        StateMachineInsight.absent(),
+                        List.of(),
+                        DeltaAnalysisSummary.none()));
+            }
+        };
+        sourceReaderPort = ref -> Optional.of(new SourceInput(
+                ref,
+                SourceInputType.JAVA_CONTROLLER,
+                "public class MyController {}"));
+        port = (controllerRef, javaContent) -> ExtractionResult.ast(
+                List.of(liveSaveRule, liveCreateRule),
+                0,
+                new StateMachineInsight(
+                        DetectionStatus.CONFIRMED,
+                        0.75d,
+                        List.of("DRAFT", "SAVED"),
+                        List.of(new StateTransition("DRAFT", "SAVED", "onSave"))),
+                List.of(new ControllerDependency(
+                        DependencyKind.SHARED_SERVICE,
+                        "BillingService",
+                        "billingService")));
+
+        service = new ClassifyResponsibilitiesService(port, persistencePort, sourceReaderPort);
+
+        result = service.handle("session-cache", "com/example/MyController.java");
+
+        assertThat(result.rules()).containsExactly(cachedSaveRule, cachedDeleteRule);
+        assertThat(result.stateMachine().status()).isEqualTo(DetectionStatus.CONFIRMED);
+        assertThat(result.stateMachine().transitions()).hasSize(1);
+        assertThat(result.dependencies()).containsExactly(new ControllerDependency(
+                DependencyKind.SHARED_SERVICE,
+                "BillingService",
+                "billingService"));
+        assertThat(result.deltaAnalysis()).isEqualTo(new DeltaAnalysisSummary(1, 1, 1));
+    }
+
+    @Test
+    void handle_preservesAdvancedExtractionSignalsOnFreshClassification() {
+        BusinessRule rule;
+        RuleExtractionPort port;
+        SourceReaderPort sourceReaderPort;
+        ClassifyResponsibilitiesService service;
+        ClassificationResult result;
+
+        rule = buildRule("RG-020", false);
+        sourceReaderPort = ref -> Optional.of(new SourceInput(
+                ref,
+                SourceInputType.JAVA_CONTROLLER,
+                "public class MyController {}"));
+        port = (controllerRef, javaContent) -> ExtractionResult.ast(
+                List.of(rule),
+                2,
+                new StateMachineInsight(
+                        DetectionStatus.POSSIBLE,
+                        0.45d,
+                        List.of("DRAFT"),
+                        List.of()),
+                List.of(new ControllerDependency(
+                        DependencyKind.DIRECT_CONTROLLER,
+                        "DetailsController",
+                        "detailsController")));
+
+        service = new ClassifyResponsibilitiesService(port, NO_OP_PERSISTENCE, sourceReaderPort);
+
+        result = service.handle("session-advanced", "com/example/MyController.java");
+
+        assertThat(result.excludedLifecycleMethodsCount()).isEqualTo(2);
+        assertThat(result.stateMachine().status()).isEqualTo(DetectionStatus.POSSIBLE);
+        assertThat(result.dependencies()).containsExactly(new ControllerDependency(
+                DependencyKind.DIRECT_CONTROLLER,
+                "DetailsController",
+                "detailsController"));
+        assertThat(result.deltaAnalysis()).isEqualTo(DeltaAnalysisSummary.none());
     }
 }

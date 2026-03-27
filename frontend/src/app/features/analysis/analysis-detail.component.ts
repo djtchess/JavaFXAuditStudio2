@@ -3,20 +3,20 @@ import { ActivatedRoute } from '@angular/router';
 
 import { AnalysisApiService } from '../../core/services/analysis-api.service';
 import {
+  ArtifactsResponse,
   CartographyResponse,
   ClassificationResponse,
   MigrationPlanResponse,
-  ArtifactsResponse,
-  RestitutionReportResponse,
-  OrchestratedAnalysisResultResponse
+  OrchestratedAnalysisResultResponse,
+  RestitutionReportResponse
 } from '../../core/models/analysis.model';
 
+import { AiEnrichmentViewComponent } from './components/ai-enrichment-view.component';
+import { ArtifactsViewComponent } from './components/artifacts-view.component';
 import { CartographyViewComponent } from './components/cartography-view.component';
 import { ClassificationViewComponent } from './components/classification-view.component';
 import { MigrationPlanViewComponent } from './components/migration-plan-view.component';
-import { ArtifactsViewComponent } from './components/artifacts-view.component';
 import { ReportViewComponent } from './components/report-view.component';
-import { AiEnrichmentViewComponent } from './components/ai-enrichment-view.component';
 
 interface StepState<T> {
   isLoading: boolean;
@@ -41,9 +41,34 @@ function emptyStep<T>(): StepState<T> {
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     .page-shell {
-      width: min(1080px, calc(100% - 2rem));
+      width: min(1240px, calc(100% - 1rem));
       margin: 0 auto;
-      padding: 2rem 0 4rem;
+      padding: 1.5rem 0 4rem;
+    }
+
+    .session-hero {
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.9fr);
+      padding: 1.7rem;
+      border-radius: 32px;
+      border: 1px solid var(--line-strong);
+      background:
+        linear-gradient(145deg, rgba(8, 20, 32, 0.9), rgba(12, 28, 43, 0.85)),
+        radial-gradient(circle at top left, rgba(101, 223, 255, 0.12), transparent 34%),
+        radial-gradient(circle at bottom right, rgba(255, 154, 77, 0.14), transparent 28%);
+      box-shadow: var(--glow);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .session-hero::after {
+      content: "";
+      position: absolute;
+      inset: auto -8% -34% 50%;
+      height: 220px;
+      background: radial-gradient(circle, rgba(101, 223, 255, 0.14), transparent 68%);
+      pointer-events: none;
     }
 
     .eyebrow {
@@ -55,30 +80,97 @@ function emptyStep<T>(): StepState<T> {
     }
 
     h1 {
-      margin: 0.4rem 0 0.5rem;
+      margin: 0.4rem 0 0.75rem;
       font-family: var(--font-display);
       font-weight: 700;
-      font-size: clamp(1.6rem, 3vw, 2.4rem);
-      line-height: 1.1;
+      font-size: clamp(2.2rem, 3.6vw, 3.5rem);
+      line-height: 0.95;
+      max-width: 11ch;
+      letter-spacing: 0.04em;
+    }
+
+    .lead {
+      margin: 0;
+      max-width: 56ch;
+      color: var(--ink-soft);
+      line-height: 1.7;
     }
 
     .session-id {
-      margin: 0 0 1.2rem;
-      font-size: 0.82rem;
-      color: var(--ink-soft);
-      font-family: monospace;
+      margin: 1.1rem 0 0;
+      display: inline-flex;
+      width: fit-content;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.55rem 0.85rem;
+      border-radius: 999px;
+      border: 1px solid rgba(157, 190, 218, 0.18);
+      background: rgba(255, 255, 255, 0.04);
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(157, 190, 218, 0.88);
     }
 
-    .pipeline-bar {
+    .session-id span {
+      color: white;
+      font-family: var(--font-mono);
+      letter-spacing: 0.04em;
+      text-transform: none;
+    }
+
+    .hero-meta {
+      display: grid;
+      gap: 0.8rem;
+      align-content: start;
+      position: relative;
+      z-index: 1;
+    }
+
+    .meta-card {
+      display: grid;
+      gap: 0.25rem;
+      padding: 1rem 1.05rem;
+      border-radius: 22px;
+      border: 1px solid rgba(157, 190, 218, 0.16);
+      background: rgba(255, 255, 255, 0.04);
+      backdrop-filter: blur(8px);
+    }
+
+    .meta-label {
+      margin: 0;
+      color: rgba(157, 190, 218, 0.76);
+      font-size: 0.72rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    .meta-card strong {
+      font-family: var(--font-display);
+      font-size: 1.55rem;
+      line-height: 1;
+      letter-spacing: 0.04em;
+    }
+
+    .meta-card span {
+      color: var(--ink-soft);
+      font-size: 0.84rem;
+      line-height: 1.55;
+    }
+
+    .command-bar {
       display: flex;
       align-items: center;
       gap: 1rem;
-      margin-bottom: 1.5rem;
-      padding: 1rem 1.25rem;
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      background: rgba(255, 255, 255, 0.75);
-      box-shadow: var(--shadow);
+      justify-content: space-between;
+      margin: 1rem 0 1.5rem;
+      padding: 1rem 1.1rem;
+      border: 1px solid var(--line-strong);
+      border-radius: 24px;
+      background:
+        linear-gradient(135deg, rgba(8, 20, 32, 0.84), rgba(12, 28, 43, 0.82)),
+        rgba(255, 255, 255, 0.02);
+      box-shadow: var(--glow);
       flex-wrap: wrap;
     }
 
@@ -86,25 +178,43 @@ function emptyStep<T>(): StepState<T> {
       display: inline-flex;
       align-items: center;
       gap: 0.5rem;
-      padding: 0.6rem 1.4rem;
-      border: none;
+      justify-content: center;
+      min-height: 3rem;
+      padding: 0.7rem 1.25rem;
+      border: 1px solid rgba(101, 223, 255, 0.22);
       border-radius: 999px;
-      background: linear-gradient(135deg, var(--slate), #2d4a6f);
+      background:
+        linear-gradient(135deg, rgba(101, 223, 255, 0.2), rgba(255, 154, 77, 0.18)),
+        rgba(255, 255, 255, 0.08);
       color: white;
       font-weight: 700;
-      font-size: 0.9rem;
+      font-size: 0.82rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
       cursor: pointer;
-      transition: opacity 0.2s;
       flex-shrink: 0;
     }
 
     .pipeline-btn:hover:not(:disabled) {
-      opacity: 0.85;
+      transform: translateY(-1px);
     }
 
     .pipeline-btn:disabled {
       opacity: 0.5;
       cursor: not-allowed;
+    }
+
+    .command-side {
+      display: grid;
+      gap: 0.45rem;
+      min-width: min(100%, 320px);
+    }
+
+    .command-caption {
+      margin: 0;
+      color: rgba(157, 190, 218, 0.76);
+      font-size: 0.78rem;
+      line-height: 1.5;
     }
 
     .pipeline-progress {
@@ -116,23 +226,23 @@ function emptyStep<T>(): StepState<T> {
     }
 
     .progress-bar-track {
-      width: 180px;
+      width: 200px;
       height: 6px;
       border-radius: 999px;
-      background: rgba(18, 35, 56, 0.08);
+      background: rgba(255, 255, 255, 0.08);
       overflow: hidden;
     }
 
     .progress-bar-fill {
       height: 100%;
       border-radius: 999px;
-      background: var(--slate);
+      background: linear-gradient(90deg, var(--cyan), var(--accent));
       transition: width 0.3s ease;
     }
 
     .pipeline-error {
       font-size: 0.82rem;
-      color: #b94517;
+      color: #ffd1c6;
     }
 
     .steps-grid {
@@ -141,9 +251,12 @@ function emptyStep<T>(): StepState<T> {
     }
 
     .step-card {
-      border: 1px solid var(--line);
-      border-radius: 20px;
-      background: rgba(255, 255, 255, 0.75);
+      border: 1px solid var(--surface-line-strong);
+      border-radius: 26px;
+      background:
+        radial-gradient(circle at top right, rgba(101, 223, 255, 0.06), transparent 34%),
+        linear-gradient(155deg, rgba(252, 248, 239, 0.98), rgba(237, 230, 218, 0.96));
+      color: var(--surface-ink);
       box-shadow: var(--shadow);
       overflow: hidden;
     }
@@ -153,7 +266,8 @@ function emptyStep<T>(): StepState<T> {
       align-items: center;
       justify-content: space-between;
       gap: 1rem;
-      padding: 1.1rem 1.5rem;
+      padding: 1.15rem 1.35rem;
+      border-bottom: 1px solid var(--surface-line);
     }
 
     .step-header h2 {
@@ -169,9 +283,10 @@ function emptyStep<T>(): StepState<T> {
       justify-content: center;
       width: 2rem;
       height: 2rem;
-      border-radius: 50%;
-      background: var(--accent-soft);
-      color: var(--slate);
+      border-radius: 0.8rem;
+      background:
+        linear-gradient(135deg, rgba(17, 40, 60, 1), rgba(39, 76, 108, 1));
+      color: white;
       font-weight: 700;
       font-size: 0.85rem;
       flex-shrink: 0;
@@ -187,20 +302,25 @@ function emptyStep<T>(): StepState<T> {
       display: inline-flex;
       align-items: center;
       gap: 0.4rem;
-      padding: 0.5rem 1.2rem;
-      border: none;
+      justify-content: center;
+      min-height: 2.7rem;
+      padding: 0.55rem 1rem;
+      border: 1px solid rgba(42, 82, 116, 0.16);
       border-radius: 999px;
-      background: var(--slate);
-      color: white;
-      font-weight: 600;
-      font-size: 0.85rem;
+      background: rgba(16, 38, 56, 0.08);
+      color: var(--surface-ink-strong);
+      font-weight: 700;
+      font-size: 0.76rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
       cursor: pointer;
-      transition: opacity 0.2s;
       flex-shrink: 0;
     }
 
     .run-btn:hover:not(:disabled) {
-      opacity: 0.85;
+      transform: translateY(-1px);
+      border-color: rgba(101, 223, 255, 0.32);
+      background: rgba(101, 223, 255, 0.12);
     }
 
     .run-btn:disabled {
@@ -209,7 +329,7 @@ function emptyStep<T>(): StepState<T> {
     }
 
     .step-body {
-      padding: 0 1.5rem 1.25rem;
+      padding: 1rem 1.35rem 1.25rem;
     }
 
     .parsing-warning-banner {
@@ -217,10 +337,10 @@ function emptyStep<T>(): StepState<T> {
       align-items: center;
       gap: 0.5rem;
       padding: 0.7rem 1rem;
-      border-radius: 12px;
-      background: rgba(245, 158, 11, 0.08);
-      border: 1px solid rgba(245, 158, 11, 0.3);
-      color: #92400e;
+      border-radius: 16px;
+      background: rgba(255, 154, 77, 0.08);
+      border: 1px solid rgba(255, 154, 77, 0.26);
+      color: #8a4519;
       font-size: 0.85rem;
       margin-bottom: 1rem;
     }
@@ -232,30 +352,61 @@ function emptyStep<T>(): StepState<T> {
 
     .status-loading {
       padding: 0.8rem 1rem;
-      border-radius: 12px;
-      background: rgba(14, 139, 114, 0.06);
-      border: 1px solid rgba(14, 139, 114, 0.2);
-      color: var(--ink-soft);
+      border-radius: 16px;
+      background: rgba(76, 225, 198, 0.08);
+      border: 1px solid rgba(76, 225, 198, 0.24);
+      color: var(--surface-ink);
       font-size: 0.9rem;
     }
 
     .status-error {
       padding: 0.8rem 1rem;
-      border-radius: 12px;
-      background: rgba(217, 95, 51, 0.06);
-      border: 1px solid rgba(217, 95, 51, 0.25);
-      color: #b94517;
+      border-radius: 16px;
+      background: rgba(255, 118, 92, 0.08);
+      border: 1px solid rgba(255, 118, 92, 0.25);
+      color: #9e3213;
       font-size: 0.9rem;
+    }
+
+    @media (max-width: 960px) {
+      .session-hero {
+        grid-template-columns: 1fr;
+      }
     }
   `,
   template: `
     <main class="page-shell">
-      <p class="eyebrow">Analyse</p>
-      <h1>Detail de la session</h1>
-      <p class="session-id">Session : {{ sessionId }}</p>
+      <section class="session-hero">
+        <div>
+          <p class="eyebrow">Mission Control</p>
+          <h1>Detail de la session</h1>
+          <p class="lead">
+            Execute les etapes une par une pour inspecter finement les sorties, ou lance le pipeline
+            complet pour piloter la migration depuis une seule console.
+          </p>
+          <p class="session-id">Session <span>{{ sessionId }}</span></p>
+        </div>
 
-      <!-- Pipeline complet -->
-      <div class="pipeline-bar">
+        <div class="hero-meta">
+          <article class="meta-card">
+            <p class="meta-label">Pipeline</p>
+            <strong>5 etapes</strong>
+            <span>Cartographie, classification, plan, artefacts et restitution.</span>
+          </article>
+          <article class="meta-card">
+            <p class="meta-label">Mode</p>
+            <strong>Orchestration guidee</strong>
+            <span>Run complet ou execution ciblee selon le besoin d'analyse.</span>
+          </article>
+          <article class="meta-card">
+            <p class="meta-label">Extension</p>
+            <strong>Analyse IA</strong>
+            <span>Enrichissement additionnel depuis la meme session de travail.</span>
+          </article>
+        </div>
+      </section>
+
+      <section class="command-bar">
         <button
           class="pipeline-btn"
           [disabled]="pipelineRunning()"
@@ -265,22 +416,30 @@ function emptyStep<T>(): StepState<T> {
         </button>
 
         @if (pipelineRunning()) {
-          <div class="pipeline-progress">
-            <div class="progress-bar-track">
-              <div class="progress-bar-fill" [style.width.%]="pipelineProgressPercent()"></div>
+          <div class="command-side">
+            <div class="pipeline-progress">
+              <div class="progress-bar-track">
+                <div class="progress-bar-fill" [style.width.%]="pipelineProgressPercent()"></div>
+              </div>
+              <span>Etape {{ pipelineStep() }}/5 en cours...</span>
             </div>
-            <span>Etape {{ pipelineStep() }}/5 en cours...</span>
+            <p class="command-caption">Progression du pipeline global en cours d'orchestration.</p>
+          </div>
+        } @else {
+          <div class="command-side">
+            <p class="command-caption">
+              Le pipeline complet enchaine automatiquement les cinq modules et peuple la console de
+              restitution sans changer les contrats backend.
+            </p>
           </div>
         }
 
         @if (pipelineError()) {
           <span class="pipeline-error">{{ pipelineError() }}</span>
         }
-      </div>
+      </section>
 
       <div class="steps-grid">
-
-        <!-- Step 1: Cartographie -->
         <section class="step-card">
           <div class="step-header">
             <div class="step-title-row">
@@ -308,7 +467,6 @@ function emptyStep<T>(): StepState<T> {
           }
         </section>
 
-        <!-- Step 2: Classification -->
         <section class="step-card">
           <div class="step-header">
             <div class="step-title-row">
@@ -332,7 +490,7 @@ function emptyStep<T>(): StepState<T> {
               } @else if (classification().data) {
                 @if (classification().data!.parsingMode === 'REGEX_FALLBACK') {
                   <div class="parsing-warning-banner">
-                    ⚠ Analyse en mode regex — précision réduite (JavaParser a échoué)
+                    Attention : analyse en mode regex, precision reduite (JavaParser a echoue)
                     @if (classification().data!.parsingFallbackReason) {
                       <span class="reason">{{ classification().data!.parsingFallbackReason }}</span>
                     }
@@ -344,7 +502,6 @@ function emptyStep<T>(): StepState<T> {
           }
         </section>
 
-        <!-- Step 3: Plan de migration -->
         <section class="step-card">
           <div class="step-header">
             <div class="step-title-row">
@@ -372,7 +529,6 @@ function emptyStep<T>(): StepState<T> {
           }
         </section>
 
-        <!-- Step 4: Artefacts -->
         <section class="step-card">
           <div class="step-header">
             <div class="step-title-row">
@@ -400,7 +556,6 @@ function emptyStep<T>(): StepState<T> {
           }
         </section>
 
-        <!-- Step 5: Rapport -->
         <section class="step-card">
           <div class="step-header">
             <div class="step-title-row">
@@ -428,16 +583,17 @@ function emptyStep<T>(): StepState<T> {
           }
         </section>
 
-        <!-- Analyse IA -->
         <section class="step-card">
           <div class="step-header">
-            <h2>Analyse IA</h2>
+            <div class="step-title-row">
+              <span class="step-number">AI</span>
+              <h2>Analyse IA</h2>
+            </div>
           </div>
           <div class="step-body">
-            <jas-ai-enrichment-view [sessionId]="sessionId" />
+            <jas-ai-enrichment-view [sessionId]="sessionId" [templateArtifacts]="artifacts().data" />
           </div>
         </section>
-
       </div>
     </main>
   `

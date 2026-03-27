@@ -70,7 +70,7 @@ class EnrichAnalysisServiceAuditTest {
     }
 
     private static SanitizedBundle bundleFor(final String controllerRef) {
-        return new SanitizedBundle("bundle-id", controllerRef, "sanitized source", 5, "1.0");
+        return new SanitizedBundle("bundle-id", controllerRef, "sanitized source", 5, "1.0", null);
     }
 
     private static AnalysisSession sessionFor(final String sessionId, final String controllerName) {

@@ -7,8 +7,14 @@ import org.springframework.stereotype.Component;
 
 import ff.ss.javaFxAuditStudio.adapters.in.rest.dto.ClassificationResponse;
 import ff.ss.javaFxAuditStudio.adapters.in.rest.dto.ClassificationResponse.BusinessRuleDto;
+import ff.ss.javaFxAuditStudio.adapters.in.rest.dto.ClassificationResponse.DependencyDto;
+import ff.ss.javaFxAuditStudio.adapters.in.rest.dto.ClassificationResponse.DeltaAnalysisDto;
 import ff.ss.javaFxAuditStudio.adapters.in.rest.dto.ClassificationResponse.MethodParameterDto;
 import ff.ss.javaFxAuditStudio.adapters.in.rest.dto.ClassificationResponse.MethodSignatureDto;
+import ff.ss.javaFxAuditStudio.adapters.in.rest.dto.ClassificationResponse.StateMachineDto;
+import ff.ss.javaFxAuditStudio.adapters.in.rest.dto.ClassificationResponse.StateTransitionDto;
+import ff.ss.javaFxAuditStudio.domain.analysis.ControllerDependency;
+import ff.ss.javaFxAuditStudio.domain.analysis.StateMachineInsight;
 import ff.ss.javaFxAuditStudio.domain.rules.BusinessRule;
 import ff.ss.javaFxAuditStudio.domain.rules.ClassificationResult;
 import ff.ss.javaFxAuditStudio.domain.rules.MethodSignature;
@@ -28,7 +34,14 @@ public class ClassificationResponseMapper {
                 allRules,
                 parsingMode,
                 result.parsingFallbackReason(),
-                result.excludedLifecycleMethodsCount());
+                result.excludedLifecycleMethodsCount(),
+                toStateMachineDto(result.stateMachine()),
+                result.dependencies().stream().map(this::toDependencyDto).toList(),
+                new DeltaAnalysisDto(
+                        result.deltaAnalysis().addedRules(),
+                        result.deltaAnalysis().removedRules(),
+                        result.deltaAnalysis().changedRules(),
+                        result.deltaAnalysis().hasChanges()));
     }
 
     private List<BusinessRuleDto> buildAllRules(final ClassificationResult result) {
@@ -60,5 +73,26 @@ public class ClassificationResponseMapper {
                 .map(p -> new MethodParameterDto(p.type(), p.name(), p.unknown()))
                 .toList();
         return new MethodSignatureDto(sig.returnType(), params, sig.hasUnknowns());
+    }
+
+    private StateMachineDto toStateMachineDto(final StateMachineInsight insight) {
+        List<StateTransitionDto> transitions = insight.transitions().stream()
+                .map(transition -> new StateTransitionDto(
+                        transition.fromState(),
+                        transition.toState(),
+                        transition.trigger()))
+                .toList();
+        return new StateMachineDto(
+                insight.status().name(),
+                insight.confidence(),
+                insight.states(),
+                transitions);
+    }
+
+    private DependencyDto toDependencyDto(final ControllerDependency dependency) {
+        return new DependencyDto(
+                dependency.kind().name(),
+                dependency.target(),
+                dependency.via());
     }
 }

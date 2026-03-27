@@ -8,6 +8,7 @@ import ff.ss.javaFxAuditStudio.application.ports.in.IngestSourcesUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.in.ProduceMigrationPlanUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.in.ProduceRestitutionUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.out.AnalysisSessionPort;
+import ff.ss.javaFxAuditStudio.application.ports.out.WorkflowObservabilityPort;
 import ff.ss.javaFxAuditStudio.domain.cartography.ControllerCartography;
 import ff.ss.javaFxAuditStudio.domain.generation.GenerationResult;
 import ff.ss.javaFxAuditStudio.domain.migration.MigrationPlan;
@@ -20,9 +21,12 @@ import ff.ss.javaFxAuditStudio.domain.workbench.OrchestratedAnalysisResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 /**
  * Service applicatif orchestrant le pipeline bout-en-bout d'une session d'analyse.
@@ -42,6 +46,7 @@ public final class AnalysisOrchestrationService implements AnalysisOrchestration
     private final ProduceMigrationPlanUseCase produceMigrationPlanUseCase;
     private final GenerateArtifactsUseCase generateArtifactsUseCase;
     private final ProduceRestitutionUseCase produceRestitutionUseCase;
+    private final WorkflowObservabilityPort observabilityPort;
 
     public AnalysisOrchestrationService(
             final AnalysisSessionPort analysisSessionPort,
@@ -51,6 +56,26 @@ public final class AnalysisOrchestrationService implements AnalysisOrchestration
             final ProduceMigrationPlanUseCase produceMigrationPlanUseCase,
             final GenerateArtifactsUseCase generateArtifactsUseCase,
             final ProduceRestitutionUseCase produceRestitutionUseCase) {
+        this(
+                analysisSessionPort,
+                ingestSourcesUseCase,
+                cartographyUseCase,
+                classifyResponsibilitiesUseCase,
+                produceMigrationPlanUseCase,
+                generateArtifactsUseCase,
+                produceRestitutionUseCase,
+                WorkflowObservabilityPort.noop());
+    }
+
+    public AnalysisOrchestrationService(
+            final AnalysisSessionPort analysisSessionPort,
+            final IngestSourcesUseCase ingestSourcesUseCase,
+            final CartographyUseCase cartographyUseCase,
+            final ClassifyResponsibilitiesUseCase classifyResponsibilitiesUseCase,
+            final ProduceMigrationPlanUseCase produceMigrationPlanUseCase,
+            final GenerateArtifactsUseCase generateArtifactsUseCase,
+            final ProduceRestitutionUseCase produceRestitutionUseCase,
+            final WorkflowObservabilityPort observabilityPort) {
         this.analysisSessionPort = Objects.requireNonNull(analysisSessionPort, "analysisSessionPort must not be null");
         this.ingestSourcesUseCase = Objects.requireNonNull(ingestSourcesUseCase, "ingestSourcesUseCase must not be null");
         this.cartographyUseCase = Objects.requireNonNull(cartographyUseCase, "cartographyUseCase must not be null");
@@ -58,98 +83,181 @@ public final class AnalysisOrchestrationService implements AnalysisOrchestration
         this.produceMigrationPlanUseCase = Objects.requireNonNull(produceMigrationPlanUseCase, "produceMigrationPlanUseCase must not be null");
         this.generateArtifactsUseCase = Objects.requireNonNull(generateArtifactsUseCase, "generateArtifactsUseCase must not be null");
         this.produceRestitutionUseCase = Objects.requireNonNull(produceRestitutionUseCase, "produceRestitutionUseCase must not be null");
+        this.observabilityPort = (observabilityPort != null) ? observabilityPort : WorkflowObservabilityPort.noop();
     }
 
     @Override
     public OrchestratedAnalysisResult orchestrate(final String sessionId) {
         Objects.requireNonNull(sessionId, "sessionId must not be null");
+        Instant startedAt = Instant.now();
         log.info("Orchestration demarree - sessionId masque");
 
-        // Etape 1 : retrouver la session
         Optional<AnalysisSession> sessionOpt = analysisSessionPort.findById(sessionId);
         if (sessionOpt.isEmpty()) {
             log.warn("Session introuvable lors de l'orchestration - sessionId masque");
-            return new OrchestratedAnalysisResult(
-                    sessionId,
-                    AnalysisStatus.FAILED,
-                    null, null, null, null, null,
-                    List.of("Session introuvable : " + sessionId));
+            observabilityPort.recordPipelineOutcome("not_found", Duration.between(startedAt, Instant.now()));
+            return buildFailureResult(sessionId, "Session introuvable : " + sessionId);
         }
 
         AnalysisSession session = sessionOpt.get();
-        final String controllerRef = session.controllerName();
-        final String sourceRef = session.sourceSnippetRef() != null ? session.sourceSnippetRef() : controllerRef;
-
-        // Etape 2 : passer en IN_PROGRESS
-        AnalysisSession sessionInProgress = new AnalysisSession(
-                session.sessionId(),
-                session.controllerName(),
-                session.sourceSnippetRef(),
-                AnalysisStatus.IN_PROGRESS,
-                session.createdAt());
-        analysisSessionPort.save(sessionInProgress);
+        String sourceRef = session.sourceSnippetRef() != null ? session.sourceSnippetRef() : session.controllerName();
+        saveStatus(session, AnalysisStatus.IN_PROGRESS);
 
         try {
-            // Etape 3 : ingestion
-            log.debug("Etape ingestion demarree");
-            ingestSourcesUseCase.handle(List.of(sourceRef));
-
-            // Etape 4 : cartographie — utilise les chemins reels stockes dans la session
-            log.debug("Etape cartographie demarree");
-            ControllerCartography cartography = cartographyUseCase.handle(
-                    sessionId, session.controllerName(), session.sourceSnippetRef());
-
-            // Etape 5 : classification
-            log.debug("Etape classification demarree");
-            ClassificationResult classification = classifyResponsibilitiesUseCase.handle(sessionId, cartography.controllerRef());
-
-            // Etape 6 : plan de migration
-            log.debug("Etape plan de migration demarree");
-            MigrationPlan migrationPlan = produceMigrationPlanUseCase.handle(sessionId, classification.controllerRef());
-
-            // Etape 7 : generation
-            log.debug("Etape generation demarree");
-            GenerationResult generationResult = generateArtifactsUseCase.handle(sessionId, migrationPlan.controllerRef());
-
-            // Etape 8 : restitution
-            log.debug("Etape restitution demarree");
-            RestitutionReport restitutionReport = produceRestitutionUseCase.handle(sessionId, generationResult.controllerRef());
-
-            // Etape 9 : COMPLETED
-            AnalysisSession sessionCompleted = new AnalysisSession(
-                    session.sessionId(),
-                    session.controllerName(),
-                    session.sourceSnippetRef(),
-                    AnalysisStatus.COMPLETED,
-                    session.createdAt());
-            analysisSessionPort.save(sessionCompleted);
-
+            ingestSources(session, sourceRef);
+            ControllerCartography cartography = cartography(sessionId, session);
+            ClassificationResult classification = classify(sessionId, session, cartography);
+            MigrationPlan migrationPlan = planMigration(sessionId, session, classification);
+            GenerationResult generationResult = generateArtifacts(sessionId, session, migrationPlan);
+            RestitutionReport restitutionReport = produceRestitution(sessionId, session, generationResult);
+            saveStatus(session, AnalysisStatus.COMPLETED);
             log.info("Orchestration terminee avec succes");
-            return new OrchestratedAnalysisResult(
+            observabilityPort.recordPipelineOutcome("success", Duration.between(startedAt, Instant.now()));
+            return buildSuccessResult(
                     sessionId,
-                    AnalysisStatus.COMPLETED,
                     cartography,
                     classification,
                     migrationPlan,
                     generationResult,
-                    restitutionReport,
-                    List.of());
-
+                    restitutionReport);
         } catch (Exception ex) {
             log.error("Orchestration echouee - etape inconnue", ex);
-            AnalysisSession sessionFailed = new AnalysisSession(
-                    session.sessionId(),
-                    session.controllerName(),
-                    session.sourceSnippetRef(),
-                    AnalysisStatus.FAILED,
-                    session.createdAt());
-            analysisSessionPort.save(sessionFailed);
-
-            return new OrchestratedAnalysisResult(
-                    sessionId,
-                    AnalysisStatus.FAILED,
-                    null, null, null, null, null,
-                    List.of(ex.getMessage() != null ? ex.getMessage() : ex.getClass().getName()));
+            saveStatus(session, AnalysisStatus.FAILED);
+            observabilityPort.recordPipelineOutcome("failure", Duration.between(startedAt, Instant.now()));
+            return buildFailureResult(sessionId, ex.getMessage() != null ? ex.getMessage() : ex.getClass().getName());
         }
+    }
+
+    private void ingestSources(final AnalysisSession session, final String sourceRef) {
+        executeStage(
+                "ingest",
+                session,
+                AnalysisStatus.INGESTING,
+                () -> {
+                    log.debug("Etape ingestion demarree");
+                    ingestSourcesUseCase.handle(List.of(sourceRef));
+                    return null;
+                });
+    }
+
+    private ControllerCartography cartography(final String sessionId, final AnalysisSession session) {
+        return executeStage(
+                "cartography",
+                session,
+                AnalysisStatus.CARTOGRAPHING,
+                () -> {
+                    log.debug("Etape cartographie demarree");
+                    return cartographyUseCase.handle(sessionId, session.controllerName(), session.sourceSnippetRef());
+                });
+    }
+
+    private ClassificationResult classify(
+            final String sessionId,
+            final AnalysisSession session,
+            final ControllerCartography cartography) {
+        return executeStage(
+                "classification",
+                session,
+                AnalysisStatus.CLASSIFYING,
+                () -> {
+                    log.debug("Etape classification demarree");
+                    return classifyResponsibilitiesUseCase.handle(sessionId, cartography.controllerRef());
+                });
+    }
+
+    private MigrationPlan planMigration(
+            final String sessionId,
+            final AnalysisSession session,
+            final ClassificationResult classification) {
+        return executeStage(
+                "planning",
+                session,
+                AnalysisStatus.PLANNING,
+                () -> {
+                    log.debug("Etape plan de migration demarree");
+                    return produceMigrationPlanUseCase.handle(sessionId, classification.controllerRef());
+                });
+    }
+
+    private GenerationResult generateArtifacts(
+            final String sessionId,
+            final AnalysisSession session,
+            final MigrationPlan migrationPlan) {
+        return executeStage(
+                "generation",
+                session,
+                AnalysisStatus.GENERATING,
+                () -> {
+                    log.debug("Etape generation demarree");
+                    return generateArtifactsUseCase.handle(sessionId, migrationPlan.controllerRef());
+                });
+    }
+
+    private RestitutionReport produceRestitution(
+            final String sessionId,
+            final AnalysisSession session,
+            final GenerationResult generationResult) {
+        return executeStage(
+                "reporting",
+                session,
+                AnalysisStatus.REPORTING,
+                () -> {
+                    log.debug("Etape restitution demarree");
+                    return produceRestitutionUseCase.handle(sessionId, generationResult.controllerRef());
+                });
+    }
+
+    private <T> T executeStage(
+            final String stageName,
+            final AnalysisSession session,
+            final AnalysisStatus status,
+            final Supplier<T> action) {
+        saveStatus(session, status);
+        Instant startedAt = Instant.now();
+        try {
+            T result = action.get();
+            observabilityPort.recordPipelineStage(stageName, "success", Duration.between(startedAt, Instant.now()));
+            return result;
+        } catch (RuntimeException ex) {
+            observabilityPort.recordPipelineStage(stageName, "failure", Duration.between(startedAt, Instant.now()));
+            throw ex;
+        }
+    }
+
+    private AnalysisSession saveStatus(final AnalysisSession session, final AnalysisStatus status) {
+        AnalysisSession updatedSession = new AnalysisSession(
+                session.sessionId(),
+                session.controllerName(),
+                session.sourceSnippetRef(),
+                status,
+                session.createdAt());
+        analysisSessionPort.save(updatedSession);
+        return updatedSession;
+    }
+
+    private OrchestratedAnalysisResult buildSuccessResult(
+            final String sessionId,
+            final ControllerCartography cartography,
+            final ClassificationResult classification,
+            final MigrationPlan migrationPlan,
+            final GenerationResult generationResult,
+            final RestitutionReport restitutionReport) {
+        return new OrchestratedAnalysisResult(
+                sessionId,
+                AnalysisStatus.COMPLETED,
+                cartography,
+                classification,
+                migrationPlan,
+                generationResult,
+                restitutionReport,
+                List.of());
+    }
+
+    private OrchestratedAnalysisResult buildFailureResult(final String sessionId, final String errorMessage) {
+        return new OrchestratedAnalysisResult(
+                sessionId,
+                AnalysisStatus.FAILED,
+                null, null, null, null, null,
+                List.of(errorMessage));
     }
 }

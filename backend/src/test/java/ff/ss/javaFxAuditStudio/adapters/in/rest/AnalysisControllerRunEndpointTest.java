@@ -1,5 +1,6 @@
 package ff.ss.javaFxAuditStudio.adapters.in.rest;
 
+import ff.ss.javaFxAuditStudio.adapters.in.rest.dto.AnalysisSessionResponse;
 import ff.ss.javaFxAuditStudio.adapters.in.rest.dto.OrchestratedAnalysisResultResponse;
 import ff.ss.javaFxAuditStudio.adapters.in.rest.mapper.AnalysisSessionResponseMapper;
 import ff.ss.javaFxAuditStudio.adapters.in.rest.mapper.ArtifactsResponseMapper;
@@ -11,9 +12,9 @@ import ff.ss.javaFxAuditStudio.adapters.in.rest.mapper.RestitutionReportResponse
 import ff.ss.javaFxAuditStudio.application.ports.in.AnalysisOrchestrationUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.in.CartographyUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.in.ClassifyResponsibilitiesUseCase;
+import ff.ss.javaFxAuditStudio.application.ports.in.ExportArtifactsUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.in.GenerateArtifactsUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.in.ProduceMigrationPlanUseCase;
-import ff.ss.javaFxAuditStudio.application.ports.in.ExportArtifactsUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.in.ProduceRestitutionUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.out.AnalysisSessionPort;
 import ff.ss.javaFxAuditStudio.domain.workbench.AnalysisSession;
@@ -178,5 +179,51 @@ class AnalysisControllerRunEndpointTest {
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().sessionId()).isEqualTo(sessionId);
         assertThat(response.getBody().finalStatus()).isEqualTo("COMPLETED");
+    }
+
+    @Test
+    void getSession_returns200_whenSessionExists() {
+        String sessionId;
+        AnalysisSession session;
+        AnalysisSessionResponse responseDto;
+        ResponseEntity<AnalysisSessionResponse> response;
+
+        sessionId = "session-detaillee";
+        session = new AnalysisSession(
+                sessionId,
+                "com/example/MyController.java",
+                "snippets/MyController.txt",
+                AnalysisStatus.CARTOGRAPHING,
+                Instant.now());
+
+        responseDto = new AnalysisSessionResponse(
+                sessionId,
+                "CARTOGRAPHING",
+                "com/example/MyController.java",
+                "snippets/MyController.txt");
+
+        when(analysisSessionPort.findById(sessionId)).thenReturn(Optional.of(session));
+        when(analysisSessionResponseMapper.toResponse(session)).thenReturn(responseDto);
+
+        response = controller.getSession(sessionId);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().sessionId()).isEqualTo(sessionId);
+        assertThat(response.getBody().status()).isEqualTo("CARTOGRAPHING");
+    }
+
+    @Test
+    void getSession_returns404_whenSessionMissing() {
+        String sessionId;
+        ResponseEntity<AnalysisSessionResponse> response;
+
+        sessionId = "session-absente";
+        when(analysisSessionPort.findById(sessionId)).thenReturn(Optional.empty());
+
+        response = controller.getSession(sessionId);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(response.getBody()).isNull();
     }
 }

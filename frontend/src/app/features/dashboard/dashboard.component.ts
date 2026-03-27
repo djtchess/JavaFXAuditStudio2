@@ -1,5 +1,6 @@
 import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { catchError, map, of, startWith } from 'rxjs';
 
 import { WorkbenchApiService } from '../../core/services/workbench-api.service';
@@ -13,7 +14,7 @@ interface DashboardViewModel {
 
 @Component({
   selector: 'jas-dashboard',
-  imports: [AsyncPipe],
+  imports: [AsyncPipe, RouterLink],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush

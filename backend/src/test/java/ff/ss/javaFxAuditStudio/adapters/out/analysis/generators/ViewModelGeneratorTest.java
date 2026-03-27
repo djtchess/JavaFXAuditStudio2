@@ -38,7 +38,7 @@ class ViewModelGeneratorTest {
         BusinessRule rule = champFxml("TableView", "patientsTable");
         CodeArtifact artifact = generator.generate("Patient", "com.example", List.of(rule));
 
-        assertThat(artifact.content()).contains("ObservableList<Object> patientsTableItems");
+        assertThat(artifact.content()).contains("ObservableList<Object> patientsItems");
     }
 
     @Test
@@ -56,7 +56,7 @@ class ViewModelGeneratorTest {
         BusinessRule rule = champFxml("ListView", "resultList");
         CodeArtifact artifact = generator.generate("Result", "com.example", List.of(rule));
 
-        assertThat(artifact.content()).contains("ObservableList<Object> resultListItems");
+        assertThat(artifact.content()).contains("ObservableList<Object> resultItems");
         assertThat(artifact.content()).contains("FXCollections.observableArrayList()");
     }
 
@@ -67,7 +67,7 @@ class ViewModelGeneratorTest {
         BusinessRule rule = champFxml("TreeView", "fileTree");
         CodeArtifact artifact = generator.generate("File", "com.example", List.of(rule));
 
-        assertThat(artifact.content()).contains("ObservableList<Object> fileTreeItems");
+        assertThat(artifact.content()).contains("ObservableList<Object> fileItems");
         assertThat(artifact.content()).contains("FXCollections.observableArrayList()");
     }
 
@@ -110,9 +110,9 @@ class ViewModelGeneratorTest {
         CodeArtifact artifact = generator.generate("Patient", "com.example", List.of(rule));
 
         // Le getter doit etre present
-        assertThat(artifact.content()).contains("getPatientsTableItems()");
+        assertThat(artifact.content()).contains("getPatientsItems()");
         // Pas de setter : la liste est modifiee en place
-        assertThat(artifact.content()).doesNotContain("setPatientsTableItems(");
+        assertThat(artifact.content()).doesNotContain("setPatientsItems(");
     }
 
     // --- Non-regression : pas de commentaire TODO pour TableView/ListView/TreeView ---
@@ -142,6 +142,6 @@ class ViewModelGeneratorTest {
         CodeArtifact artifact = generator.generate("Patient", "com.example", List.of(handler, champ));
 
         assertThat(artifact.content()).doesNotContain("onSave");
-        assertThat(artifact.content()).contains("statusLabelText");
+        assertThat(artifact.content()).contains("statusText");
     }
 }

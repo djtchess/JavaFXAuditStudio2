@@ -1,5 +1,9 @@
 # Phase 3 - Implementation Produit : Decoupage JIRA Complet
 
+> Statut documentaire (2026-03-26) : ce document reste une reference historique
+> de decoupage phase 3. La vue maitre du reste a faire est desormais
+> `jira/backlog-restant-a-faire.md`.
+
 Date de reference : 2026-03-16
 Agent : `jira-estimation`
 Modele : `opus`

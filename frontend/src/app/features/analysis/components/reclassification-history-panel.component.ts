@@ -13,11 +13,11 @@ import { ReclassificationApiService } from '../../../core/services/reclassificat
 import { ReclassificationAuditEntryResponse } from '../../../core/models/analysis.model';
 
 const CATEGORY_COLORS: Record<string, string> = {
-  UI: '#3b82f6',
-  APPLICATION: '#10b981',
-  BUSINESS: '#f59e0b',
-  TECHNICAL: '#6b7280',
-  UNKNOWN: '#ef4444',
+  UI: '#3d86c6',
+  APPLICATION: '#0f766e',
+  BUSINESS: '#b96a2c',
+  TECHNICAL: '#627487',
+  UNKNOWN: '#a23c1c',
 };
 
 /**
@@ -29,9 +29,9 @@ const CATEGORY_COLORS: Record<string, string> = {
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     .panel {
-      border: 1px solid #e5e7eb;
+      border: 1px solid var(--surface-line);
       border-radius: 16px;
-      background: white;
+      background: var(--panel-soft-alt);
       padding: 1.25rem;
       display: flex;
       flex-direction: column;
@@ -50,7 +50,7 @@ const CATEGORY_COLORS: Record<string, string> = {
       margin: 0;
       font-size: 0.95rem;
       font-weight: 700;
-      color: #122338;
+      color: var(--surface-ink-strong);
     }
 
     .btn-close {
@@ -59,35 +59,35 @@ const CATEGORY_COLORS: Record<string, string> = {
       justify-content: center;
       width: 2rem;
       height: 2rem;
-      border: 1px solid #e5e7eb;
+      border: 1px solid var(--surface-line);
       border-radius: 50%;
-      background: white;
+      background: rgba(255, 255, 255, 0.72);
       cursor: pointer;
       font-size: 1rem;
-      color: #6b7280;
+      color: var(--surface-ink-soft);
       flex-shrink: 0;
       transition: background 0.15s;
     }
 
     .btn-close:hover {
-      background: #f3f4f6;
+      background: var(--surface-chip);
     }
 
     .loading-msg {
       font-size: 0.85rem;
-      color: #6b7280;
+      color: var(--surface-ink-soft);
       font-style: italic;
     }
 
     .empty-msg {
       font-size: 0.85rem;
-      color: #9ca3af;
+      color: var(--surface-ink-soft);
       font-style: italic;
     }
 
     .error-msg {
       font-size: 0.85rem;
-      color: #dc2626;
+      color: var(--surface-danger);
     }
 
     .history-list {
@@ -98,8 +98,8 @@ const CATEGORY_COLORS: Record<string, string> = {
     .history-entry {
       padding: 0.65rem 0.85rem;
       border-radius: 10px;
-      border: 1px solid #f3f4f6;
-      background: #fafafa;
+      border: 1px solid var(--surface-line);
+      background: rgba(255, 255, 255, 0.54);
       display: flex;
       flex-direction: column;
       gap: 0.3rem;
@@ -107,7 +107,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 
     .entry-date {
       font-size: 0.75rem;
-      color: #9ca3af;
+      color: var(--surface-ink-soft);
       font-family: monospace;
     }
 
@@ -130,12 +130,12 @@ const CATEGORY_COLORS: Record<string, string> = {
 
     .arrow {
       font-size: 0.85rem;
-      color: #9ca3af;
+      color: var(--surface-ink-soft);
     }
 
     .entry-reason {
       font-size: 0.8rem;
-      color: #6b7280;
+      color: var(--surface-ink-soft);
       font-style: italic;
     }
   `,

@@ -49,8 +49,12 @@ public final class PolicyGenerator implements ArtifactGenerator {
                 sb.append("    public ").append(returnType).append(" ").append(method)
                   .append("(").append(params).append(") {\n");
                 sb.append("        // TODO : implementer la regle metier\n");
-                sb.append("        throw new UnsupportedOperationException(\"Non implemente : ")
-                  .append(method).append("\");\n");
+                if ("void".equals(returnType)) {
+                    sb.append("        return;\n");
+                } else {
+                    String defaultValue = GeneratorUtils.defaultValueExpression(returnType);
+                    sb.append("        return ").append(defaultValue).append(";\n");
+                }
                 sb.append("    }\n\n");
             }
         }

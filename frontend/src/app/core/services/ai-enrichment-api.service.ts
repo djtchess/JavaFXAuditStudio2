@@ -1,9 +1,13 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, Subscription } from 'rxjs';
 
 import {
+  AiArtifactCoherenceResponse,
   AiCodeGenerationResponse,
+  AiGeneratedArtifactCollectionResponse,
+  AiArtifactRefineRequest,
+  AiGenerationStreamEvent,
   AiEnrichmentResponse,
   AiEnrichmentStatusResponse,
   ArtifactReviewResponse,
@@ -51,10 +55,184 @@ export class AiEnrichmentApiService {
     );
   }
 
+  generateStream(sessionId: string): Observable<AiGenerationStreamEvent> {
+    return new Observable<AiGenerationStreamEvent>(subscriber => {
+      if (typeof EventSource === 'undefined') {
+        const fallbackSubscription = this.syntheticGenerateStream(sessionId).subscribe(subscriber);
+        return () => fallbackSubscription.unsubscribe();
+      }
+
+      const streamUrl = `/api/v1/analyses/${encodeURIComponent(sessionId)}/generate/ai/stream`;
+      const eventSource = new EventSource(streamUrl);
+      let receivedMessage = false;
+      let fallbackSubscription: Subscription | null = null;
+
+      eventSource.onmessage = event => {
+        receivedMessage = true;
+        const payload = this.parseGenerationStreamEvent(event.data);
+        subscriber.next(payload);
+
+        if (payload.stage === 'complete' || payload.stage === 'error') {
+          eventSource.close();
+          subscriber.complete();
+        }
+      };
+
+      eventSource.onerror = () => {
+        eventSource.close();
+
+        if (receivedMessage) {
+          subscriber.error(new Error('Erreur pendant le flux SSE de generation IA.'));
+          return;
+        }
+
+        fallbackSubscription = this.syntheticGenerateStream(sessionId).subscribe({
+          next: value => subscriber.next(value),
+          error: err => subscriber.error(err),
+          complete: () => subscriber.complete(),
+        });
+      };
+
+      return () => {
+        eventSource.close();
+        fallbackSubscription?.unsubscribe();
+      };
+    });
+  }
+
+  refineArtifact(sessionId: string, request: AiArtifactRefineRequest): Observable<AiCodeGenerationResponse> {
+    return this.http.post<AiCodeGenerationResponse>(
+      `/api/v1/analyses/${encodeURIComponent(sessionId)}/generate/ai/refine`,
+      request,
+    );
+  }
+
+  getPersistedArtifacts(sessionId: string): Observable<AiGeneratedArtifactCollectionResponse> {
+    return this.http.get<AiGeneratedArtifactCollectionResponse>(
+      `/api/v1/analyses/${encodeURIComponent(sessionId)}/artifacts/ai`,
+    );
+  }
+
+  getPersistedArtifactVersions(sessionId: string, artifactType: string): Observable<AiGeneratedArtifactCollectionResponse> {
+    return this.http.get<AiGeneratedArtifactCollectionResponse>(
+      `/api/v1/analyses/${encodeURIComponent(sessionId)}/artifacts/ai/${encodeURIComponent(artifactType)}/versions`,
+    );
+  }
+
+  verifyPersistedArtifactCoherence(sessionId: string): Observable<AiArtifactCoherenceResponse> {
+    return this.http.post<AiArtifactCoherenceResponse>(
+      `/api/v1/analyses/${encodeURIComponent(sessionId)}/artifacts/ai/coherence`,
+      null,
+    );
+  }
+
+  exportGeneratedZip(sessionId: string): Observable<Blob> {
+    return this.http.post(
+      `/api/v1/analyses/${encodeURIComponent(sessionId)}/generate/ai/export/zip`,
+      null,
+      { responseType: 'blob' },
+    );
+  }
+
   previewSanitized(sessionId: string): Observable<SanitizedSourcePreviewResponse> {
     return this.http.post<SanitizedSourcePreviewResponse>(
       `/api/v1/analyses/${encodeURIComponent(sessionId)}/preview-sanitized`,
       null
     );
+  }
+
+  private syntheticGenerateStream(sessionId: string): Observable<AiGenerationStreamEvent> {
+    return new Observable<AiGenerationStreamEvent>(subscriber => {
+      const emitProgress = (event: AiGenerationStreamEvent): void => {
+        subscriber.next(event);
+      };
+
+      const subscription = this.generate(sessionId).subscribe({
+        next: result => {
+          emitProgress({
+            stage: 'sanitizing',
+            message: 'Sanitisation et preparation du contexte IA',
+            progress: 15,
+          });
+          emitProgress({
+            stage: 'sending_to_llm',
+            message: `Appel du fournisseur IA ${result.provider}`,
+            progress: 45,
+            provider: result.provider,
+            degraded: result.degraded,
+          });
+          emitProgress({
+            stage: 'parsing_response',
+            message: 'Analyse de la reponse IA',
+            progress: 75,
+            provider: result.provider,
+          });
+          emitProgress({
+            stage: 'validating',
+            message: 'Validation des classes generees',
+            progress: 90,
+            provider: result.provider,
+          });
+          emitProgress({
+            stage: 'complete',
+            message: result.degraded
+              ? 'Generation terminee en mode degrade'
+              : 'Generation terminee avec succes',
+            progress: 100,
+            generatedClasses: result.generatedClasses,
+            tokensUsed: result.tokensUsed,
+            provider: result.provider,
+            degraded: result.degraded,
+          });
+          subscriber.complete();
+        },
+        error: err => {
+          subscriber.next({
+            stage: 'error',
+            message: 'Erreur lors de la generation IA',
+            progress: 100,
+            error: err?.error?.message ?? 'Generation IA indisponible',
+          });
+          subscriber.complete();
+        },
+      });
+
+      emitProgress({
+        stage: 'sanitizing',
+        message: 'Sanitisation du code source et preparation de la generation',
+        progress: 10,
+      });
+      emitProgress({
+        stage: 'sending_to_llm',
+        message: 'Preparation du flux de generation',
+        progress: 35,
+      });
+
+      return () => subscription.unsubscribe();
+    });
+  }
+
+  private parseGenerationStreamEvent(rawEvent: string): AiGenerationStreamEvent {
+    try {
+      const parsed = JSON.parse(rawEvent) as AiGenerationStreamEvent;
+      return {
+        stage: parsed.stage,
+        message: parsed.message ?? 'Evenement SSE de generation IA',
+        progress: typeof parsed.progress === 'number' ? parsed.progress : 0,
+        artifactKey: parsed.artifactKey,
+        chunk: parsed.chunk,
+        generatedClasses: parsed.generatedClasses,
+        tokensUsed: parsed.tokensUsed,
+        provider: parsed.provider,
+        degraded: parsed.degraded,
+        error: parsed.error,
+      };
+    } catch {
+      return {
+        stage: 'streaming',
+        message: rawEvent,
+        progress: 50,
+      };
+    }
   }
 }

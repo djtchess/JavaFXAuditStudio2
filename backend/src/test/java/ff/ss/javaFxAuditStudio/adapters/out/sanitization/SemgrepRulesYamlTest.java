@@ -25,7 +25,10 @@ class SemgrepRulesYamlTest {
     private static final Set<String> EXPECTED_RULE_IDS = Set.of(
             "hardcoded-secret",
             "internal-ip-url",
-            "hardcoded-url");
+            "hardcoded-url",
+            "internal-host-url",
+            "jdbc-connection-string",
+            "private-key-marker");
 
     @Test
     void should_find_rules_yaml_on_classpath() {
@@ -66,12 +69,11 @@ class SemgrepRulesYamlTest {
         Map<String, Object> root = loadYaml();
         List<Map<String, Object>> rules = (List<Map<String, Object>>) root.get("rules");
 
-        assertThat(rules).hasSize(3);
+        assertThat(rules).hasSize(6);
 
-        Set<String> actualIds = Set.of(
-                (String) rules.get(0).get("id"),
-                (String) rules.get(1).get("id"),
-                (String) rules.get(2).get("id"));
+        Set<String> actualIds = rules.stream()
+                .map(rule -> (String) rule.get("id"))
+                .collect(java.util.stream.Collectors.toSet());
 
         assertThat(actualIds).containsExactlyInAnyOrderElementsOf(EXPECTED_RULE_IDS);
     }
@@ -85,7 +87,7 @@ class SemgrepRulesYamlTest {
         for (Map<String, Object> rule : rules) {
             String id = (String) rule.get("id");
             String severity = (String) rule.get("severity");
-            if ("hardcoded-secret".equals(id)) {
+            if ("hardcoded-secret".equals(id) || "private-key-marker".equals(id)) {
                 assertThat(severity).isEqualTo("ERROR");
             } else {
                 assertThat(severity).isEqualTo("WARNING");

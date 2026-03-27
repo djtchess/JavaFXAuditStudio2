@@ -19,7 +19,9 @@ public record RestitutionReportResponse(
         @Schema(description = "Liste des observations et recommandations issues de l'analyse")
         List<String> findings,
         @Schema(description = "Liste des elements non resolus necessitant une action manuelle")
-        List<String> unknowns) {
+        List<String> unknowns,
+        @Schema(description = "Version markdown complete de la restitution")
+        String markdown) {
 
     public RestitutionReportResponse {
         Objects.requireNonNull(controllerRef, "controllerRef must not be null");
@@ -28,5 +30,6 @@ public record RestitutionReportResponse(
         Objects.requireNonNull(unknowns, "unknowns must not be null");
         findings = List.copyOf(findings);
         unknowns = List.copyOf(unknowns);
+        markdown = markdown == null ? "" : markdown;
     }
 }

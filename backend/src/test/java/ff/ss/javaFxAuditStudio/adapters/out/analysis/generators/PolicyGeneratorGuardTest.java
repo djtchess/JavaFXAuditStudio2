@@ -31,6 +31,7 @@ class PolicyGeneratorGuardTest {
         CodeArtifact artifact = generator.generate("Form", "com.example", List.of(rule));
 
         assertThat(artifact.content()).contains("public boolean isFormValid()");
+        assertThat(artifact.content()).contains("return false;");
     }
 
     @Test
@@ -77,6 +78,24 @@ class PolicyGeneratorGuardTest {
 
         // L'ancien comportement doit etre preserve : boolean + Object context
         assertThat(artifact.content()).contains("public boolean onSave(final Object context)");
+    }
+
+    @Test
+    void generate_semanticBusinessRule_exposesSemanticMethodName() {
+        BusinessRule rule = new BusinessRule(
+                "RG-002",
+                "Regle metier isEligible : decision BUSINESS detectee",
+                "PatientController.java",
+                0,
+                ResponsibilityClass.BUSINESS,
+                ExtractionCandidate.POLICY,
+                false,
+                MethodSignature.of("boolean", List.of())
+        );
+
+        CodeArtifact artifact = generator.generate("Patient", "com.example", List.of(rule));
+
+        assertThat(artifact.content()).contains("public boolean isEligible()");
     }
 
     // --- helpers ---

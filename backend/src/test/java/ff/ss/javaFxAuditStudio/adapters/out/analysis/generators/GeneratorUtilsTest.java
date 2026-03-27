@@ -69,6 +69,15 @@ class GeneratorUtilsTest {
         assertThat(vmp.fieldName()).isEqualTo("filesItems");
     }
 
+    @Test
+    void fxmlTypeToProperty_typeCustomWidget_retourneVisibleBoolean() {
+        ViewModelProperty vmp = GeneratorUtils.fxmlTypeToProperty("summaryPanel", "PatientSummaryWidget");
+
+        assertThat(vmp).isNotNull();
+        assertThat(vmp.type()).isEqualTo(PropertyType.BOOLEAN);
+        assertThat(vmp.fieldName()).isEqualTo("summaryVisible");
+    }
+
     // --- Non-regression : Label -> STRING ---
 
     @Test
@@ -77,7 +86,7 @@ class GeneratorUtilsTest {
 
         assertThat(vmp).isNotNull();
         assertThat(vmp.type()).isEqualTo(PropertyType.STRING);
-        assertThat(vmp.fieldName()).isEqualTo("patientLabelText");
+        assertThat(vmp.fieldName()).isEqualTo("patientText");
     }
 
     // --- Non-regression : Button -> BOOLEAN ---
@@ -88,7 +97,7 @@ class GeneratorUtilsTest {
 
         assertThat(vmp).isNotNull();
         assertThat(vmp.type()).isEqualTo(PropertyType.BOOLEAN);
-        assertThat(vmp.fieldName()).isEqualTo("saveBtnEnabled");
+        assertThat(vmp.fieldName()).isEqualTo("saveEnabled");
     }
 
     // --- Non-regression : TextField -> STRING ---
@@ -99,7 +108,7 @@ class GeneratorUtilsTest {
 
         assertThat(vmp).isNotNull();
         assertThat(vmp.type()).isEqualTo(PropertyType.STRING);
-        assertThat(vmp.fieldName()).isEqualTo("nameFieldText");
+        assertThat(vmp.fieldName()).isEqualTo("nameText");
     }
 
     // --- Non-regression : nom de champ suffixe en "Items" ---
@@ -108,6 +117,6 @@ class GeneratorUtilsTest {
     void fxmlTypeToProperty_tableView_nomChampSuffixeItems() {
         ViewModelProperty vmp = GeneratorUtils.fxmlTypeToProperty("patientsTable", "TableView");
 
-        assertThat(vmp.fieldName()).isEqualTo("patientsTableItems");
+        assertThat(vmp.fieldName()).isEqualTo("patientsItems");
     }
 }

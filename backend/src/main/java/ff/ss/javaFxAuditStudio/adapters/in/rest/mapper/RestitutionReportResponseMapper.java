@@ -16,6 +16,7 @@ public class RestitutionReportResponseMapper {
                 report.summary().confidence().name(),
                 report.isActionable(),
                 report.findings(),
-                report.unknowns());
+                report.unknowns(),
+                report.markdown());
     }
 }

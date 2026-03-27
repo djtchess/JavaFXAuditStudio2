@@ -12,6 +12,8 @@ import java.util.List;
 public interface RuleClassificationAuditRepository
         extends JpaRepository<RuleClassificationAuditEntity, String> {
 
+    List<RuleClassificationAuditEntity> findByAnalysisIdOrderByCreatedAtAsc(String analysisId);
+
     /**
      * Retourne toutes les entrees d'audit pour une analyse et une regle donnees,
      * triees par date de creation ascendante.

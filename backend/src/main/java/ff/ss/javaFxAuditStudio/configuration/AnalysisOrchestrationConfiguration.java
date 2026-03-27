@@ -8,6 +8,7 @@ import ff.ss.javaFxAuditStudio.application.ports.in.IngestSourcesUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.in.ProduceMigrationPlanUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.in.ProduceRestitutionUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.out.AnalysisSessionPort;
+import ff.ss.javaFxAuditStudio.application.ports.out.WorkflowObservabilityPort;
 import ff.ss.javaFxAuditStudio.application.service.AnalysisOrchestrationService;
 
 import org.springframework.context.annotation.Bean;
@@ -28,7 +29,8 @@ public class AnalysisOrchestrationConfiguration {
             final ClassifyResponsibilitiesUseCase classifyResponsibilitiesUseCase,
             final ProduceMigrationPlanUseCase produceMigrationPlanUseCase,
             final GenerateArtifactsUseCase generateArtifactsUseCase,
-            final ProduceRestitutionUseCase produceRestitutionUseCase) {
+            final ProduceRestitutionUseCase produceRestitutionUseCase,
+            final WorkflowObservabilityPort observabilityPort) {
         return new AnalysisOrchestrationService(
                 analysisSessionPort,
                 ingestSourcesUseCase,
@@ -36,6 +38,7 @@ public class AnalysisOrchestrationConfiguration {
                 classifyResponsibilitiesUseCase,
                 produceMigrationPlanUseCase,
                 generateArtifactsUseCase,
-                produceRestitutionUseCase);
+                produceRestitutionUseCase,
+                observabilityPort);
     }
 }

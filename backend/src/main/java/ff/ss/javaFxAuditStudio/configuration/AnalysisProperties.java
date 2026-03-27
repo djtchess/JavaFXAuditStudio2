@@ -35,7 +35,9 @@ public record AnalysisProperties(
             List<String> businessKeywords,
             List<String> technicalKeywords,
             List<String> serviceCallSuffixes,
-            List<String> policyGuardPrefixes) {
+            List<String> policyGuardPrefixes,
+            List<String> uiGuardMethodNames,
+            Double stateMachineConfidenceThreshold) {
 
         /** Retourne les mots-cles UI ou une liste par defaut si null. */
         public List<String> effectiveUiKeywords() {
@@ -82,6 +84,27 @@ public record AnalysisProperties(
         public List<String> effectivePolicyGuardPrefixes() {
             return policyGuardPrefixes != null ? policyGuardPrefixes
                     : List.of("is", "can", "has", "should");
+        }
+
+        /**
+         * Noms de methodes purement UI qui ressemblent a des gardes mais ne doivent pas
+         * etre classifies en Policy.
+         */
+        public List<String> effectiveUiGuardMethodNames() {
+            return uiGuardMethodNames != null ? uiGuardMethodNames : List.of(
+                "isVisible", "isDisable", "isDisabled", "isSelected", "isEnabled",
+                "isEditable", "isManaged", "isShown", "isHidden", "isExpanded", "isChecked"
+            );
+        }
+
+        /**
+         * Seuil de confiance applique a la detection de state machine.
+         * En-dessous, la detection reste informative mais non confirmee.
+         */
+        public double effectiveStateMachineConfidenceThreshold() {
+            return (stateMachineConfidenceThreshold != null && stateMachineConfidenceThreshold > 0.0)
+                    ? stateMachineConfidenceThreshold
+                    : 0.60d;
         }
     }
 }

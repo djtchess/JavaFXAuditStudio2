@@ -20,8 +20,8 @@ import { CartographyResponse } from '../../../core/models/analysis.model';
       gap: 0.3rem;
       padding: 0.3rem 0.8rem;
       border-radius: 999px;
-      background: var(--accent-soft);
-      color: var(--slate);
+      background: var(--surface-chip);
+      color: var(--surface-ink-strong);
       font-weight: 600;
       font-size: 0.82rem;
     }
@@ -31,7 +31,7 @@ import { CartographyResponse } from '../../../core/models/analysis.model';
       border-radius: 12px;
       background: rgba(245, 158, 11, 0.08);
       border: 1px solid rgba(245, 158, 11, 0.3);
-      color: #92400e;
+      color: var(--surface-warning);
       font-size: 0.88rem;
       font-weight: 500;
       margin-bottom: 1rem;
@@ -41,7 +41,7 @@ import { CartographyResponse } from '../../../core/models/analysis.model';
       margin: 1rem 0 0.5rem;
       font-weight: 700;
       font-size: 0.9rem;
-      color: var(--slate);
+      color: var(--surface-ink-strong);
     }
 
     .section-label:first-of-type {
@@ -57,19 +57,19 @@ import { CartographyResponse } from '../../../core/models/analysis.model';
     th {
       text-align: left;
       padding: 0.55rem 0.75rem;
-      background: rgba(18, 35, 56, 0.04);
-      color: var(--ink-soft);
+      background: var(--surface-chip);
+      color: var(--surface-ink-soft);
       font-weight: 600;
       font-size: 0.78rem;
       text-transform: uppercase;
       letter-spacing: 0.06em;
-      border-bottom: 1px solid var(--line);
+      border-bottom: 1px solid var(--surface-line);
     }
 
     td {
       padding: 0.5rem 0.75rem;
-      border-bottom: 1px solid var(--line);
-      color: var(--slate);
+      border-bottom: 1px solid var(--surface-line);
+      color: var(--surface-ink);
     }
 
     tr:last-child td {

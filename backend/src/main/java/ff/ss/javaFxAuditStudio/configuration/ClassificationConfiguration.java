@@ -23,7 +23,8 @@ public class ClassificationConfiguration {
         AnalysisProperties.ClassificationPatterns classificationPatterns =
                 analysisProperties.classificationPatterns() != null
                         ? analysisProperties.classificationPatterns()
-                        : new AnalysisProperties.ClassificationPatterns(null, null, null, null, null, null);
+                        : new AnalysisProperties.ClassificationPatterns(
+                                null, null, null, null, null, null, null, null);
         RuleExtractionPort regexFallback = new JavaControllerRuleExtractionAdapter(
                 lifecycleExcluded, classificationPatterns);
         return new JavaParserRuleExtractionAdapter(regexFallback, lifecycleExcluded, classificationPatterns);

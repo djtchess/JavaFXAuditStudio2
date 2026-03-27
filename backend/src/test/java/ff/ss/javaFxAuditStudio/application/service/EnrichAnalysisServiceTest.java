@@ -12,13 +12,19 @@ import ff.ss.javaFxAuditStudio.domain.ai.TaskType;
 import ff.ss.javaFxAuditStudio.domain.sanitization.SanitizationRefusedException;
 import ff.ss.javaFxAuditStudio.domain.workbench.AnalysisSession;
 import ff.ss.javaFxAuditStudio.domain.workbench.AnalysisStatus;
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.Map;
@@ -50,17 +56,33 @@ class EnrichAnalysisServiceTest {
     private SourceFileReaderPort sourceFileReaderPort;
 
     private EnrichAnalysisService service;
+    private Logger logger;
+    private ListAppender<ILoggingEvent> appender;
+    private Level originalLevel;
 
     @BeforeEach
     void setUp() {
         service = new EnrichAnalysisService(sessionPort, enrichmentPort, sanitizationPort);
+        logger = (Logger) LoggerFactory.getLogger(EnrichAnalysisService.class);
+        originalLevel = logger.getLevel();
+        logger.setLevel(Level.DEBUG);
+        appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+    }
+
+    @AfterEach
+    void tearDown() {
+        logger.detachAppender(appender);
+        logger.setLevel(originalLevel);
+        appender.stop();
     }
 
     /**
      * Bundle de test avec le controllerRef fourni — source neutre, pas de marqueur sensible.
      */
     private static SanitizedBundle bundleFor(final String controllerRef) {
-        return new SanitizedBundle("test-bundle", controllerRef, "source", 1, "1.0");
+        return new SanitizedBundle("test-bundle", controllerRef, "source", 1, "1.0", null);
     }
 
     @Test
@@ -175,7 +197,7 @@ class EnrichAnalysisServiceTest {
         when(sessionPort.findById("sess-7")).thenReturn(Optional.of(session));
 
         SanitizedBundle sanitizedBundle = new SanitizedBundle(
-                "bundle-id", "MyController", "sanitizedJavaSource", 10, "1.0");
+                "bundle-id", "MyController", "sanitizedJavaSource", 10, "1.0", null);
         when(sanitizationPort.sanitize(any(), any(), any())).thenReturn(sanitizedBundle);
         when(enrichmentPort.enrich(any())).thenReturn(
                 AiEnrichmentResult.degraded("req-7", "disabled"));
@@ -243,5 +265,37 @@ class EnrichAnalysisServiceTest {
                 any(),
                 eq("C:/tmp/MissingController.java"),
                 eq("C:/tmp/MissingController.java"));
+    }
+
+    @Test
+    void should_not_log_raw_source_when_source_reader_is_used() {
+        EnrichAnalysisService serviceWithSourceReader = new EnrichAnalysisService(
+                sessionPort,
+                enrichmentPort,
+                sanitizationPort,
+                null,
+                null,
+                null,
+                sourceFileReaderPort);
+        AnalysisSession session = new AnalysisSession(
+                "sess-10", "C:/tmp/SafeController.java", null, AnalysisStatus.COMPLETED, Instant.now());
+        when(sessionPort.findById("sess-10")).thenReturn(Optional.of(session));
+        when(sourceFileReaderPort.read("C:/tmp/SafeController.java"))
+                .thenReturn(Optional.of("public class SafeController { String token = \"abc\"; }"));
+        when(sanitizationPort.sanitize(any(), any(), any()))
+                .thenReturn(bundleFor("C:/tmp/SafeController.java"));
+        when(enrichmentPort.enrich(any())).thenReturn(
+                AiEnrichmentResult.degraded("req-10", "disabled"));
+
+        serviceWithSourceReader.enrich("sess-10", TaskType.NAMING);
+
+        String rawSource = "public class SafeController { String token = \"abc\"; }";
+        String logOutput = appender.list.stream()
+                .map(ILoggingEvent::getFormattedMessage)
+                .reduce("", (left, right) -> left + "\n" + right);
+        assertThat(logOutput).contains("Enrichissement IA demarre");
+        assertThat(logOutput).contains("controllerRef=C:/tmp/SafeController.java");
+        assertThat(logOutput).doesNotContain(rawSource);
+        assertThat(logOutput).doesNotContain("sanitizedSource");
     }
 }

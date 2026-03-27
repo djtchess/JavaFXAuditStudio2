@@ -69,6 +69,22 @@ class JpaProjectDashboardAdapterIT {
     }
 
     @Test
+    void computeDashboard_countsFineGrainedPipelineStatusesAsAnalysing() {
+        insertSession("s10", PROJECT_ID, "INGESTING");
+        insertSession("s11", PROJECT_ID, "CARTOGRAPHING");
+        insertSession("s12", PROJECT_ID, "LOCKED");
+        insertSession("s13", PROJECT_ID, "COMPLETED");
+
+        Optional<ProjectDashboard> result = adapter.computeDashboard(PROJECT_ID);
+
+        assertThat(result).isPresent();
+        ProjectDashboard d = result.get();
+        assertThat(d.totalSessions()).isEqualTo(4);
+        assertThat(d.analysingCount()).isEqualTo(2);
+        assertThat(d.completedCount()).isEqualTo(1);
+    }
+
+    @Test
     void computeDashboard_countsUncertainRules() {
         insertSession("s4", PROJECT_ID, "COMPLETED");
         ClassificationResultEntity cr = insertClassificationResult("s4");

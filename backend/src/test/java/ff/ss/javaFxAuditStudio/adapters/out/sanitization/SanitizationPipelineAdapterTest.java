@@ -61,7 +61,7 @@ class SanitizationPipelineAdapterTest {
 
     @Test
     void should_refuse_when_token_count_exceeds_max() {
-        // Plafond de 9 tokens. Source de 41 chars => estimatedTokens = 10 > 9 => refus.
+        // Plafond de 9 tokens. La source reste au-dessus du seuil avec l'estimateur lexical.
         // On utilise des espaces et lettres minuscules pour eviter le detecteur de marqueurs
         // (qui cible : URL, email, alphanum > 30 chars, mots-cles sensibles).
         SanitizationProperties tinyProps = new SanitizationProperties("1.0", 9, true);
@@ -69,7 +69,6 @@ class SanitizationPipelineAdapterTest {
         SanitizationPipelineAdapter tinyAdapter = new SanitizationPipelineAdapter(
                 pipeline, new SensitiveMarkerDetector(), tinyProps);
 
-        // 41 chars => estimatedTokens = 41/4 = 10 > plafond 9 => refus pour depassement de tokens.
         // Alternance de lettres et espaces : pas de sequence alphanum > 30 chars ni mot-cle sensible.
         String source = "ab cd ef gh ij kl mn op qr st uv wx yz ab";
 

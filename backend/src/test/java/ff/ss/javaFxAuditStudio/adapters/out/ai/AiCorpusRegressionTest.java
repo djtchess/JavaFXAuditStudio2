@@ -126,7 +126,8 @@ class AiCorpusRegressionTest {
                 controllerRef,
                 sanitizedSource,
                 sanitizedSource.length(),
-                "v1.0");
+                "v1.0",
+                null);
 
         AiEnrichmentRequest request = new AiEnrichmentRequest(
                 UUID.randomUUID().toString(),

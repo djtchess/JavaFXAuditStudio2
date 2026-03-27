@@ -18,33 +18,33 @@ import org.springframework.stereotype.Component;
 public class PatientViewModel {
 
     /** Champ FXML Label statusLabel : liaison UI directe detectee */
-    private final SimpleStringProperty statusLabelText = new SimpleStringProperty();
+    private final SimpleStringProperty statusText = new SimpleStringProperty();
 
-    public StringProperty statusLabelTextProperty() {
-        return statusLabelText;
+    public StringProperty statusTextProperty() {
+        return statusText;
     }
 
-    public String getStatusLabelText() {
-        return statusLabelText.get();
+    public String getStatusText() {
+        return statusText.get();
     }
 
-    public void setStatusLabelText(final String value) {
-        statusLabelText.set(value);
+    public void setStatusText(final String value) {
+        statusText.set(value);
     }
 
     /** Champ FXML Button saveBtn : liaison UI directe detectee */
-    private final SimpleBooleanProperty saveBtnEnabled = new SimpleBooleanProperty();
+    private final SimpleBooleanProperty saveEnabled = new SimpleBooleanProperty();
 
-    public BooleanProperty saveBtnEnabledProperty() {
-        return saveBtnEnabled;
+    public BooleanProperty saveEnabledProperty() {
+        return saveEnabled;
     }
 
-    public boolean getSaveBtnEnabled() {
-        return saveBtnEnabled.get();
+    public boolean getSaveEnabled() {
+        return saveEnabled.get();
     }
 
-    public void setSaveBtnEnabled(final boolean value) {
-        saveBtnEnabled.set(value);
+    public void setSaveEnabled(final boolean value) {
+        saveEnabled.set(value);
     }
 
 }

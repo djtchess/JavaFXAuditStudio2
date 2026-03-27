@@ -1,38 +1,47 @@
-Tu es un expert en migration Java spécialisé dans la transformation de contrôleurs JavaFX vers une architecture hexagonale Spring Boot (JDK 21, Spring Boot 4.x).
+Tu es un expert en migration Java specialise dans la transformation de controleurs JavaFX vers une architecture hexagonale Spring Boot (JDK 21, Spring Boot 4.x).
 
-Contrôleur source : {{controllerRef}}
-Tokens estimés : {{estimatedTokens}}
+Controleur source : {{controllerRef}}
+Tokens estimes : {{estimatedTokens}}
 
-## Règles métier classifiées
+## Regles metier classees
 {{{classifiedRules}}}
 
-## Code source JavaFX (sanitisé)
+## Contexte ecran et architecture
+{{{screenContext}}}
+
+## Retours de reclassification
+{{{reclassificationFeedback}}}
+
+## Patterns projet de reference
+{{{projectReferencePatterns}}}
+
+## Code source JavaFX (sanitise)
 ```java
 {{{sanitizedSource}}}
 ```
 
 ## Objectif
-Génère les classes Spring Boot cibles pour chaque type d'artefact présent dans les règles classifiées.
+Genere les classes Spring Boot cibles pour chaque type d'artefact present dans les regles classees.
 
-### Règles de génération obligatoires
-1. **Aucun import JavaFX** (javafx.*, javafx.scene.*, javafx.fxml.*) dans les classes générées
-2. **USE_CASE** : interface Java pure (pas d'annotation Spring), méthodes exprimant les intentions métier
+### Regles de generation obligatoires
+1. **Aucun import JavaFX** (javafx.*, javafx.scene.*, javafx.fxml.*) dans les classes generees
+2. **USE_CASE** : interface Java pure (pas d'annotation Spring), methodes exprimant les intentions metier
 3. **VIEW_MODEL** : classe `@Component` Spring avec injection via constructeur (`@Autowired` facultatif), sans FXThread
-4. **POLICY** : classe `@Component` Spring avec méthodes de décision retournant `boolean` ou un enum
-5. **GATEWAY** : interface Java pure (pas d'annotation Spring), pour les appels à des systèmes externes
-6. **Javadoc en français** pour chaque classe et méthode publique
-7. **Package** : dériver depuis le package source en remplaçant `.controller` par le suffixe approprié (`.usecase`, `.viewmodel`, `.policy`, `.gateway`)
+4. **POLICY** : classe `@Component` Spring avec methodes de decision retournant `boolean` ou un enum
+5. **GATEWAY** : interface Java pure (pas d'annotation Spring), pour les appels a des systemes externes
+6. **Javadoc en francais** pour chaque classe et methode publique
+7. **Package** : deriver depuis le package source en remplacant `.controller` par le suffixe approprie (`.usecase`, `.viewmodel`, `.policy`, `.gateway`)
 8. **Java 21** : utiliser les records, sealed classes ou pattern matching si pertinent
-9. Laisser un commentaire `// TODO: implémenter` pour les corps de méthode non triviaux
+9. Laisser un commentaire `// TODO: implementer` pour les corps de methode non triviaux
 
-Réponds UNIQUEMENT avec un objet JSON valide dans ce format exact (pas de bloc markdown, pas d'explication avant ou après) :
+Reponds UNIQUEMENT avec un objet JSON valide dans ce format exact (pas de bloc markdown, pas d'explication avant ou apres) :
 {
   "suggestions": {
-    "USE_CASE": "package ff.example.usecase;\n\n/** Intentions métier liées à ... */\npublic interface XxxUseCase {\n\n    /** ... */\n    void execute();\n}",
+    "USE_CASE": "package ff.example.usecase;\n\n/** Intentions metier liees a ... */\npublic interface XxxUseCase {\n\n    /** ... */\n    void execute();\n}",
     "VIEW_MODEL": "package ff.example.viewmodel;\n\nimport org.springframework.stereotype.Component;\n\n/** ViewModel Spring Boot pour ... */\n@Component\npublic class XxxViewModel {\n\n    private final XxxUseCase xxxUseCase;\n\n    public XxxViewModel(final XxxUseCase xxxUseCase) {\n        this.xxxUseCase = xxxUseCase;\n    }\n}",
-    "POLICY": "package ff.example.policy;\n\nimport org.springframework.stereotype.Component;\n\n/** Règles de garde pour ... */\n@Component\npublic class XxxPolicy {\n\n    /** @return vrai si l'action est autorisée */\n    public boolean canExecute() {\n        // TODO: implémenter\n        return false;\n    }\n}",
-    "GATEWAY": "package ff.example.gateway;\n\n/** Port sortant vers le système externe ... */\npublic interface XxxGateway {\n\n    /** Appel distant ... */\n    void call();\n}"
+    "POLICY": "package ff.example.policy;\n\nimport org.springframework.stereotype.Component;\n\n/** Regles de garde pour ... */\n@Component\npublic class XxxPolicy {\n\n    /** @return vrai si l'action est autorisee */\n    public boolean canExecute() {\n        // TODO: implementer\n        return false;\n    }\n}",
+    "GATEWAY": "package ff.example.gateway;\n\n/** Port sortant vers le systeme externe ... */\npublic interface XxxGateway {\n\n    /** Appel distant ... */\n    void call();\n}"
   }
 }
 
-N'inclure que les clés pour les types d'artefacts réellement présents dans les règles classifiées. Si aucune règle USE_CASE, omettre la clé "USE_CASE". Si aucune règle POLICY, omettre "POLICY". Etc.
+N'inclure que les cles pour les types d'artefacts reellement presents dans les regles classees. Si aucune regle USE_CASE, omettre la cle "USE_CASE". Si aucune regle POLICY, omettre "POLICY". Etc.

@@ -37,6 +37,7 @@ public record AiEnrichmentProperties(
     private static final String PROVIDER_CLAUDE_CLI = "claude-code-cli";
     private static final int DEFAULT_MAX_TOKENS_STANDARD = 1_024;
     private static final int DEFAULT_MAX_TOKENS_ARTIFACT_REVIEW = 2_048;
+    private static final int DEFAULT_MAX_TOKENS_ARTIFACT_COHERENCE = 3_072;
     private static final int DEFAULT_MAX_TOKENS_SPRING_GENERATION = 4_096;
     private static final int DEFAULT_MAX_RESPONSE_SIZE_BYTES = 512 * 1024;
     private static final int DEFAULT_MAX_DEGRADATION_REASON_LENGTH = 200;
@@ -143,7 +144,8 @@ public record AiEnrichmentProperties(
     private static int defaultMaxTokens(final TaskType taskType) {
         return switch (taskType) {
             case ARTIFACT_REVIEW -> DEFAULT_MAX_TOKENS_ARTIFACT_REVIEW;
-            case SPRING_BOOT_GENERATION -> DEFAULT_MAX_TOKENS_SPRING_GENERATION;
+            case ARTIFACT_COHERENCE -> DEFAULT_MAX_TOKENS_ARTIFACT_COHERENCE;
+            case ARTIFACT_REFINEMENT, SPRING_BOOT_GENERATION -> DEFAULT_MAX_TOKENS_SPRING_GENERATION;
             case NAMING, DESCRIPTION, CLASSIFICATION_HINT -> DEFAULT_MAX_TOKENS_STANDARD;
         };
     }

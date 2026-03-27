@@ -1,0 +1,37 @@
+Tu es un expert en refactoring JavaFX vers Spring Boot.
+
+Controleur : {{controllerRef}}
+Artefact cible : {{artifactType}}
+Instruction de raffinement : {{refineInstruction}}{{instruction}}
+Tokens estimes : {{estimatedTokens}}
+
+## Contexte ecran et architecture
+{{{screenContext}}}
+
+## Retours de reclassification
+{{{reclassificationFeedback}}}
+
+## Patterns projet de reference
+{{{projectReferencePatterns}}}
+
+## Regles metier classees
+{{{classifiedRules}}}
+
+## Artefact courant a raffiner
+```java
+{{{currentArtifactCode}}}{{{previousCode}}}
+```
+
+## Source de reference sanitisee
+```java
+{{{sanitizedSource}}}
+```
+
+Reponds UNIQUEMENT avec un objet JSON valide au format exact suivant :
+{
+  "suggestions": {
+    "{{artifactType}}": "code Java raffine pour l'artefact demande"
+  }
+}
+
+Ne retourne qu'une seule cle, exactement egale a {{artifactType}}.

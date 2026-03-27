@@ -1,4 +1,4 @@
-# Maven local repository (cache dépendances, ne pas versionner)
+# Maven local repository (cache dependances, ne pas versionner)
 .m2/
 
 # Archives binaires
@@ -14,7 +14,7 @@ agentOpenAI.zip
 .claude/worktrees/agent-ab2e5c10/
 .claude/worktrees/agent-ab7f44f2/
 
-# Fichiers secrets (ne jamais committer les valeurs réelles)
+# Fichiers secrets (ne jamais committer les valeurs reelles)
 .env
 
 # Build outputs

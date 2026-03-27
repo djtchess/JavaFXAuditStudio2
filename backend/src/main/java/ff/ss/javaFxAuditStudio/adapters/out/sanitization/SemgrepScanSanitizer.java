@@ -208,6 +208,15 @@ public class SemgrepScanSanitizer implements Sanitizer {
         appendStaticRule(yaml, "hardcoded-url", "[java]", "WARNING",
                 "URL HTTP hardcodee detectee.",
                 "\"https?://[a-zA-Z0-9._-]+\\.[a-zA-Z]{2,}[^\"]*\"");
+        appendStaticRule(yaml, "internal-host-url", "[java]", "WARNING",
+                "URL interne ou corporate detectee.",
+                "\"https?://[a-zA-Z0-9._-]+\\.(internal|intra|corp|lan)[^\"]*\"");
+        appendStaticRule(yaml, "jdbc-connection-string", "[java]", "WARNING",
+                "Chaine de connexion JDBC detectee.",
+                "\"jdbc:(postgresql|mysql|oracle|sqlserver|h2):[^\"]*\"");
+        appendStaticRule(yaml, "private-key-marker", "[java]", "ERROR",
+                "Marqueur de cle privee detecte.",
+                "\"-----BEGIN (RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----\"");
         return yaml.toString();
     }
 
@@ -223,6 +232,12 @@ public class SemgrepScanSanitizer implements Sanitizer {
         appendStaticRule(yaml, "generic-url", "[generic]", "WARNING",
                 "URL HTTP detectee dans fichier non-Java.",
                 "https?://[a-zA-Z0-9._-]+\\.[a-zA-Z]{2,}");
+        appendStaticRule(yaml, "generic-jdbc-url", "[generic]", "WARNING",
+                "Chaine JDBC detectee dans fichier non-Java.",
+                "jdbc:(postgresql|mysql|oracle|sqlserver|h2):\\S+");
+        appendStaticRule(yaml, "generic-private-key-marker", "[generic]", "ERROR",
+                "Marqueur de cle privee detecte dans fichier non-Java.",
+                "-----BEGIN (RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----");
     }
 
     private void appendStaticRule(

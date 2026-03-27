@@ -18,13 +18,13 @@ import { MigrationPlanResponse } from '../../../core/models/analysis.model';
     }
 
     .compilable-yes {
-      background: rgba(16, 185, 129, 0.1);
-      color: #059669;
+      background: var(--surface-success-soft);
+      color: var(--surface-success);
     }
 
     .compilable-no {
-      background: rgba(239, 68, 68, 0.1);
-      color: #dc2626;
+      background: var(--surface-danger-soft);
+      color: var(--surface-danger);
     }
 
     .stepper {
@@ -37,7 +37,7 @@ import { MigrationPlanResponse } from '../../../core/models/analysis.model';
     .lot-step {
       position: relative;
       padding: 0 0 1.5rem 1.2rem;
-      border-left: 2px solid var(--line);
+      border-left: 2px solid var(--surface-line);
     }
 
     .lot-step:last-child {
@@ -55,25 +55,25 @@ import { MigrationPlanResponse } from '../../../core/models/analysis.model';
       width: 2rem;
       height: 2rem;
       border-radius: 50%;
-      background: var(--accent-soft);
-      color: var(--slate);
+      background: var(--surface-chip-strong);
+      color: var(--surface-ink-strong);
       font-weight: 700;
       font-size: 0.85rem;
-      border: 2px solid white;
+      border: 2px solid rgba(255, 255, 255, 0.7);
     }
 
     .lot-title {
       margin: 0 0 0.2rem;
       font-weight: 700;
       font-size: 0.95rem;
-      color: var(--slate);
+      color: var(--surface-ink-strong);
       font-family: var(--font-display);
     }
 
     .lot-objective {
       margin: 0 0 0.6rem;
       font-size: 0.85rem;
-      color: var(--ink-soft);
+      color: var(--surface-ink-soft);
       line-height: 1.45;
     }
 
@@ -87,9 +87,9 @@ import { MigrationPlanResponse } from '../../../core/models/analysis.model';
       display: inline-block;
       padding: 0.2rem 0.6rem;
       border-radius: 999px;
-      background: rgba(18, 35, 56, 0.06);
-      border: 1px solid var(--line);
-      color: var(--slate);
+      background: var(--surface-chip);
+      border: 1px solid var(--surface-line);
+      color: var(--surface-ink);
       font-size: 0.78rem;
       font-family: monospace;
       font-weight: 500;

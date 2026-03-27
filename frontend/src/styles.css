@@ -1,16 +1,44 @@
 :root {
-  --ink-strong: #122338;
-  --ink-soft: #35506d;
-  --paper: #f7f4eb;
-  --paper-deep: #efe6d1;
-  --accent: #d95f33;
-  --accent-soft: rgba(217, 95, 51, 0.14);
-  --mint: #0e8b72;
-  --slate: #203247;
-  --line: rgba(18, 35, 56, 0.12);
-  --shadow: 0 18px 45px rgba(18, 35, 56, 0.12);
-  --font-body: "Segoe UI Variable Text", "Segoe UI", sans-serif;
-  --font-display: Georgia, "Times New Roman", serif;
+  color-scheme: dark;
+  --ink-strong: #edf5ff;
+  --ink-soft: #9db5c9;
+  --paper: #06111b;
+  --paper-deep: #0b1b2a;
+  --paper-grid: rgba(155, 197, 230, 0.08);
+  --panel: rgba(10, 21, 32, 0.78);
+  --panel-alt: rgba(14, 27, 42, 0.9);
+  --panel-soft: rgba(241, 236, 225, 0.94);
+  --panel-soft-alt: rgba(252, 248, 239, 0.97);
+  --surface-ink: #193147;
+  --surface-ink-strong: #102638;
+  --surface-ink-soft: #617588;
+  --surface-line: rgba(16, 38, 56, 0.12);
+  --surface-line-strong: rgba(16, 38, 56, 0.18);
+  --surface-chip: rgba(16, 38, 56, 0.06);
+  --surface-chip-strong: rgba(16, 38, 56, 0.1);
+  --surface-code-bg: #122133;
+  --surface-code-ink: #dbe7f6;
+  --surface-success: #0f766e;
+  --surface-success-soft: rgba(76, 225, 198, 0.12);
+  --surface-warning: #9a5520;
+  --surface-warning-soft: rgba(255, 154, 77, 0.12);
+  --surface-danger: #a23c1c;
+  --surface-danger-soft: rgba(255, 118, 92, 0.12);
+  --accent: #ff9a4d;
+  --accent-soft: rgba(255, 154, 77, 0.16);
+  --mint: #4ce1c6;
+  --cyan: #65dfff;
+  --cyan-soft: rgba(101, 223, 255, 0.16);
+  --slate: #11283c;
+  --line: rgba(157, 190, 218, 0.18);
+  --line-strong: rgba(157, 214, 255, 0.34);
+  --shadow: 0 26px 70px rgba(0, 0, 0, 0.38);
+  --glow: 0 0 0 1px rgba(101, 223, 255, 0.08), 0 24px 70px rgba(2, 8, 16, 0.5);
+  --success-soft: rgba(76, 225, 198, 0.14);
+  --danger-soft: rgba(255, 118, 92, 0.16);
+  --font-body: "Aptos", "Segoe UI Variable Text", sans-serif;
+  --font-display: "Bahnschrift", "Segoe UI Variable Display", sans-serif;
+  --font-mono: "Consolas", "Cascadia Mono", monospace;
 }
 
 html,
@@ -18,19 +46,57 @@ body {
   margin: 0;
   min-height: 100%;
   background:
-    radial-gradient(circle at top left, rgba(217, 95, 51, 0.18), transparent 32%),
-    radial-gradient(circle at bottom right, rgba(14, 139, 114, 0.22), transparent 26%),
-    linear-gradient(180deg, #fcfbf7 0%, #f1ecde 100%);
+    radial-gradient(circle at 15% 18%, rgba(101, 223, 255, 0.16), transparent 28%),
+    radial-gradient(circle at 82% 14%, rgba(255, 154, 77, 0.18), transparent 24%),
+    radial-gradient(circle at 72% 68%, rgba(76, 225, 198, 0.12), transparent 22%),
+    linear-gradient(160deg, #040b13 0%, #07131f 36%, #0d1c2b 100%);
   color: var(--ink-strong);
   font-family: var(--font-body);
 }
 
 body {
   min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
 }
 
-* {
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+body::before {
+  background:
+    linear-gradient(var(--paper-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--paper-grid) 1px, transparent 1px);
+  background-size: 88px 88px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.9), transparent 92%);
+}
+
+body::after {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.1), transparent 34%),
+    radial-gradient(circle at 50% 100%, rgba(101, 223, 255, 0.08), transparent 32%);
+  opacity: 0.7;
+}
+
+*,
+*::before,
+*::after {
   box-sizing: border-box;
+}
+
+body > * {
+  position: relative;
+  z-index: 1;
+}
+
+a {
+  color: inherit;
 }
 
 button,
@@ -38,4 +104,210 @@ input,
 textarea,
 select {
   font: inherit;
+}
+
+button,
+a,
+input,
+textarea,
+select {
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+::selection {
+  background: rgba(101, 223, 255, 0.22);
+  color: white;
+}
+
+:focus-visible {
+  outline: 2px solid rgba(101, 223, 255, 0.7);
+  outline-offset: 3px;
+}
+
+jas-ai-enrichment-view .status-row,
+jas-ai-enrichment-view .review-header-text,
+jas-ai-enrichment-view .suggestion-text,
+jas-ai-enrichment-view .artifact-review-text,
+jas-ai-enrichment-view .global-suggestion-item,
+jas-ai-enrichment-view .persisted-finding-value,
+jas-ai-enrichment-view .persisted-global-findings,
+jas-ai-enrichment-view .source-meta {
+  color: var(--surface-ink);
+}
+
+jas-ai-enrichment-view .credential-missing,
+jas-ai-enrichment-view .degraded-msg,
+jas-ai-enrichment-view .uncertain-rule-id,
+jas-ai-enrichment-view .sanitized-badge.no,
+jas-ai-enrichment-view .zip-export-result.error {
+  color: var(--surface-warning);
+}
+
+jas-ai-enrichment-view .error-block {
+  background: var(--surface-danger-soft);
+  border-color: rgba(162, 60, 28, 0.24);
+  color: var(--surface-danger);
+}
+
+jas-ai-enrichment-view .result-block,
+jas-ai-enrichment-view .badge-nominal,
+jas-ai-enrichment-view .sanitized-badge.yes,
+jas-ai-enrichment-view .zip-export-result.ok {
+  background: var(--surface-success-soft);
+  border-color: rgba(15, 118, 110, 0.2);
+  color: var(--surface-success);
+}
+
+jas-ai-enrichment-view .result-block.degraded,
+jas-ai-enrichment-view .badge-degraded {
+  background: var(--surface-warning-soft);
+  border-color: rgba(185, 106, 44, 0.24);
+  color: var(--surface-warning);
+}
+
+jas-ai-enrichment-view .enrich-btn,
+jas-ai-enrichment-view .btn-confirm,
+jas-ai-enrichment-view .generate-btn {
+  background: linear-gradient(135deg, rgba(16, 38, 56, 1), rgba(42, 82, 116, 1));
+  border-color: rgba(16, 38, 56, 0.14);
+  color: white;
+  box-shadow: none;
+}
+
+jas-ai-enrichment-view .review-btn,
+jas-ai-enrichment-view .preview-btn,
+jas-ai-enrichment-view .zip-export-btn,
+jas-ai-enrichment-view .persisted-btn,
+jas-ai-enrichment-view .generated-class-btn,
+jas-ai-enrichment-view .refine-btn,
+jas-ai-enrichment-view .btn-cancel {
+  border-color: var(--surface-line);
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--surface-ink);
+}
+
+jas-ai-enrichment-view .review-btn:hover:not(:disabled),
+jas-ai-enrichment-view .preview-btn:hover:not(:disabled),
+jas-ai-enrichment-view .zip-export-btn:hover:not(:disabled),
+jas-ai-enrichment-view .persisted-btn:hover,
+jas-ai-enrichment-view .generated-class-btn:hover,
+jas-ai-enrichment-view .refine-btn:hover,
+jas-ai-enrichment-view .btn-cancel:hover {
+  background: var(--surface-chip);
+}
+
+jas-ai-enrichment-view .persisted-btn.secondary {
+  color: #3d86c6;
+  border-color: rgba(61, 134, 198, 0.2);
+}
+
+jas-ai-enrichment-view .confirm-overlay {
+  background: rgba(3, 8, 14, 0.62);
+}
+
+jas-ai-enrichment-view .confirm-card,
+jas-ai-enrichment-view .suggestion-item,
+jas-ai-enrichment-view .artifact-review-item,
+jas-ai-enrichment-view .generated-class-item.streaming,
+jas-ai-enrichment-view .refine-panel,
+jas-ai-enrichment-view .persisted-card {
+  background: var(--panel-soft-alt);
+  border-color: var(--surface-line);
+  box-shadow: none;
+}
+
+jas-ai-enrichment-view .confirm-card h3,
+jas-ai-enrichment-view .audit-section-title,
+jas-ai-enrichment-view .review-header-text strong,
+jas-ai-enrichment-view .persisted-title,
+jas-ai-enrichment-view .persisted-finding-key {
+  color: var(--surface-ink-strong);
+}
+
+jas-ai-enrichment-view .confirm-card p,
+jas-ai-enrichment-view .hash-cell,
+jas-ai-enrichment-view .no-audit,
+jas-ai-enrichment-view .no-suggestions,
+jas-ai-enrichment-view .persisted-meta,
+jas-ai-enrichment-view .empty-persisted-state {
+  color: var(--surface-ink-soft);
+}
+
+jas-ai-enrichment-view .audit-table th,
+jas-ai-enrichment-view .persisted-version-row,
+jas-ai-enrichment-view .persisted-finding,
+jas-ai-enrichment-view .global-suggestion-item,
+jas-ai-enrichment-view .artifact-type-badge {
+  background: var(--surface-chip);
+  color: var(--surface-ink);
+  border-color: var(--surface-line);
+}
+
+jas-ai-enrichment-view .audit-table td {
+  color: var(--surface-ink);
+  border-bottom-color: var(--surface-line);
+}
+
+jas-ai-enrichment-view .degraded-row td {
+  background: var(--surface-danger-soft);
+}
+
+jas-ai-enrichment-view .suggestion-handler,
+jas-ai-enrichment-view .review-section-label {
+  color: var(--surface-ink-strong);
+}
+
+jas-ai-enrichment-view .section-divider {
+  border-top-color: var(--surface-line);
+}
+
+jas-ai-enrichment-view .generation-progress {
+  border-color: rgba(61, 134, 198, 0.18);
+  background: rgba(61, 134, 198, 0.08);
+}
+
+jas-ai-enrichment-view .generation-progress-header,
+jas-ai-enrichment-view .generation-log {
+  color: #3d86c6;
+}
+
+jas-ai-enrichment-view .progress-track {
+  background: rgba(61, 134, 198, 0.14);
+}
+
+jas-ai-enrichment-view .progress-fill {
+  background: linear-gradient(90deg, var(--cyan), var(--accent));
+}
+
+jas-ai-enrichment-view .generated-class-code,
+jas-ai-enrichment-view .source-code-block {
+  background: var(--surface-code-bg);
+  color: var(--surface-code-ink);
+}
+
+jas-ai-enrichment-view .generated-feedback {
+  color: var(--surface-success);
+}
+
+jas-ai-enrichment-view .generated-feedback.error {
+  color: var(--surface-danger);
+}
+
+jas-ai-enrichment-view .refine-panel textarea {
+  border-color: var(--surface-line);
+  background: rgba(255, 255, 255, 0.84);
+  color: var(--surface-ink);
+}
+
+jas-ai-enrichment-view .refine-panel textarea:focus {
+  outline-color: rgba(101, 223, 255, 0.22);
+}
+
+jas-ai-enrichment-view .refine-note {
+  color: var(--surface-ink-soft);
 }

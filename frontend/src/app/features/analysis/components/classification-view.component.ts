@@ -13,12 +13,12 @@ import { ReclassifyModalComponent } from './reclassify-modal.component';
 import { ReclassificationHistoryPanelComponent } from './reclassification-history-panel.component';
 
 const RESPONSIBILITY_COLORS: Record<string, string> = {
-  UI: '#3b82f6',
-  PRESENTATION: '#6366f1',
-  APPLICATION: '#10b981',
-  BUSINESS: '#f59e0b',
-  TECHNICAL: '#6b7280',
-  UNKNOWN: '#ef4444',
+  UI: '#3d86c6',
+  PRESENTATION: '#4f7ea8',
+  APPLICATION: '#0f766e',
+  BUSINESS: '#b96a2c',
+  TECHNICAL: '#627487',
+  UNKNOWN: '#a23c1c',
 };
 
 /**
@@ -62,7 +62,7 @@ const RESPONSIBILITY_COLORS: Record<string, string> = {
     }
 
     .class-badge.active {
-      border-color: var(--slate);
+      border-color: var(--surface-ink-strong);
       transform: scale(1.05);
     }
 
@@ -72,8 +72,8 @@ const RESPONSIBILITY_COLORS: Record<string, string> = {
       gap: 0.3rem;
       padding: 0.28rem 0.7rem;
       border-radius: 999px;
-      background: rgba(239, 68, 68, 0.1);
-      color: #dc2626;
+      background: var(--surface-danger-soft);
+      color: var(--surface-danger);
       font-weight: 600;
       font-size: 0.78rem;
       margin-left: auto;
@@ -90,15 +90,15 @@ const RESPONSIBILITY_COLORS: Record<string, string> = {
       gap: 0.6rem;
       padding: 0.65rem 0.75rem;
       border-radius: 12px;
-      border: 1px solid var(--line);
-      background: rgba(255, 255, 255, 0.6);
+      border: 1px solid var(--surface-line);
+      background: rgba(255, 255, 255, 0.48);
       font-size: 0.85rem;
     }
 
     .rule-id {
       font-family: monospace;
       font-size: 0.78rem;
-      color: var(--ink-soft);
+      color: var(--surface-ink-soft);
       white-space: nowrap;
       min-width: 4rem;
       flex-shrink: 0;
@@ -106,7 +106,7 @@ const RESPONSIBILITY_COLORS: Record<string, string> = {
 
     .rule-desc {
       flex: 1;
-      color: var(--slate);
+      color: var(--surface-ink);
       line-height: 1.4;
     }
 
@@ -129,12 +129,12 @@ const RESPONSIBILITY_COLORS: Record<string, string> = {
     }
 
     .extraction-badge {
-      background: rgba(18, 35, 56, 0.08);
-      color: var(--slate);
+      background: var(--surface-chip);
+      color: var(--surface-ink-strong);
     }
 
     .modified-badge {
-      background: #f59e0b;
+      background: #b96a2c;
       color: white;
     }
 
@@ -145,8 +145,8 @@ const RESPONSIBILITY_COLORS: Record<string, string> = {
       width: 1.3rem;
       height: 1.3rem;
       border-radius: 50%;
-      background: rgba(239, 68, 68, 0.12);
-      color: #dc2626;
+      background: var(--surface-danger-soft);
+      color: var(--surface-danger);
       font-size: 0.72rem;
       font-weight: 700;
       flex-shrink: 0;
@@ -163,19 +163,19 @@ const RESPONSIBILITY_COLORS: Record<string, string> = {
       display: inline-flex;
       align-items: center;
       padding: 0.22rem 0.6rem;
-      border: 1px solid #e5e7eb;
+      border: 1px solid var(--surface-line);
       border-radius: 999px;
-      background: white;
+      background: rgba(255, 255, 255, 0.68);
       font-size: 0.72rem;
       font-weight: 600;
-      color: #374151;
+      color: var(--surface-ink);
       cursor: pointer;
       transition: background 0.15s;
       white-space: nowrap;
     }
 
     .btn-action:hover {
-      background: #f3f4f6;
+      background: var(--surface-chip);
     }
 
     .btn-history {
@@ -199,17 +199,17 @@ const RESPONSIBILITY_COLORS: Record<string, string> = {
       gap: 0.5rem;
       padding: 0.7rem 1rem;
       margin-bottom: 1rem;
-      background: #fff7ed;
-      border: 1px solid #f97316;
+      background: var(--surface-warning-soft);
+      border: 1px solid rgba(185, 106, 44, 0.32);
       border-radius: 10px;
-      color: #9a3412;
+      color: var(--surface-warning);
       font-size: 0.88rem;
       font-weight: 500;
     }
 
     .banner-icon { font-size: 1.1rem; }
 
-    .banner-reason { color: #b45309; font-style: italic; }
+    .banner-reason { color: var(--surface-warning); font-style: italic; }
 
     .metric-chip {
       display: inline-block;
@@ -220,9 +220,9 @@ const RESPONSIBILITY_COLORS: Record<string, string> = {
     }
 
     .lifecycle-chip {
-      background: rgba(245, 158, 11, 0.1);
-      color: #92400e;
-      border: 1px solid rgba(245, 158, 11, 0.3);
+      background: var(--surface-warning-soft);
+      color: var(--surface-warning);
+      border: 1px solid rgba(185, 106, 44, 0.24);
     }
 
     .confidence-badge {
@@ -234,17 +234,17 @@ const RESPONSIBILITY_COLORS: Record<string, string> = {
     }
 
     .confidence-badge.low {
-      background: #fef2f2;
-      border: 1px solid #fca5a5;
-      color: #991b1b;
+      background: var(--surface-danger-soft);
+      border: 1px solid rgba(162, 60, 28, 0.22);
+      color: var(--surface-danger);
     }
 
     .method-signature {
       display: block;
       font-family: monospace;
       font-size: 0.78rem;
-      color: var(--slate);
-      background: rgba(18, 35, 56, 0.04);
+      color: var(--surface-ink);
+      background: var(--surface-chip);
       border-radius: 6px;
       padding: 0.18rem 0.45rem;
       margin-top: 0.25rem;
@@ -255,7 +255,7 @@ const RESPONSIBILITY_COLORS: Record<string, string> = {
     .unknown-hint {
       font-family: sans-serif;
       font-size: 0.72rem;
-      color: #9ca3af;
+      color: var(--surface-ink-soft);
       margin-left: 0.35rem;
       font-style: italic;
     }

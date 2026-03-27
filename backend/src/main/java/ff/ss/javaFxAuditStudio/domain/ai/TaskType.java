@@ -20,6 +20,12 @@ public enum TaskType {
     /** Revue qualité des artefacts générés. */
     ARTIFACT_REVIEW,
 
+    /** Raffinement multi-tour d'un artefact généré. */
+    ARTIFACT_REFINEMENT,
+
+    /** Vérification de cohérence inter-artefacts. */
+    ARTIFACT_COHERENCE,
+
     /** Génération des classes cibles Spring Boot. */
     SPRING_BOOT_GENERATION;
 
@@ -39,7 +45,7 @@ public enum TaskType {
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("TaskType inconnu : '" + value
                     + "'. Valeurs acceptées : NAMING, DESCRIPTION, CLASSIFICATION_HINT, "
-                    + "ARTIFACT_REVIEW, SPRING_BOOT_GENERATION");
+                    + "ARTIFACT_REVIEW, ARTIFACT_REFINEMENT, ARTIFACT_COHERENCE, SPRING_BOOT_GENERATION");
         }
     }
 }

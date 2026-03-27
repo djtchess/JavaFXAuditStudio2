@@ -7,6 +7,7 @@ import ff.ss.javaFxAuditStudio.application.ports.in.IngestSourcesUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.in.ProduceMigrationPlanUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.in.ProduceRestitutionUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.out.AnalysisSessionPort;
+import ff.ss.javaFxAuditStudio.application.ports.out.WorkflowObservabilityPort;
 import ff.ss.javaFxAuditStudio.domain.cartography.ControllerCartography;
 import ff.ss.javaFxAuditStudio.domain.generation.GenerationResult;
 import ff.ss.javaFxAuditStudio.domain.ingestion.IngestionResult;
@@ -24,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
@@ -34,6 +36,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class AnalysisOrchestrationServiceTest {
@@ -58,6 +62,9 @@ class AnalysisOrchestrationServiceTest {
 
     @Mock
     private ProduceRestitutionUseCase produceRestitutionUseCase;
+
+    @Mock
+    private WorkflowObservabilityPort workflowObservabilityPort;
 
     @InjectMocks
     private AnalysisOrchestrationService service;
@@ -157,6 +164,20 @@ class AnalysisOrchestrationServiceTest {
         assertThat(result.migrationPlan()).isNotNull();
         assertThat(result.generationResult()).isNotNull();
         assertThat(result.restitutionReport()).isNotNull();
+
+        ArgumentCaptor<AnalysisSession> captor = ArgumentCaptor.forClass(AnalysisSession.class);
+        verify(analysisSessionPort, times(8)).save(captor.capture());
+        assertThat(captor.getAllValues())
+                .extracting(AnalysisSession::status)
+                .containsExactly(
+                        AnalysisStatus.IN_PROGRESS,
+                        AnalysisStatus.INGESTING,
+                        AnalysisStatus.CARTOGRAPHING,
+                        AnalysisStatus.CLASSIFYING,
+                        AnalysisStatus.PLANNING,
+                        AnalysisStatus.GENERATING,
+                        AnalysisStatus.REPORTING,
+                        AnalysisStatus.COMPLETED);
     }
 
     @Test
@@ -186,5 +207,14 @@ class AnalysisOrchestrationServiceTest {
         assertThat(result.errors()).hasSize(1);
         assertThat(result.errors().get(0)).isEqualTo(errorMessage);
         assertThat(result.sessionId()).isEqualTo(sessionId);
+
+        ArgumentCaptor<AnalysisSession> captor = ArgumentCaptor.forClass(AnalysisSession.class);
+        verify(analysisSessionPort, times(3)).save(captor.capture());
+        assertThat(captor.getAllValues())
+                .extracting(AnalysisSession::status)
+                .containsExactly(
+                        AnalysisStatus.IN_PROGRESS,
+                        AnalysisStatus.INGESTING,
+                        AnalysisStatus.FAILED);
     }
 }

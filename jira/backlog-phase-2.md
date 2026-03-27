@@ -1,5 +1,9 @@
 # Backlog Phase 2 — JavaFXAuditStudio2
 
+> Statut documentaire (2026-03-26) : ce fichier conserve l'historique du backlog
+> socle produit. Utiliser `jira/backlog-restant-a-faire.md` pour la priorisation
+> active du reste a faire.
+
 ## Contrat inter-agent (structure contracts.md)
 
 ### objectif

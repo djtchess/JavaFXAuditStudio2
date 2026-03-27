@@ -1,11 +1,43 @@
 # JAS-52 - Strategie d'observabilite et de logs de workflow
 
 Story : JAS-52 | Epic : JAS-EPIC-06
-Date : 2026-03-16
+Date : 2026-03-26
 
 ---
 
-## 1. Points de logs critiques par service
+## 1. Observabilite exposee
+
+### Actuator
+
+Les endpoints suivants sont exposes :
+
+- `GET /actuator/health`
+- `GET /actuator/info`
+- `GET /actuator/metrics`
+
+La health globale agrège maintenant :
+
+- `analysisWorkflow`
+- `llmEnrichment`
+
+### Metriques
+
+Metriques principales disponibles :
+
+- `jas.analysis.sessions` avec le tag `status` pour suivre le volume de sessions par statut
+- `jas.analysis.pipeline.stage.count` et `jas.analysis.pipeline.stage.duration` pour les etapes du pipeline
+- `jas.analysis.pipeline.count` et `jas.analysis.pipeline.duration` pour le resultat global du pipeline
+- `jas.llm.enrichment.count` et `jas.llm.enrichment.duration` pour les appels d enrichissement IA
+
+Tags utilises :
+
+- `stage`
+- `outcome`
+- `provider`
+- `taskType`
+- `status`
+
+## 2. Points de logs critiques par service
 
 ### IngestSourcesService
 
@@ -42,7 +74,7 @@ Regles specifiques :
 
 ---
 
-## 2. Conventions : ce qui ne doit JAMAIS apparaitre dans les logs
+## 3. Conventions : ce qui ne doit JAMAIS apparaitre dans les logs
 
 Les interdictions suivantes s'appliquent a tous les services et adaptateurs, sans exception :
 
@@ -55,7 +87,7 @@ Les interdictions suivantes s'appliquent a tous les services et adaptateurs, san
 
 ---
 
-## 3. Activation du niveau DEBUG
+## 4. Activation du niveau DEBUG
 
 ### Via profil Spring (recommande en developpement local)
 
@@ -83,42 +115,45 @@ Les messages DEBUG ne sont jamais emis. Aucune configuration supplementaire n'es
 
 ---
 
-## 4. Format du correlationId dans les logs
+## 5. Format du correlationId dans les logs
 
 Le pattern Logback defini dans `logback-spring.xml` est :
 
 ```
-%d{HH:mm:ss.SSS} [%thread] %-5level [%X{correlationId:-no-corr}] %logger{36} - %msg%n
+%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} level=%-5level app=${APP_NAME} corr=%X{correlationId:-no-corr} thread=%thread logger=%logger{36} msg=%msg%n
 ```
 
 Exemple de ligne produite avec correlationId present :
 
 ```
-14:32:07.421 [http-nio-8080-exec-3] DEBUG [a1b2c3d4-e5f6-7890-abcd-ef1234567890] f.s.j.a.s.IngestSourcesService - Ingestion demarree - 3 refs
+2026-03-26T14:32:07.421+01:00 level=DEBUG app=javaFxAuditStudio corr=a1b2c3d4-e5f6-7890-abcd-ef1234567890 thread=http-nio-8080-exec-3 logger=f.s.j.a.s.IngestSourcesService msg=Ingestion demarree - 3 refs
 ```
 
 Exemple sans correlationId (appel hors contexte HTTP) :
 
 ```
-14:32:07.422 [main] DEBUG [no-corr] f.s.j.a.s.CartographyService - Cartographie demarree - controllerRef masquee
+2026-03-26T14:32:07.422+01:00 level=DEBUG app=javaFxAuditStudio corr=no-corr thread=main logger=f.s.j.a.s.CartographyService msg=Cartographie demarree - controllerRef masquee
 ```
 
 Le champ `[%X{correlationId:-no-corr}]` utilise la valeur MDC injectee par `CorrelationFilter`. La valeur de repli `no-corr` signale qu'aucune requete HTTP n'est a l'origine de l'appel (batch, test, demarrage).
 
 ---
 
-## 5. Fichiers crees ou modifies par cette story
+## 6. Fichiers crees ou modifies par cette story
 
 | Fichier | Action |
 |---|---|
-| `backend/src/main/java/.../service/IngestSourcesService.java` | Logger SLF4J + 3 points de log |
-| `backend/src/main/java/.../service/CartographyService.java` | Logger SLF4J + 2 points de log |
-| `backend/src/main/resources/logback-spring.xml` | Cree : configuration Logback par profil |
-| `backend/src/main/resources/application.properties` | Section JAS-52 ajoutee |
+| `backend/pom.xml` | Actuator ajoute |
+| `backend/src/main/java/.../observability/*` | Health checks et metriques Micrometer |
+| `backend/src/main/java/.../service/AnalysisOrchestrationService.java` | Instrumentation pipeline |
+| `backend/src/main/java/.../service/EnrichAnalysisService.java` | Instrumentation LLM |
+| `backend/src/main/resources/logback-spring.xml` | Pattern de logs structure |
+| `backend/src/main/resources/application.properties` | Exposure Actuator et options metrics |
+| `docs/jas-52-observabilite.md` | Documentation alignee sur l implementation |
 
 ---
 
-## 6. Handoffs
+## 7. Handoffs
 
 - **securite** : valider que les conventions d'interdiction de log (section 2) sont couvertes par une revue de code ou un test statique.
 - **devops-ci-cd** : confirmer que le profil `dev` n'est pas active dans les pipelines CI (seul `default` doit etre actif en integration).

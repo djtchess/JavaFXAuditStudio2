@@ -77,7 +77,7 @@ class ReviewArtifactsServiceTest {
     }
 
     private static SanitizedBundle bundleFor(final String controllerRef) {
-        return new SanitizedBundle("test-bundle", controllerRef, "source-sanitized", 1, "1.0");
+        return new SanitizedBundle("test-bundle", controllerRef, "source-sanitized", 1, "1.0", null);
     }
 
     private static BusinessRule ruleWith(

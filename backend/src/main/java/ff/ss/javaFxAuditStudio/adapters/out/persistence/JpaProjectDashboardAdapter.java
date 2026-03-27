@@ -15,6 +15,17 @@ import java.util.Optional;
  */
 public class JpaProjectDashboardAdapter implements ProjectDashboardPort {
 
+    private static final List<String> ANALYSING_STATUSES = List.of(
+            "PENDING",
+            "IN_PROGRESS",
+            "RUNNING",
+            "INGESTING",
+            "CARTOGRAPHING",
+            "CLASSIFYING",
+            "PLANNING",
+            "GENERATING",
+            "REPORTING");
+
     private final AnalysisSessionRepository sessionRepository;
     private final BusinessRuleRepository businessRuleRepository;
     private final RuleClassificationAuditRepository auditRepository;
@@ -34,7 +45,7 @@ public class JpaProjectDashboardAdapter implements ProjectDashboardPort {
         if (total == 0) {
             return Optional.empty();
         }
-        long analysing = sessionRepository.countByControllerNameAndStatus(projectId, "IN_PROGRESS");
+        long analysing = sessionRepository.countByControllerNameAndStatusIn(projectId, ANALYSING_STATUSES);
         long completed = sessionRepository.countByControllerNameAndStatus(projectId, "COMPLETED");
         Map<String, Long> rulesByCategory = buildRulesByCategory(projectId);
         long uncertain = businessRuleRepository.countUncertainRulesForProject(projectId);

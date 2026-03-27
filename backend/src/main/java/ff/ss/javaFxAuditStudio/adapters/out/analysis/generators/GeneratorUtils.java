@@ -118,6 +118,30 @@ public final class GeneratorUtils {
         }
 
         // Pattern 2 — service injecte -> nom du champ (2eme token)
+        if (desc.startsWith("Regle metier ")) {
+            String rest = desc.substring("Regle metier ".length());
+            String name = extractLeadingIdentifier(rest);
+            if (isValidIdentifier(name)) {
+                return name;
+            }
+        }
+
+        if (desc.startsWith("Appel HTTP ")) {
+            String rest = desc.substring("Appel HTTP ".length());
+            String name = extractLeadingIdentifier(rest);
+            if (isValidIdentifier(name)) {
+                return name;
+            }
+        }
+
+        if (desc.startsWith("Impression ")) {
+            String rest = desc.substring("Impression ".length());
+            String name = extractLeadingIdentifier(rest);
+            if (isValidIdentifier(name)) {
+                return name;
+            }
+        }
+
         if (desc.startsWith("Service injecte ")) {
             String rest = desc.substring("Service injecte ".length());
             int colon = rest.indexOf(':');
@@ -270,6 +294,34 @@ public final class GeneratorUtils {
     }
 
     /**
+     * Retourne une expression Java par defaut pour un type donne.
+     * Utilisee par les generateurs de tests et les squelettes de policies.
+     */
+    public static String defaultValueExpression(final String type) {
+        String simpleType = simpleTypeName(type);
+        return switch (simpleType) {
+            case "boolean", "Boolean" -> "false";
+            case "byte", "Byte" -> "(byte) 0";
+            case "short", "Short" -> "(short) 0";
+            case "int", "Integer" -> "0";
+            case "long", "Long" -> "0L";
+            case "float", "Float" -> "0.0f";
+            case "double", "Double" -> "0.0d";
+            case "char", "Character" -> "'\\0'";
+            case "String" -> "\"sample\"";
+            case "BigDecimal" -> "java.math.BigDecimal.ZERO";
+            case "LocalDate" -> "java.time.LocalDate.now()";
+            case "LocalDateTime" -> "java.time.LocalDateTime.now()";
+            case "Instant" -> "java.time.Instant.now()";
+            case "List" -> "java.util.List.of()";
+            case "Set" -> "java.util.Set.of()";
+            case "Map" -> "java.util.Map.of()";
+            case "Optional" -> "java.util.Optional.empty()";
+            default -> "null";
+        };
+    }
+
+    /**
      * Extrait le type JavaFX du champ depuis une description "Champ FXML TypeName fieldName :".
      * Retourne une chaine vide si non applicable.
      */
@@ -292,44 +344,45 @@ public final class GeneratorUtils {
      */
     public static ViewModelProperty fxmlTypeToProperty(final String rawField, final String fxmlType) {
         String lower = fxmlType.toLowerCase();
+        String semanticField = semanticFieldName(rawField, lower);
 
         // Correspondance exacte — types standards JavaFX
         if (lower.endsWith("vbox") || lower.endsWith("hbox") || lower.endsWith("pane")
                 || lower.endsWith("gridpane") || lower.endsWith("flowpane")
                 || lower.endsWith("borderpane") || lower.endsWith("anchorpane")
                 || lower.endsWith("stackpane") || lower.endsWith("splitpane")) {
-            return new ViewModelProperty(rawField + "Visible", PropertyType.BOOLEAN);
+            return new ViewModelProperty(semanticField + "Visible", PropertyType.BOOLEAN);
         }
         if (lower.endsWith("button") || lower.endsWith("btn") || lower.endsWith("menuitem")
                 || lower.endsWith("hyperlink")) {
-            return new ViewModelProperty(rawField + "Enabled", PropertyType.BOOLEAN);
+            return new ViewModelProperty(semanticField + "Enabled", PropertyType.BOOLEAN);
         }
         if (lower.endsWith("checkbox") || lower.endsWith("chcbx")
                 || lower.endsWith("radiobutton") || lower.endsWith("togglebutton")) {
-            return new ViewModelProperty(rawField + "Selected", PropertyType.BOOLEAN);
+            return new ViewModelProperty(semanticField + "Selected", PropertyType.BOOLEAN);
         }
         if (lower.endsWith("label") || lower.endsWith("lbl")
                 || lower.endsWith("textfield") || lower.endsWith("textarea")
                 || lower.endsWith("passwordfield")) {
-            return new ViewModelProperty(rawField + "Text", PropertyType.STRING);
+            return new ViewModelProperty(semanticField + "Text", PropertyType.STRING);
         }
         if (lower.endsWith("combobox") || lower.endsWith("choicebox")
                 || lower.endsWith("spinner") || lower.endsWith("slider")) {
-            return new ViewModelProperty(rawField + "Value", PropertyType.STRING);
+            return new ViewModelProperty(semanticField + "Value", PropertyType.STRING);
         }
         if (lower.endsWith("tableview") || lower.endsWith("listview")
                 || lower.endsWith("treeview")) {
             // JAS-007 : les vues liste exposent une ObservableList<Object> plutot qu'un TODO
-            return new ViewModelProperty(rawField + "Items", PropertyType.OBSERVABLE_LIST);
+            return new ViewModelProperty(semanticField + "Items", PropertyType.OBSERVABLE_LIST);
         }
 
         // JAS-007 — heuristique par sous-chaine pour les types custom heritant de composants JavaFX
-        ViewModelProperty heuristicResult = resolveByHeuristic(rawField, fxmlType, lower);
+        ViewModelProperty heuristicResult = resolveByHeuristic(semanticField, fxmlType, lower);
         if (heuristicResult != null) {
             return heuristicResult;
         }
 
-        return new ViewModelProperty(rawField, inferPropertyType(rawField));
+        return new ViewModelProperty(semanticField, inferPropertyType(semanticField));
     }
 
     /**
@@ -337,63 +390,133 @@ public final class GeneratorUtils {
      * Retourne null si aucune heuristique ne correspond (type inconnu).
      */
     private static ViewModelProperty resolveByHeuristic(
-            final String rawField, final String fxmlType, final String lower) {
+            final String semanticField, final String fxmlType, final String lower) {
         // TableView avant ListView et TreeView pour eviter les correspondances "table" ambigues
         // JAS-007 : les types custom heritant de TableView/ListView/TreeView generent une ObservableList
         if (lower.contains("tableview") || lower.contains("table")) {
             LOG.debug("[JAS-007] Type custom '{}' resolu par heuristique vers 'TableView'", fxmlType);
-            return new ViewModelProperty(rawField + "Items", PropertyType.OBSERVABLE_LIST);
+            return new ViewModelProperty(semanticField + "Items", PropertyType.OBSERVABLE_LIST);
         }
         if (lower.contains("listview") || lower.contains("list")) {
             LOG.debug("[JAS-007] Type custom '{}' resolu par heuristique vers 'ListView'", fxmlType);
-            return new ViewModelProperty(rawField + "Items", PropertyType.OBSERVABLE_LIST);
+            return new ViewModelProperty(semanticField + "Items", PropertyType.OBSERVABLE_LIST);
         }
         if (lower.contains("treeview") || lower.contains("tree")) {
             LOG.debug("[JAS-007] Type custom '{}' resolu par heuristique vers 'TreeView'", fxmlType);
-            return new ViewModelProperty(rawField + "Items", PropertyType.OBSERVABLE_LIST);
+            return new ViewModelProperty(semanticField + "Items", PropertyType.OBSERVABLE_LIST);
         }
         if (lower.contains("gridpane") || lower.contains("grid")) {
             LOG.debug("[JAS-007] Type custom '{}' resolu par heuristique vers 'GridPane'", fxmlType);
-            return new ViewModelProperty(rawField + "Visible", PropertyType.BOOLEAN);
+            return new ViewModelProperty(semanticField + "Visible", PropertyType.BOOLEAN);
         }
         if (lower.contains("checkbox") || lower.contains("toggle") || lower.contains("radio")) {
             LOG.debug("[JAS-007] Type custom '{}' resolu par heuristique vers 'CheckBox'", fxmlType);
-            return new ViewModelProperty(rawField + "Selected", PropertyType.BOOLEAN);
+            return new ViewModelProperty(semanticField + "Selected", PropertyType.BOOLEAN);
         }
         if (lower.contains("button") || lower.contains("btn") || lower.contains("bouton")) {
             LOG.debug("[JAS-007] Type custom '{}' resolu par heuristique vers 'Button'", fxmlType);
-            return new ViewModelProperty(rawField + "Enabled", PropertyType.BOOLEAN);
+            return new ViewModelProperty(semanticField + "Enabled", PropertyType.BOOLEAN);
         }
         if (lower.contains("label") || lower.contains("lbl")) {
             LOG.debug("[JAS-007] Type custom '{}' resolu par heuristique vers 'Label'", fxmlType);
-            return new ViewModelProperty(rawField + "Text", PropertyType.STRING);
+            return new ViewModelProperty(semanticField + "Text", PropertyType.STRING);
         }
         if (lower.contains("textfield") || lower.contains("textarea")
                 || lower.contains("input") || lower.contains("champ")) {
             LOG.debug("[JAS-007] Type custom '{}' resolu par heuristique vers 'TextField'", fxmlType);
-            return new ViewModelProperty(rawField + "Text", PropertyType.STRING);
+            return new ViewModelProperty(semanticField + "Text", PropertyType.STRING);
         }
         // "text" seul apres les variantes plus specifiques
         if (lower.contains("text")) {
             LOG.debug("[JAS-007] Type custom '{}' resolu par heuristique vers 'TextField'", fxmlType);
-            return new ViewModelProperty(rawField + "Text", PropertyType.STRING);
+            return new ViewModelProperty(semanticField + "Text", PropertyType.STRING);
         }
         if (lower.contains("combobox") || lower.contains("combo") || lower.contains("choice")
                 || lower.contains("spinner") || lower.contains("slider")) {
             LOG.debug("[JAS-007] Type custom '{}' resolu par heuristique vers 'ComboBox'", fxmlType);
-            return new ViewModelProperty(rawField + "Value", PropertyType.STRING);
+            return new ViewModelProperty(semanticField + "Value", PropertyType.STRING);
         }
         // "tab" sans "table" (deja traite plus haut)
         if (lower.contains("tab")) {
             LOG.debug("[JAS-007] Type custom '{}' resolu par heuristique vers 'TabPane'", fxmlType);
-            return new ViewModelProperty(rawField + "Visible", PropertyType.BOOLEAN);
+            return new ViewModelProperty(semanticField + "Visible", PropertyType.BOOLEAN);
+        }
+        if (lower.contains("accordion") || lower.contains("scrollpane")
+                || lower.contains("splitpane") || lower.contains("titledpane")) {
+            LOG.debug("[JAS-007] Type custom '{}' resolu par heuristique vers composant conteneur", fxmlType);
+            return new ViewModelProperty(semanticField + "Visible", PropertyType.BOOLEAN);
         }
         if (lower.contains("vbox") || lower.contains("hbox") || lower.contains("pane")
                 || lower.contains("box") || lower.contains("container") || lower.contains("panel")) {
             LOG.debug("[JAS-007] Type custom '{}' resolu par heuristique vers 'VBox'", fxmlType);
-            return new ViewModelProperty(rawField + "Visible", PropertyType.BOOLEAN);
+            return new ViewModelProperty(semanticField + "Visible", PropertyType.BOOLEAN);
+        }
+        if (lower.contains("component") || lower.contains("widget") || lower.contains("view")
+                || lower.contains("screen")) {
+            LOG.debug("[JAS-007] Type custom '{}' resolu par heuristique vers composant visible", fxmlType);
+            return new ViewModelProperty(semanticField + "Visible", PropertyType.BOOLEAN);
         }
         return null;
+    }
+
+    private static String semanticFieldName(final String rawField, final String lowerType) {
+        if (rawField == null || rawField.isBlank()) {
+            return rawField;
+        }
+        String candidate = stripSemanticPrefix(rawField);
+        candidate = stripSemanticSuffix(candidate, lowerType);
+        candidate = decapitalize(candidate);
+        if (!isValidIdentifier(candidate) || candidate.length() < 3) {
+            return rawField;
+        }
+        return candidate;
+    }
+
+    private static String stripSemanticPrefix(final String rawField) {
+        String[] prefixes = {
+            "button", "label", "field", "table", "check", "radio", "combo",
+            "btn", "lbl", "txt", "fld", "tbl", "lst", "cmb", "chk"
+        };
+        for (String prefix : prefixes) {
+            if (rawField.length() > prefix.length()
+                    && rawField.toLowerCase().startsWith(prefix)
+                    && Character.isUpperCase(rawField.charAt(prefix.length()))) {
+                return rawField.substring(prefix.length());
+            }
+        }
+        return rawField;
+    }
+
+    private static String stripSemanticSuffix(final String candidate, final String lowerType) {
+        String[] suffixes = suffixesFor(lowerType);
+        for (String suffix : suffixes) {
+            if (candidate.length() > suffix.length()
+                    && candidate.toLowerCase().endsWith(suffix.toLowerCase())) {
+                return candidate.substring(0, candidate.length() - suffix.length());
+            }
+        }
+        return candidate;
+    }
+
+    private static String[] suffixesFor(final String lowerType) {
+        if (lowerType.contains("button") || lowerType.contains("btn") || lowerType.contains("hyperlink")) {
+            return new String[]{"Button", "Btn", "Action"};
+        }
+        if (lowerType.contains("label") || lowerType.contains("lbl")) {
+            return new String[]{"Label", "Lbl", "Text"};
+        }
+        if (lowerType.contains("textfield") || lowerType.contains("textarea")
+                || lowerType.contains("input") || lowerType.contains("passwordfield")) {
+            return new String[]{"TextField", "Field", "Input", "Text"};
+        }
+        if (lowerType.contains("table") || lowerType.contains("list") || lowerType.contains("tree")) {
+            return new String[]{"TableView", "ListView", "TreeView", "Table", "List", "Tree", "View"};
+        }
+        if (lowerType.contains("pane") || lowerType.contains("panel") || lowerType.contains("widget")
+                || lowerType.contains("screen") || lowerType.contains("view") || lowerType.contains("container")) {
+            return new String[]{"Pane", "Panel", "Widget", "Screen", "View", "Container", "Box"};
+        }
+        return new String[0];
     }
 
     /** Infere le type JavaFX le plus approprie selon la convention de nommage du champ. */
@@ -523,27 +646,57 @@ public final class GeneratorUtils {
                 "LocalDate", "LocalDateTime", "Instant", "BigDecimal"
         );
         for (BusinessRule rule : rules) {
-            if (!rule.hasSignature()) continue;
-            MethodSignature sig = JavaFxUiTypeFilter.filterForDomain(rule.signature());
-            for (MethodParameter p : sig.parameters()) {
-                String type = p.type();
-                // Supprimer les generics : List<Patient> -> List
-                int lt = type.indexOf('<');
-                String simple = lt > 0 ? type.substring(0, lt) : type;
-                if (!known.contains(simple) && !JavaFxUiTypeFilter.isJavaFxUiType(simple) && !p.unknown()) {
-                    seen.add(simple);
+            if (rule.hasSignature()) {
+                MethodSignature sig = JavaFxUiTypeFilter.filterForDomain(rule.signature());
+                for (MethodParameter p : sig.parameters()) {
+                    String simple = simpleTypeName(p.type());
+                    if (!known.contains(simple)
+                            && !JavaFxUiTypeFilter.isJavaFxUiType(simple)
+                            && !p.unknown()) {
+                        seen.add(simple);
+                    }
                 }
-            }
-            // Type de retour non-void
-            String rt = sig.returnType();
-            if (!"void".equals(rt)) {
-                int lt = rt.indexOf('<');
-                String simple = lt > 0 ? rt.substring(0, lt) : rt;
-                if (!known.contains(simple) && !JavaFxUiTypeFilter.isJavaFxUiType(simple)) {
-                    seen.add(simple);
+                String rt = simpleTypeName(sig.returnType());
+                if (!"void".equals(rt)
+                        && !known.contains(rt)
+                        && !JavaFxUiTypeFilter.isJavaFxUiType(rt)) {
+                    seen.add(rt);
                 }
             }
         }
         return List.copyOf(seen);
+    }
+
+    private static String extractLeadingIdentifier(final String text) {
+        String candidate = text;
+        int colon = candidate.indexOf(':');
+        if (colon >= 0) {
+            candidate = candidate.substring(0, colon);
+        }
+        String[] parts = candidate.trim().split("\\s+");
+        if (parts.length == 0) {
+            return "";
+        }
+        return parts[0];
+    }
+
+    private static String simpleTypeName(final String type) {
+        if (type == null || type.isBlank()) {
+            return "";
+        }
+        String cleaned = type.trim();
+        int lt = cleaned.indexOf('<');
+        if (lt > 0) {
+            cleaned = cleaned.substring(0, lt);
+        }
+        int space = cleaned.lastIndexOf(' ');
+        if (space >= 0) {
+            cleaned = cleaned.substring(space + 1);
+        }
+        int dot = cleaned.lastIndexOf('.');
+        if (dot >= 0) {
+            cleaned = cleaned.substring(dot + 1);
+        }
+        return cleaned;
     }
 }

@@ -31,20 +31,40 @@ import ff.ss.javaFxAuditStudio.adapters.out.sanitization.SecretSanitizer;
 import ff.ss.javaFxAuditStudio.adapters.out.sanitization.SemgrepScanSanitizer;
 import ff.ss.javaFxAuditStudio.adapters.out.sanitization.SensitiveMarkerDetector;
 import ff.ss.javaFxAuditStudio.application.ports.in.EnrichAnalysisUseCase;
+import ff.ss.javaFxAuditStudio.application.ports.in.ExportAiGeneratedArtifactsUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.in.GenerateSpringBootClassesUseCase;
+import ff.ss.javaFxAuditStudio.application.ports.in.ListAiGeneratedArtifactsUseCase;
+import ff.ss.javaFxAuditStudio.application.ports.in.ListProjectReferencePatternsUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.in.PreviewSanitizedSourceUseCase;
+import ff.ss.javaFxAuditStudio.application.ports.in.RefineAiArtifactUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.in.ReviewArtifactsUseCase;
+import ff.ss.javaFxAuditStudio.application.ports.in.RefineArtifactUseCase;
+import ff.ss.javaFxAuditStudio.application.ports.in.RegisterProjectReferencePatternUseCase;
+import ff.ss.javaFxAuditStudio.application.ports.in.VerifyAiArtifactCoherenceUseCase;
+import ff.ss.javaFxAuditStudio.application.ports.in.VerifyArtifactCoherenceUseCase;
+import ff.ss.javaFxAuditStudio.application.ports.out.AiArtifactPersistencePort;
 import ff.ss.javaFxAuditStudio.application.ports.out.AiEnrichmentPort;
 import ff.ss.javaFxAuditStudio.application.ports.out.AnalysisSessionPort;
+import ff.ss.javaFxAuditStudio.application.ports.out.ArtifactPersistencePort;
+import ff.ss.javaFxAuditStudio.application.ports.out.CartographyPersistencePort;
 import ff.ss.javaFxAuditStudio.application.ports.out.ClassificationPersistencePort;
 import ff.ss.javaFxAuditStudio.application.ports.out.LlmAuditPort;
 import ff.ss.javaFxAuditStudio.application.ports.out.MultiFileSanitizationPort;
+import ff.ss.javaFxAuditStudio.application.ports.out.ProjectReferencePatternPort;
+import ff.ss.javaFxAuditStudio.application.ports.out.ReclassificationAuditPort;
 import ff.ss.javaFxAuditStudio.application.ports.out.SanitizationPort;
 import ff.ss.javaFxAuditStudio.application.ports.out.SourceFileReaderPort;
+import ff.ss.javaFxAuditStudio.application.ports.out.WorkflowObservabilityPort;
+import ff.ss.javaFxAuditStudio.application.service.AiArtifactCatalogService;
 import ff.ss.javaFxAuditStudio.application.service.AiSpringBootGenerationService;
 import ff.ss.javaFxAuditStudio.application.service.EnrichAnalysisService;
 import ff.ss.javaFxAuditStudio.application.service.PreviewSanitizedSourceService;
+import ff.ss.javaFxAuditStudio.application.service.ProjectReferencePatternCatalogService;
+import ff.ss.javaFxAuditStudio.application.service.RefineAiArtifactService;
+import ff.ss.javaFxAuditStudio.application.service.RefineArtifactService;
 import ff.ss.javaFxAuditStudio.application.service.ReviewArtifactsService;
+import ff.ss.javaFxAuditStudio.application.service.VerifyAiArtifactCoherenceService;
+import ff.ss.javaFxAuditStudio.application.service.VerifyArtifactCoherenceService;
 
 /**
  * Assemblage hexagonal du sous-systeme d'enrichissement IA (JAS-017 / JAS-018).
@@ -223,7 +243,8 @@ public class AiEnrichmentOrchestraConfiguration {
             final LlmAuditPort llmAuditPort,
             final PayloadHasher payloadHasher,
             final LlmAuditProperties llmAuditProperties,
-            final SourceFileReaderPort sourceFileReaderPort) {
+            final SourceFileReaderPort sourceFileReaderPort,
+            final WorkflowObservabilityPort observabilityPort) {
         SanitizationPort effectivePort = sanitizationProperties.enabled() ? sanitizationPort : null;
         return new EnrichAnalysisService(
                 sessionPort,
@@ -232,33 +253,125 @@ public class AiEnrichmentOrchestraConfiguration {
                 llmAuditPort,
                 payloadHasher,
                 llmAuditProperties,
-                sourceFileReaderPort);
+                sourceFileReaderPort,
+                observabilityPort);
     }
 
     @Bean
     public ReviewArtifactsUseCase reviewArtifactsUseCase(
             final AnalysisSessionPort sessionPort,
             final ClassificationPersistencePort classificationPort,
+            final CartographyPersistencePort cartographyPort,
+            final ReclassificationAuditPort reclassificationAuditPort,
             final AiEnrichmentPort aiEnrichmentPort,
             final SanitizationPort sanitizationPort,
             final SanitizationProperties sanitizationProperties,
             final SourceFileReaderPort sourceFileReaderPort) {
         SanitizationPort effectivePort = sanitizationProperties.enabled() ? sanitizationPort : null;
         return new ReviewArtifactsService(
-                sessionPort, classificationPort, aiEnrichmentPort, effectivePort, sourceFileReaderPort);
+                sessionPort, classificationPort, cartographyPort, reclassificationAuditPort,
+                aiEnrichmentPort, effectivePort, sourceFileReaderPort);
     }
 
     @Bean
     public GenerateSpringBootClassesUseCase generateSpringBootClassesUseCase(
             final AnalysisSessionPort sessionPort,
             final ClassificationPersistencePort classificationPort,
+            final CartographyPersistencePort cartographyPort,
+            final ReclassificationAuditPort reclassificationAuditPort,
+            final AiArtifactPersistencePort aiArtifactPersistencePort,
+            final ProjectReferencePatternPort projectReferencePatternPort,
             final AiEnrichmentPort aiEnrichmentPort,
             final SanitizationPort sanitizationPort,
             final SanitizationProperties sanitizationProperties,
             final SourceFileReaderPort sourceFileReaderPort) {
         SanitizationPort effectivePort = sanitizationProperties.enabled() ? sanitizationPort : null;
         return new AiSpringBootGenerationService(
-                sessionPort, classificationPort, aiEnrichmentPort, effectivePort, sourceFileReaderPort);
+                sessionPort, classificationPort, cartographyPort, reclassificationAuditPort,
+                aiArtifactPersistencePort, projectReferencePatternPort, aiEnrichmentPort, effectivePort, sourceFileReaderPort);
+    }
+
+    @Bean
+    public RefineArtifactUseCase refineArtifactUseCase(
+            final AnalysisSessionPort sessionPort,
+            final ClassificationPersistencePort classificationPort,
+            final CartographyPersistencePort cartographyPort,
+            final ReclassificationAuditPort reclassificationAuditPort,
+            final AiEnrichmentPort aiEnrichmentPort,
+            final SanitizationPort sanitizationPort,
+            final SanitizationProperties sanitizationProperties,
+            final SourceFileReaderPort sourceFileReaderPort) {
+        SanitizationPort effectivePort = sanitizationProperties.enabled() ? sanitizationPort : null;
+        return new RefineArtifactService(
+                sessionPort, classificationPort, cartographyPort, reclassificationAuditPort,
+                aiEnrichmentPort, effectivePort, sourceFileReaderPort);
+    }
+
+    @Bean
+    public RefineAiArtifactUseCase refineAiArtifactUseCase(
+            final AnalysisSessionPort sessionPort,
+            final ClassificationPersistencePort classificationPort,
+            final CartographyPersistencePort cartographyPort,
+            final ReclassificationAuditPort reclassificationAuditPort,
+            final AiArtifactPersistencePort aiArtifactPersistencePort,
+            final ProjectReferencePatternPort projectReferencePatternPort,
+            final AiEnrichmentPort aiEnrichmentPort,
+            final SanitizationPort sanitizationPort,
+            final SanitizationProperties sanitizationProperties,
+            final SourceFileReaderPort sourceFileReaderPort) {
+        SanitizationPort effectivePort = sanitizationProperties.enabled() ? sanitizationPort : null;
+        return new RefineAiArtifactService(
+                sessionPort,
+                classificationPort,
+                cartographyPort,
+                reclassificationAuditPort,
+                aiArtifactPersistencePort,
+                projectReferencePatternPort,
+                aiEnrichmentPort,
+                effectivePort,
+                sourceFileReaderPort);
+    }
+
+    @Bean
+    public VerifyArtifactCoherenceUseCase verifyArtifactCoherenceUseCase(
+            final AnalysisSessionPort sessionPort,
+            final ClassificationPersistencePort classificationPort,
+            final CartographyPersistencePort cartographyPort,
+            final ArtifactPersistencePort artifactPersistencePort,
+            final ReclassificationAuditPort reclassificationAuditPort,
+            final AiEnrichmentPort aiEnrichmentPort,
+            final SanitizationPort sanitizationPort,
+            final SanitizationProperties sanitizationProperties,
+            final SourceFileReaderPort sourceFileReaderPort) {
+        SanitizationPort effectivePort = sanitizationProperties.enabled() ? sanitizationPort : null;
+        return new VerifyArtifactCoherenceService(
+                sessionPort, classificationPort, cartographyPort, artifactPersistencePort,
+                reclassificationAuditPort, aiEnrichmentPort, effectivePort, sourceFileReaderPort);
+    }
+
+    @Bean
+    public VerifyAiArtifactCoherenceUseCase verifyAiArtifactCoherenceUseCase(
+            final AnalysisSessionPort sessionPort,
+            final ClassificationPersistencePort classificationPort,
+            final CartographyPersistencePort cartographyPort,
+            final ReclassificationAuditPort reclassificationAuditPort,
+            final AiArtifactPersistencePort aiArtifactPersistencePort,
+            final ProjectReferencePatternPort projectReferencePatternPort,
+            final AiEnrichmentPort aiEnrichmentPort,
+            final SanitizationPort sanitizationPort,
+            final SanitizationProperties sanitizationProperties,
+            final SourceFileReaderPort sourceFileReaderPort) {
+        SanitizationPort effectivePort = sanitizationProperties.enabled() ? sanitizationPort : null;
+        return new VerifyAiArtifactCoherenceService(
+                sessionPort,
+                classificationPort,
+                cartographyPort,
+                reclassificationAuditPort,
+                aiArtifactPersistencePort,
+                projectReferencePatternPort,
+                aiEnrichmentPort,
+                effectivePort,
+                sourceFileReaderPort);
     }
 
     @Bean
@@ -269,5 +382,31 @@ public class AiEnrichmentOrchestraConfiguration {
             final SourceFileReaderPort sourceFileReaderPort) {
         SanitizationPort effectivePort = sanitizationProperties.enabled() ? sanitizationPort : null;
         return new PreviewSanitizedSourceService(sessionPort, effectivePort, sourceFileReaderPort);
+    }
+
+    @Bean
+    public ListAiGeneratedArtifactsUseCase listAiGeneratedArtifactsUseCase(
+            final AnalysisSessionPort sessionPort,
+            final AiArtifactPersistencePort aiArtifactPersistencePort) {
+        return new AiArtifactCatalogService(sessionPort, aiArtifactPersistencePort);
+    }
+
+    @Bean
+    public ExportAiGeneratedArtifactsUseCase exportAiGeneratedArtifactsUseCase(
+            final AnalysisSessionPort sessionPort,
+            final AiArtifactPersistencePort aiArtifactPersistencePort) {
+        return new AiArtifactCatalogService(sessionPort, aiArtifactPersistencePort);
+    }
+
+    @Bean
+    public RegisterProjectReferencePatternUseCase registerProjectReferencePatternUseCase(
+            final ProjectReferencePatternPort projectReferencePatternPort) {
+        return new ProjectReferencePatternCatalogService(projectReferencePatternPort);
+    }
+
+    @Bean
+    public ListProjectReferencePatternsUseCase listProjectReferencePatternsUseCase(
+            final ProjectReferencePatternPort projectReferencePatternPort) {
+        return new ProjectReferencePatternCatalogService(projectReferencePatternPort);
     }
 }

@@ -3,10 +3,10 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 import { RestitutionReportResponse } from '../../../core/models/analysis.model';
 
 const CONFIDENCE_COLORS: Record<string, string> = {
-  HIGH: '#059669',
-  MEDIUM: '#ca8a04',
-  LOW: '#ea580c',
-  INSUFFICIENT: '#dc2626',
+  HIGH: '#0f766e',
+  MEDIUM: '#9a5520',
+  LOW: '#c4612c',
+  INSUFFICIENT: '#a23c1c',
 };
 
 @Component({
@@ -16,8 +16,8 @@ const CONFIDENCE_COLORS: Record<string, string> = {
     .synthesis-card {
       padding: 1rem 1.25rem;
       border-radius: 16px;
-      border: 1px solid var(--line);
-      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid var(--surface-line);
+      background: var(--panel-soft-alt);
       margin-bottom: 1rem;
     }
 
@@ -34,19 +34,19 @@ const CONFIDENCE_COLORS: Record<string, string> = {
       align-items: center;
       padding: 0.4rem 0.9rem;
       border-radius: 12px;
-      background: rgba(18, 35, 56, 0.04);
+      background: var(--surface-chip);
     }
 
     .metric-value {
       font-weight: 700;
       font-size: 1.3rem;
-      color: var(--slate);
+      color: var(--surface-ink-strong);
       font-family: var(--font-display);
     }
 
     .metric-label {
       font-size: 0.72rem;
-      color: var(--ink-soft);
+      color: var(--surface-ink-soft);
       text-transform: uppercase;
       letter-spacing: 0.06em;
       font-weight: 600;
@@ -73,44 +73,60 @@ const CONFIDENCE_COLORS: Record<string, string> = {
     }
 
     .actionable-yes {
-      background: rgba(16, 185, 129, 0.1);
-      color: #059669;
+      background: var(--surface-success-soft);
+      color: var(--surface-success);
     }
 
     .actionable-no {
-      background: rgba(239, 68, 68, 0.1);
-      color: #dc2626;
+      background: var(--surface-danger-soft);
+      color: var(--surface-danger);
     }
 
     .section-label {
       margin: 1.2rem 0 0.5rem;
       font-weight: 700;
       font-size: 0.9rem;
-      color: var(--slate);
+      color: var(--surface-ink-strong);
     }
 
-    .findings-list {
-      margin: 0;
-      padding-left: 1.3rem;
-    }
-
-    .findings-list li {
-      margin-bottom: 0.35rem;
-      font-size: 0.85rem;
-      color: var(--slate);
-      line-height: 1.45;
-    }
-
+    .findings-list,
     .unknowns-list {
       margin: 0;
       padding-left: 1.3rem;
     }
 
+    .findings-list li,
     .unknowns-list li {
       margin-bottom: 0.35rem;
       font-size: 0.85rem;
-      color: #b94517;
       line-height: 1.45;
+    }
+
+    .findings-list li {
+      color: var(--surface-ink);
+    }
+
+    .unknowns-list li {
+      color: var(--surface-danger);
+    }
+
+    .markdown-panel {
+      margin-top: 1rem;
+      padding: 1rem 1.1rem;
+      border-radius: 16px;
+      border: 1px solid var(--surface-line);
+      background: var(--surface-chip);
+      overflow: auto;
+    }
+
+    .markdown-panel pre {
+      margin: 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: var(--font-mono, monospace);
+      font-size: 0.8rem;
+      color: var(--surface-ink);
+      line-height: 1.5;
     }
   `,
   template: `
@@ -154,6 +170,13 @@ const CONFIDENCE_COLORS: Record<string, string> = {
           <li>{{ u }}</li>
         }
       </ul>
+    }
+
+    @if (data().markdown) {
+      <p class="section-label">Markdown de restitution</p>
+      <div class="markdown-panel">
+        <pre>{{ data().markdown }}</pre>
+      </div>
     }
   `
 })

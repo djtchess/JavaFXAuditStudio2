@@ -6,9 +6,9 @@ package com.example.patient.migration;
 public interface PatientGateway {
 
     /** Appel HTTP fetchPatientData : acces TECHNICAL detecte */
-    void appelHTTPFetchPatientData(Object request);
+    void fetchPatientData(Object request);
 
     /** Impression printReport : acces TECHNICAL detecte */
-    void impressionPrintReportAcces(Object request);
+    void printReport(Object request);
 
 }

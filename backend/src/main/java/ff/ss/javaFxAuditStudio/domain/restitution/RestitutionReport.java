@@ -6,18 +6,21 @@ import java.util.Objects;
 /**
  * Rapport complet de restitution pour un controller JavaFX.
  * Contient la synthese, les contradictions detectees, les inconnues
- * et les findings exploitables par le backend, le frontend et le moteur.
+ * les findings exploitables par le backend, le frontend et le moteur,
+ * ainsi que le markdown genere pour la restitution lisible.
  *
  * @param summary         synthese courte de l'analyse
  * @param contradictions  liste des contradictions detectees (peut etre vide)
  * @param unknowns        liste des inconnues non resolues (peut etre vide)
  * @param findings        liste des observations et recommandations (peut etre vide)
+ * @param markdown        version markdown de la restitution
  */
 public record RestitutionReport(
         RestitutionSummary summary,
         List<String> contradictions,
         List<String> unknowns,
-        List<String> findings) {
+        List<String> findings,
+        String markdown) {
 
     public RestitutionReport {
         Objects.requireNonNull(summary, "summary must not be null");
@@ -27,6 +30,15 @@ public record RestitutionReport(
         contradictions = List.copyOf(contradictions);
         unknowns = List.copyOf(unknowns);
         findings = List.copyOf(findings);
+        markdown = markdown == null ? "" : markdown;
+    }
+
+    public RestitutionReport(
+            final RestitutionSummary summary,
+            final List<String> contradictions,
+            final List<String> unknowns,
+            final List<String> findings) {
+        this(summary, contradictions, unknowns, findings, "");
     }
 
     /**

@@ -1,5 +1,9 @@
 # Backlog JIRA - JavaFXAuditStudio2 : Genericite et Qualite des Artefacts
 
+> Statut documentaire (2026-03-26) : ce fichier conserve l'historique du backlog initial.
+> La priorisation active du reste a faire est maintenant centralisee dans
+> `jira/backlog-restant-a-faire.md`.
+
 ## Metadonnees
 
 - Date de generation : 2026-03-17

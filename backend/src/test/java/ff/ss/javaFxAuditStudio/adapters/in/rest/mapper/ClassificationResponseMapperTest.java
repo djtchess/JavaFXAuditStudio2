@@ -10,6 +10,12 @@ import org.junit.jupiter.api.Test;
 import ff.ss.javaFxAuditStudio.adapters.in.rest.dto.ClassificationResponse;
 import ff.ss.javaFxAuditStudio.adapters.in.rest.dto.ClassificationResponse.BusinessRuleDto;
 import ff.ss.javaFxAuditStudio.adapters.in.rest.dto.ClassificationResponse.MethodSignatureDto;
+import ff.ss.javaFxAuditStudio.domain.analysis.ControllerDependency;
+import ff.ss.javaFxAuditStudio.domain.analysis.DeltaAnalysisSummary;
+import ff.ss.javaFxAuditStudio.domain.analysis.DependencyKind;
+import ff.ss.javaFxAuditStudio.domain.analysis.DetectionStatus;
+import ff.ss.javaFxAuditStudio.domain.analysis.StateMachineInsight;
+import ff.ss.javaFxAuditStudio.domain.analysis.StateTransition;
 import ff.ss.javaFxAuditStudio.domain.rules.BusinessRule;
 import ff.ss.javaFxAuditStudio.domain.rules.ClassificationResult;
 import ff.ss.javaFxAuditStudio.domain.rules.ExtractionCandidate;
@@ -212,5 +218,54 @@ class ClassificationResponseMapperTest {
         assertThat(ruleDto.extractionCandidate()).isEqualTo("USE_CASE");
         assertThat(ruleDto.uncertain()).isFalse();
         assertThat(ruleDto.signature()).isNull();
+    }
+
+    @Test
+    void toResponse_mapsAdvancedAnalysisFields() {
+        BusinessRule regle;
+        ClassificationResult result;
+        ClassificationResponse response;
+
+        regle = new BusinessRule(
+                "RG-005",
+                "Methode handler onValidate : validation metier",
+                "PatientController.java",
+                88,
+                ResponsibilityClass.APPLICATION,
+                ExtractionCandidate.USE_CASE,
+                false);
+
+        result = new ClassificationResult(
+                "PatientController",
+                List.of(regle),
+                List.of(),
+                ParsingMode.AST,
+                null,
+                1,
+                new StateMachineInsight(
+                        DetectionStatus.CONFIRMED,
+                        0.82d,
+                        List.of("DRAFT", "VALIDATED"),
+                        List.of(new StateTransition("DRAFT", "VALIDATED", "onValidate"))),
+                List.of(new ControllerDependency(
+                        DependencyKind.SHARED_SERVICE,
+                        "BillingService",
+                        "billingService")),
+                new DeltaAnalysisSummary(1, 2, 3));
+
+        response = mapper.toResponse(result);
+
+        assertThat(response.stateMachine().status()).isEqualTo("CONFIRMED");
+        assertThat(response.stateMachine().confidence()).isEqualTo(0.82d);
+        assertThat(response.stateMachine().states()).containsExactly("DRAFT", "VALIDATED");
+        assertThat(response.stateMachine().transitions()).hasSize(1);
+        assertThat(response.stateMachine().transitions().get(0).fromState()).isEqualTo("DRAFT");
+        assertThat(response.dependencies()).hasSize(1);
+        assertThat(response.dependencies().get(0).kind()).isEqualTo("SHARED_SERVICE");
+        assertThat(response.dependencies().get(0).target()).isEqualTo("BillingService");
+        assertThat(response.deltaAnalysis().addedRules()).isEqualTo(1);
+        assertThat(response.deltaAnalysis().removedRules()).isEqualTo(2);
+        assertThat(response.deltaAnalysis().changedRules()).isEqualTo(3);
+        assertThat(response.deltaAnalysis().hasChanges()).isTrue();
     }
 }

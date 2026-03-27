@@ -129,6 +129,20 @@ public class AnalysisController {
         return analysisSessionResponseMapper.toResponse(session);
     }
 
+    @Operation(summary = "Consulter une session d'analyse", description = "Retourne le statut courant et les references associees a une session.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Session trouvee"),
+        @ApiResponse(responseCode = "404", description = "Session introuvable")
+    })
+    @GetMapping("/sessions/{sessionId}")
+    public ResponseEntity<AnalysisSessionResponse> getSession(
+            @Parameter(name = "sessionId", description = "Identifiant de la session", required = true)
+            @PathVariable final String sessionId) {
+        return analysisSessionPort.findById(sessionId)
+                .map(session -> ResponseEntity.ok(analysisSessionResponseMapper.toResponse(session)))
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
     @Operation(summary = "Cartographie FXML", description = "Retourne l'inventaire des composants FXML et les bindings handlers de la session.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Cartographie disponible"),

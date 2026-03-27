@@ -23,5 +23,12 @@ export const routes: Routes = [
       import('./features/project-dashboard/project-dashboard.component').then(
         m => m.ProjectDashboardComponent
       )
+  },
+  {
+    path: 'monitoring',
+    loadComponent: () =>
+      import('./features/monitoring/monitoring-dashboard.component').then(
+        m => m.MonitoringDashboardComponent
+      )
   }
 ];

@@ -1,0 +1,7 @@
+interface:
+  display_name: "Frontend Design"
+  short_description: "Design distinctif pour l Angular 21.x"
+  default_prompt: "Use $frontend-design to build or refine an Angular interface in this project with a distinctive, production-grade visual direction."
+
+policy:
+  allow_implicit_invocation: true

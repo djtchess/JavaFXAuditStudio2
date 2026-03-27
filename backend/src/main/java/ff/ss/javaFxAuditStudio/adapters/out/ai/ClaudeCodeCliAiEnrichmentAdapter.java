@@ -12,6 +12,9 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -22,14 +25,15 @@ import java.util.concurrent.TimeUnit;
  *
  * <p>Invoque {@code claude --print} via ProcessBuilder et passe le prompt sur stdin.
  * La reponse est lue sur stdout et parsee par {@link LlmResponseParser}.
- * Aucun credential API n'est requis — l'authentification est geree par Claude Code CLI.
+ * Aucun credential API n'est requis - l'authentification est geree par Claude Code CLI.
  *
- * <p>Assemble via {@code AiEnrichmentOrchestraConfiguration} — pas de {@code @Component}.
+ * <p>Assemble via {@code AiEnrichmentOrchestraConfiguration} - pas de {@code @Component}.
  */
 public class ClaudeCodeCliAiEnrichmentAdapter {
 
     private static final Logger LOG = LoggerFactory.getLogger(ClaudeCodeCliAiEnrichmentAdapter.class);
     private static final LlmProvider PROVIDER = LlmProvider.CLAUDE_CODE_CLI;
+    private static final HexFormat HEX_FORMAT = HexFormat.of();
 
     private final AiEnrichmentProperties properties;
     private final PromptTemplateLoader templateLoader;
@@ -52,9 +56,16 @@ public class ClaudeCodeCliAiEnrichmentAdapter {
         SanitizedBundle bundle = request.bundle();
         String prompt = renderPrompt(request);
 
-        LOG.info("Claude CLI — envoi pour controllerRef={}, taskType={}, tokens={}",
-                bundle.controllerRef(), request.taskType(), bundle.estimatedTokens());
-        LOG.debug("Claude CLI — prompt complet :\n{}", prompt);
+        LOG.info("Claude CLI - envoi requestId={}, controllerRef={}, taskType={}, tokens={}",
+                request.requestId(), bundle.controllerRef(), request.taskType(),
+                bundle.estimatedTokens());
+        LOG.debug(
+                "Claude CLI - prompt prepare requestId={}, controllerRef={}, taskType={}, promptLength={}, promptHash={}",
+                request.requestId(),
+                bundle.controllerRef(),
+                request.taskType(),
+                prompt.length(),
+                sha256Hex(prompt));
 
         try {
             ProcessBuilder pb = new ProcessBuilder(buildCommand(cliCommand));
@@ -80,32 +91,47 @@ public class ClaudeCodeCliAiEnrichmentAdapter {
                     properties.effectiveTimeoutMs(), TimeUnit.MILLISECONDS);
             if (!finished) {
                 process.destroyForcibly();
-                LOG.warn("Claude CLI — timeout apres {}ms", properties.effectiveTimeoutMs());
+                LOG.warn("Claude CLI - timeout requestId={}, controllerRef={}, taskType={} apres {}ms",
+                        request.requestId(), bundle.controllerRef(), request.taskType(),
+                        properties.effectiveTimeoutMs());
                 return AiEnrichmentResult.degraded(
                         request.requestId(), "Claude CLI timeout", PROVIDER);
             }
 
             int exitCode = process.exitValue();
             if (exitCode != 0) {
+                String outputHash = sha256Hex(output);
                 String reason = "Claude CLI exit=" + exitCode
-                        + (output.isBlank() ? "" : ": " + output.strip());
-                LOG.warn("Claude CLI — echec {}", reason);
+                        + ", outputLength=" + output.length()
+                        + ", outputHash=" + outputHash;
+                LOG.warn(
+                        "Claude CLI - echec requestId={}, controllerRef={}, taskType={}, exitCode={}, outputLength={}, outputHash={}",
+                        request.requestId(),
+                        bundle.controllerRef(),
+                        request.taskType(),
+                        exitCode,
+                        output.length(),
+                        outputHash);
                 return AiEnrichmentResult.degraded(request.requestId(), reason, PROVIDER);
             }
 
             Map<String, String> suggestions = responseParser.parse(
                     output.strip(), bundle.controllerRef(), request.requestId());
 
-            LOG.info("Claude CLI — enrichissement nominal, controllerRef={}", bundle.controllerRef());
+            LOG.info("Claude CLI - enrichissement nominal requestId={}, controllerRef={}, taskType={}",
+                    request.requestId(), bundle.controllerRef(), request.taskType());
             return new AiEnrichmentResult(
                     request.requestId(), false, "", suggestions, 0, PROVIDER);
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+            LOG.warn("Claude CLI - interruption requestId={}, controllerRef={}, taskType={}",
+                    request.requestId(), bundle.controllerRef(), request.taskType());
             return AiEnrichmentResult.degraded(
                     request.requestId(), "Claude CLI interrompu", PROVIDER);
         } catch (IOException e) {
-            LOG.warn("Claude CLI — IOException : {}", e.getMessage());
+            LOG.warn("Claude CLI - IOException requestId={}, controllerRef={}, taskType={} : {}",
+                    request.requestId(), bundle.controllerRef(), request.taskType(), e.getMessage());
             return AiEnrichmentResult.degraded(
                     request.requestId(), "Claude CLI IO: " + e.getMessage(), PROVIDER);
         }
@@ -119,6 +145,17 @@ public class ClaudeCodeCliAiEnrichmentAdapter {
         context.put("taskType", request.taskType().name());
         context.putAll(request.extraContext());
         return templateLoader.render(request.promptTemplate(), context);
+    }
+
+    private static String sha256Hex(final String value) {
+        String content = value != null ? value : "";
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hashBytes = digest.digest(content.getBytes(StandardCharsets.UTF_8));
+            return HEX_FORMAT.formatHex(hashBytes);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 algorithm not available", e);
+        }
     }
 
     /**

@@ -4,6 +4,7 @@ import ff.ss.javaFxAuditStudio.application.ports.in.ProduceRestitutionUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.out.ArtifactPersistencePort;
 import ff.ss.javaFxAuditStudio.application.ports.out.ClassificationPersistencePort;
 import ff.ss.javaFxAuditStudio.application.ports.out.RestitutionPersistencePort;
+import ff.ss.javaFxAuditStudio.application.ports.out.RestitutionFormatterPort;
 import ff.ss.javaFxAuditStudio.domain.generation.GenerationResult;
 import ff.ss.javaFxAuditStudio.domain.restitution.ConfidenceLevel;
 import ff.ss.javaFxAuditStudio.domain.restitution.RestitutionReport;
@@ -24,14 +25,17 @@ public final class ProduceRestitutionService implements ProduceRestitutionUseCas
     private final RestitutionPersistencePort restitutionPersistencePort;
     private final ClassificationPersistencePort classificationPersistencePort;
     private final ArtifactPersistencePort artifactPersistencePort;
+    private final RestitutionFormatterPort restitutionFormatterPort;
 
     public ProduceRestitutionService(
             final RestitutionPersistencePort restitutionPersistencePort,
             final ClassificationPersistencePort classificationPersistencePort,
-            final ArtifactPersistencePort artifactPersistencePort) {
+            final ArtifactPersistencePort artifactPersistencePort,
+            final RestitutionFormatterPort restitutionFormatterPort) {
         this.restitutionPersistencePort = Objects.requireNonNull(restitutionPersistencePort);
         this.classificationPersistencePort = Objects.requireNonNull(classificationPersistencePort);
         this.artifactPersistencePort = Objects.requireNonNull(artifactPersistencePort);
+        this.restitutionFormatterPort = Objects.requireNonNull(restitutionFormatterPort);
     }
 
     @Override
@@ -40,7 +44,7 @@ public final class ProduceRestitutionService implements ProduceRestitutionUseCas
 
         Optional<RestitutionReport> cached = restitutionPersistencePort.findBySessionId(sessionId);
         if (cached.isPresent()) {
-            return cached.get();
+            return enrichWithMarkdown(cached.get());
         }
 
         Optional<ClassificationResult> classifOpt = classificationPersistencePort.findBySessionId(sessionId);
@@ -60,9 +64,22 @@ public final class ProduceRestitutionService implements ProduceRestitutionUseCas
 
         RestitutionReport report = new RestitutionReport(summary, List.of(), List.of(), findings);
 
-        restitutionPersistencePort.save(sessionId, report);
+        RestitutionReport savedReport = restitutionPersistencePort.save(sessionId, report);
         log.debug("Restitution terminee - {} regles, {} artefacts, confiance={}", ruleCount, artifactCount, confidence);
-        return report;
+        return enrichWithMarkdown(savedReport);
+    }
+
+    private RestitutionReport enrichWithMarkdown(final RestitutionReport report) {
+        if (!report.markdown().isBlank()) {
+            return report;
+        }
+        String markdown = restitutionFormatterPort.formatAsMarkdown(report);
+        return new RestitutionReport(
+                report.summary(),
+                report.contradictions(),
+                report.unknowns(),
+                report.findings(),
+                markdown);
     }
 
     private ConfidenceLevel determineConfidence(final int certain, final int uncertain, final int artifacts) {

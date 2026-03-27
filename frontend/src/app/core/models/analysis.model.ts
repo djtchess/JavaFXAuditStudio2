@@ -125,6 +125,7 @@ export interface RestitutionReportResponse {
   isActionable: boolean;
   findings: string[];
   unknowns: string[];
+  markdown: string;
 }
 
 // --- Orchestrated (full pipeline) ---
@@ -146,6 +147,54 @@ export interface ErrorResponse {
   status: number;
   error: string;
   correlationId: string;
+}
+
+// --- Monitoring / Actuator ---
+
+export interface ActuatorHealthComponent {
+  status: string;
+  details?: Record<string, unknown>;
+}
+
+export interface ActuatorHealthResponse {
+  status: string;
+  components?: Record<string, ActuatorHealthComponent>;
+}
+
+export interface ActuatorMetricMeasurement {
+  statistic: string;
+  value: number;
+}
+
+export interface ActuatorMetricAvailableTag {
+  tag: string;
+  values: string[];
+}
+
+export interface ActuatorMetricResponse {
+  name: string;
+  baseUnit?: string;
+  measurements: ActuatorMetricMeasurement[];
+  availableTags?: ActuatorMetricAvailableTag[];
+}
+
+export interface MonitoringMetricValue {
+  key: string;
+  label: string;
+  value: number;
+}
+
+export interface MonitoringStageDuration {
+  stage: string;
+  averageMs: number;
+  sampleCount: number;
+}
+
+export interface MonitoringDashboardResponse {
+  health: ActuatorHealthResponse;
+  totalSessions: number;
+  sessionsByStatus: MonitoringMetricValue[];
+  stageDurations: MonitoringStageDuration[];
 }
 
 // --- Project Dashboard ---
@@ -212,6 +261,69 @@ export interface AiEnrichmentResponse {
   degraded: boolean;
   degradationReason: string;
   suggestions: Record<string, string>;
+  tokensUsed: number;
+  provider: string;
+}
+
+/**
+ * Evenement de progression pour la generation IA en SSE.
+ */
+export interface AiGenerationStreamEvent {
+  stage: 'sanitizing' | 'sending_to_llm' | 'streaming' | 'parsing_response' | 'validating' | 'complete' | 'error';
+  message: string;
+  progress: number;
+  artifactKey?: string;
+  chunk?: string;
+  generatedClasses?: Record<string, string>;
+  tokensUsed?: number;
+  provider?: string;
+  degraded?: boolean;
+  error?: string;
+}
+
+/**
+ * Requete de raffinement multi-tour d'un artefact IA.
+ */
+export interface AiArtifactRefineRequest {
+  artifactType: string;
+  instruction: string;
+  previousCode: string;
+}
+
+/**
+ * Reponse minimale pour un export d'artefacts generes.
+ */
+export interface AiArtifactExportResponse {
+  targetDirectory?: string;
+  exportedFiles?: string[];
+  errors?: string[];
+  fileName?: string;
+}
+
+export interface AiGeneratedArtifactResponse {
+  artifactType: string;
+  className: string;
+  content: string;
+  versionNumber: number;
+  parentVersionId?: string | null;
+  requestId: string;
+  provider: string;
+  originTask: string;
+  createdAt: string;
+}
+
+export interface AiGeneratedArtifactCollectionResponse {
+  sessionId: string;
+  artifacts: AiGeneratedArtifactResponse[];
+}
+
+export interface AiArtifactCoherenceResponse {
+  requestId: string;
+  degraded: boolean;
+  degradationReason: string;
+  summary: string;
+  artifactFindings: Record<string, string>;
+  globalFindings: string[];
   tokensUsed: number;
   provider: string;
 }

@@ -18,6 +18,14 @@ public interface ReclassificationAuditPort {
     ReclassificationAuditEntry save(ReclassificationAuditEntry entry);
 
     /**
+     * Retourne tout l'historique de reclassification d'une session.
+     *
+     * @param analysisId identifiant de la session d'analyse
+     * @return liste triee par horodatage ascendant, jamais null
+     */
+    List<ReclassificationAuditEntry> findByAnalysisId(String analysisId);
+
+    /**
      * Retourne l'historique de reclassification pour une regle dans une analyse donnee.
      *
      * @param analysisId identifiant de la session d'analyse

@@ -1,5 +1,8 @@
 package ff.ss.javaFxAuditStudio.domain.rules;
 
+import ff.ss.javaFxAuditStudio.domain.analysis.ControllerDependency;
+import ff.ss.javaFxAuditStudio.domain.analysis.StateMachineInsight;
+
 import java.util.List;
 import java.util.Objects;
 
@@ -13,20 +16,27 @@ import java.util.Objects;
  * @param parsingMode                  mode d'extraction utilise, jamais null
  * @param fallbackReason               raison du fallback regex, null si mode AST
  * @param excludedLifecycleMethodsCount nombre de methodes lifecycle ignorees, >= 0
+ * @param stateMachine                 logique d'etat detectee, jamais null
+ * @param dependencies                 dependances controller detectees, jamais null
  */
 public record ExtractionResult(
         List<BusinessRule> rules,
         ParsingMode parsingMode,
         String fallbackReason,
-        int excludedLifecycleMethodsCount) {
+        int excludedLifecycleMethodsCount,
+        StateMachineInsight stateMachine,
+        List<ControllerDependency> dependencies) {
 
     public ExtractionResult {
         Objects.requireNonNull(rules, "rules must not be null");
         Objects.requireNonNull(parsingMode, "parsingMode must not be null");
+        Objects.requireNonNull(stateMachine, "stateMachine must not be null");
+        Objects.requireNonNull(dependencies, "dependencies must not be null");
         if (excludedLifecycleMethodsCount < 0) {
             throw new IllegalArgumentException("excludedLifecycleMethodsCount must be >= 0");
         }
         rules = List.copyOf(rules);
+        dependencies = List.copyOf(dependencies);
         // fallbackReason peut etre null si mode AST
     }
 
@@ -37,7 +47,13 @@ public record ExtractionResult(
      * @return resultat en mode AST avec compteur d'exclusion a 0
      */
     public static ExtractionResult ast(final List<BusinessRule> rules) {
-        return new ExtractionResult(rules, ParsingMode.AST, null, 0);
+        return new ExtractionResult(
+                rules,
+                ParsingMode.AST,
+                null,
+                0,
+                StateMachineInsight.absent(),
+                List.of());
     }
 
     /**
@@ -48,7 +64,27 @@ public record ExtractionResult(
      * @return resultat en mode AST
      */
     public static ExtractionResult ast(final List<BusinessRule> rules, final int excludedCount) {
-        return new ExtractionResult(rules, ParsingMode.AST, null, excludedCount);
+        return new ExtractionResult(
+                rules,
+                ParsingMode.AST,
+                null,
+                excludedCount,
+                StateMachineInsight.absent(),
+                List.of());
+    }
+
+    public static ExtractionResult ast(
+            final List<BusinessRule> rules,
+            final int excludedCount,
+            final StateMachineInsight stateMachine,
+            final List<ControllerDependency> dependencies) {
+        return new ExtractionResult(
+                rules,
+                ParsingMode.AST,
+                null,
+                excludedCount,
+                stateMachine,
+                dependencies);
     }
 
     /**
@@ -59,7 +95,13 @@ public record ExtractionResult(
      * @return resultat en mode REGEX_FALLBACK avec compteur d'exclusion a 0
      */
     public static ExtractionResult regexFallback(final List<BusinessRule> rules, final String reason) {
-        return new ExtractionResult(rules, ParsingMode.REGEX_FALLBACK, reason, 0);
+        return new ExtractionResult(
+                rules,
+                ParsingMode.REGEX_FALLBACK,
+                reason,
+                0,
+                StateMachineInsight.absent(),
+                List.of());
     }
 
     /**
@@ -72,6 +114,27 @@ public record ExtractionResult(
      */
     public static ExtractionResult regexFallback(final List<BusinessRule> rules, final String reason,
             final int excludedCount) {
-        return new ExtractionResult(rules, ParsingMode.REGEX_FALLBACK, reason, excludedCount);
+        return new ExtractionResult(
+                rules,
+                ParsingMode.REGEX_FALLBACK,
+                reason,
+                excludedCount,
+                StateMachineInsight.absent(),
+                List.of());
+    }
+
+    public static ExtractionResult regexFallback(
+            final List<BusinessRule> rules,
+            final String reason,
+            final int excludedCount,
+            final StateMachineInsight stateMachine,
+            final List<ControllerDependency> dependencies) {
+        return new ExtractionResult(
+                rules,
+                ParsingMode.REGEX_FALLBACK,
+                reason,
+                excludedCount,
+                stateMachine,
+                dependencies);
     }
 }

@@ -9,15 +9,15 @@ import org.springframework.stereotype.Component;
 public class PatientPolicy {
 
     /** Regle metier isEligible : decision BUSINESS detectee */
-    public boolean regleMetierIsEligible(final Object context) {
+    public boolean isEligible(final Object context) {
         // TODO : implementer la regle metier
-        throw new UnsupportedOperationException("Non implemente : regleMetierIsEligible");
+        return false;
     }
 
     /** Regle metier canDelete : validation BUSINESS detectee */
-    public boolean regleMetierCanDelete(final Object context) {
+    public boolean canDelete(final Object context) {
         // TODO : implementer la regle metier
-        throw new UnsupportedOperationException("Non implemente : regleMetierCanDelete");
+        return false;
     }
 
 }

@@ -1,227 +1,125 @@
 package ff.ss.javaFxAuditStudio.application.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.time.Instant;
 import java.util.List;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-
-import ff.ss.javaFxAuditStudio.application.ports.out.SanitizationPort;
-import ff.ss.javaFxAuditStudio.application.ports.out.SourceFileReaderPort;
-import ff.ss.javaFxAuditStudio.domain.ai.SanitizedBundle;
-import ff.ss.javaFxAuditStudio.domain.ai.TokenEstimator;
+import ff.ss.javaFxAuditStudio.domain.analysis.ControllerDependency;
+import ff.ss.javaFxAuditStudio.domain.analysis.DeltaAnalysisSummary;
+import ff.ss.javaFxAuditStudio.domain.analysis.DetectionStatus;
+import ff.ss.javaFxAuditStudio.domain.analysis.StateMachineInsight;
+import ff.ss.javaFxAuditStudio.domain.analysis.StateTransition;
+import ff.ss.javaFxAuditStudio.domain.cartography.ControllerCartography;
+import ff.ss.javaFxAuditStudio.domain.cartography.FxmlComponent;
+import ff.ss.javaFxAuditStudio.domain.cartography.HandlerBinding;
+import ff.ss.javaFxAuditStudio.domain.generation.ArtifactType;
+import ff.ss.javaFxAuditStudio.domain.generation.CodeArtifact;
+import ff.ss.javaFxAuditStudio.domain.generation.GenerationResult;
 import ff.ss.javaFxAuditStudio.domain.rules.BusinessRule;
 import ff.ss.javaFxAuditStudio.domain.rules.ClassificationResult;
 import ff.ss.javaFxAuditStudio.domain.rules.ExtractionCandidate;
-import ff.ss.javaFxAuditStudio.domain.rules.ParsingMode;
 import ff.ss.javaFxAuditStudio.domain.rules.ResponsibilityClass;
+import ff.ss.javaFxAuditStudio.domain.rules.ReclassificationAuditEntry;
+import ff.ss.javaFxAuditStudio.domain.workbench.AnalysisSession;
+import ff.ss.javaFxAuditStudio.domain.workbench.AnalysisStatus;
+import ff.ss.javaFxAuditStudio.application.ports.out.ReclassificationAuditPort;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-@ExtendWith(MockitoExtension.class)
 class LlmServiceSupportTest {
 
-    @Mock
-    private SanitizationPort sanitizationPort;
-
-    @Mock
-    private SourceFileReaderPort sourceFileReaderPort;
-
-    @Test
-    void readSourceFile_should_return_reader_content_when_available() {
-        when(sourceFileReaderPort.read("MyController.java"))
-                .thenReturn(java.util.Optional.of("public class MyController {}"));
-
-        String result = LlmServiceSupport.readSourceFile("MyController.java", sourceFileReaderPort);
-
-        assertThat(result).isEqualTo("public class MyController {}");
-    }
-
-    @Test
-    void readSourceFile_should_fallback_to_controller_ref_when_reader_returns_empty() {
-        when(sourceFileReaderPort.read("MissingController.java"))
-                .thenReturn(java.util.Optional.empty());
-
-        String result = LlmServiceSupport.readSourceFile("MissingController.java", sourceFileReaderPort);
-
-        assertThat(result).isEqualTo("MissingController.java");
-    }
-
-    @Test
-    void readSourceFile_should_fallback_to_controller_ref_when_port_is_null() {
-        String result = LlmServiceSupport.readSourceFile("ControllerRef", null);
-
-        assertThat(result).isEqualTo("ControllerRef");
-    }
-
-    @Test
-    void readSourceFile_should_throw_when_controller_ref_is_null() {
-        assertThatThrownBy(() -> LlmServiceSupport.readSourceFile(null, sourceFileReaderPort))
-                .isInstanceOf(NullPointerException.class);
-    }
-
-    @Test
-    void buildBundle_should_delegate_to_sanitization_port_when_present() {
-        SanitizedBundle expected = new SanitizedBundle("b1", "MyCtrl", "sanitized", 10, "1.0");
-        when(sanitizationPort.sanitize("b1", "rawSource", "MyCtrl")).thenReturn(expected);
-
-        SanitizedBundle result = LlmServiceSupport.buildBundle("b1", "rawSource", "MyCtrl", sanitizationPort);
-
-        assertThat(result).isEqualTo(expected);
-        verify(sanitizationPort).sanitize("b1", "rawSource", "MyCtrl");
-    }
-
-    @Test
-    void buildBundle_should_build_minimal_bundle_when_sanitization_port_is_null() {
-        String rawSource = "public class Foo {}";
-
-        SanitizedBundle result = LlmServiceSupport.buildBundle("b2", rawSource, "Foo", null);
-
-        assertThat(result.bundleId()).isEqualTo("b2");
-        assertThat(result.controllerRef()).isEqualTo("Foo");
-        assertThat(result.sanitizedSource()).isEqualTo(rawSource);
-        assertThat(result.estimatedTokens()).isEqualTo(TokenEstimator.estimate(rawSource));
-        assertThat(result.sanitizationVersion()).isEqualTo(LlmServiceSupport.SANITIZATION_VERSION);
-    }
-
-    @Test
-    void buildBundle_should_throw_when_bundle_id_is_null() {
-        assertThatThrownBy(() -> LlmServiceSupport.buildBundle(null, "source", "ref", null))
-                .isInstanceOf(NullPointerException.class);
-    }
-
-    @Test
-    void buildBundle_should_throw_when_raw_source_is_null() {
-        assertThatThrownBy(() -> LlmServiceSupport.buildBundle("id", null, "ref", null))
-                .isInstanceOf(NullPointerException.class);
-    }
-
-    @Test
-    void buildBundle_should_throw_when_controller_ref_is_null() {
-        assertThatThrownBy(() -> LlmServiceSupport.buildBundle("id", "source", null, null))
-                .isInstanceOf(NullPointerException.class);
-    }
-
-    @Test
-    void formatRules_should_format_certain_rules() {
+    private static ClassificationResult classification() {
         BusinessRule rule = new BusinessRule(
                 "RG-001",
-                "Save patient data",
-                "MyCtrl.java",
-                42,
+                "Orchestration du use case",
+                "Controller.java",
+                12,
                 ResponsibilityClass.APPLICATION,
                 ExtractionCandidate.USE_CASE,
                 false);
-        ClassificationResult classification = new ClassificationResult(
-                "MyCtrl",
+        StateMachineInsight stateMachine = new StateMachineInsight(
+                DetectionStatus.CONFIRMED,
+                0.82d,
+                List.of("IDLE", "BUSY"),
+                List.of(new StateTransition("IDLE", "BUSY", "onSave")));
+        List<ControllerDependency> dependencies = List.of(
+                new ControllerDependency(ff.ss.javaFxAuditStudio.domain.analysis.DependencyKind.SHARED_SERVICE, "PatientService", "save()"));
+        return new ClassificationResult(
+                "Controller",
                 List.of(rule),
                 List.of(),
-                ParsingMode.AST,
+                ff.ss.javaFxAuditStudio.domain.rules.ParsingMode.AST,
                 null,
-                0);
+                0,
+                stateMachine,
+                dependencies,
+                DeltaAnalysisSummary.none());
+    }
 
-        String result = LlmServiceSupport.formatRules(classification);
-
-        assertThat(result).isEqualTo("[RG-001] Save patient data (line 42) -> USE_CASE / APPLICATION");
+    private static ControllerCartography cartography() {
+        return new ControllerCartography(
+                "Controller",
+                "controller.fxml",
+                List.of(new FxmlComponent("saveButton", "Button", "onSave")),
+                List.of(new HandlerBinding("onSave", "#saveButton", "Button")),
+                List.of());
     }
 
     @Test
-    void formatRules_should_append_warning_marker_for_uncertain_rules() {
-        BusinessRule uncertainRule = new BusinessRule(
-                "RG-002",
-                "Validate form",
-                "MyCtrl.java",
-                10,
-                ResponsibilityClass.BUSINESS,
-                ExtractionCandidate.POLICY,
-                true);
-        ClassificationResult classification = new ClassificationResult(
-                "MyCtrl",
-                List.of(),
-                List.of(uncertainRule),
-                ParsingMode.AST,
-                null,
-                0);
+    void formatScreenContext_includes_cartography_and_classification() {
+        AnalysisSession session = new AnalysisSession(
+                "sess-1",
+                "Controller",
+                "ControllerSnippet.java",
+                AnalysisStatus.COMPLETED,
+                Instant.parse("2026-03-26T10:00:00Z"));
 
-        String result = LlmServiceSupport.formatRules(classification);
+        String context = LlmServiceSupport.formatScreenContext(session, classification(), cartography());
 
-        assertThat(result).contains("WARNING UNCERTAIN");
-        assertThat(result).contains("[RG-002]");
+        assertThat(context).contains("sess-1");
+        assertThat(context).contains("controller.fxml");
+        assertThat(context).contains("stateMachine=CONFIRMED");
+        assertThat(context).contains("dependencies=1");
     }
 
     @Test
-    void formatRules_should_include_both_certain_and_uncertain_rules() {
-        BusinessRule certain = new BusinessRule(
+    void formatReclassificationFeedback_collects_audit_entries() {
+        ClassificationResult classification = classification();
+        ReclassificationAuditPort port = Mockito.mock(ReclassificationAuditPort.class);
+        ReclassificationAuditEntry entry = new ReclassificationAuditEntry(
+                "audit-1",
+                "sess-1",
                 "RG-001",
-                "Load data",
-                "Ctrl.java",
-                5,
                 ResponsibilityClass.APPLICATION,
-                ExtractionCandidate.USE_CASE,
-                false);
-        BusinessRule uncertain = new BusinessRule(
-                "RG-002",
-                "Check access",
-                "Ctrl.java",
-                15,
                 ResponsibilityClass.BUSINESS,
-                ExtractionCandidate.POLICY,
-                true);
-        ClassificationResult classification = new ClassificationResult(
-                "Ctrl",
-                List.of(certain),
-                List.of(uncertain),
-                ParsingMode.AST,
-                null,
-                0);
+                "mieux isole",
+                Instant.parse("2026-03-26T10:10:00Z"));
+        Mockito.when(port.findByAnalysisIdAndRuleId("sess-1", "RG-001")).thenReturn(List.of(entry));
 
-        String result = LlmServiceSupport.formatRules(classification);
-        String[] lines = result.split("\n");
+        String feedback = LlmServiceSupport.formatReclassificationFeedback("sess-1", classification, port);
 
-        assertThat(lines).hasSize(2);
-        assertThat(lines[0]).startsWith("[RG-001]");
-        assertThat(lines[1]).startsWith("[RG-002]").contains("WARNING UNCERTAIN");
+        assertThat(feedback).contains("RG-001");
+        assertThat(feedback).contains("APPLICATION -> BUSINESS");
+        assertThat(feedback).contains("mieux isole");
     }
 
     @Test
-    void formatRules_should_return_empty_string_when_no_rules() {
-        ClassificationResult classification = new ClassificationResult(
-                "Ctrl",
-                List.of(),
-                List.of(),
-                ParsingMode.AST,
-                null,
-                0);
+    void formatGeneratedArtifacts_includes_code_artifacts_and_warnings() {
+        GenerationResult result = new GenerationResult(
+                "Controller",
+                List.of(new CodeArtifact(
+                        "art-1",
+                        ArtifactType.USE_CASE,
+                        1,
+                        "PatientUseCase",
+                        "public interface PatientUseCase {}",
+                        false)),
+                List.of("warning-1"));
 
-        String result = LlmServiceSupport.formatRules(classification);
+        String summary = LlmServiceSupport.formatGeneratedArtifacts(result);
 
-        assertThat(result).isEmpty();
-    }
-
-    @Test
-    void formatRules_should_throw_when_classification_is_null() {
-        assertThatThrownBy(() -> LlmServiceSupport.formatRules(null))
-                .isInstanceOf(NullPointerException.class);
-    }
-
-    @Test
-    void estimateTokens_should_return_zero_for_null() {
-        assertThat(LlmServiceSupport.estimateTokens(null)).isZero();
-    }
-
-    @Test
-    void estimateTokens_should_return_zero_for_blank() {
-        assertThat(LlmServiceSupport.estimateTokens("   ")).isZero();
-    }
-
-    @Test
-    void estimateTokens_should_use_named_divisor_heuristic() {
-        String source = "a".repeat(100);
-
-        assertThat(LlmServiceSupport.estimateTokens(source)).isEqualTo(TokenEstimator.estimate(source));
+        assertThat(summary).contains("PatientUseCase");
+        assertThat(summary).contains("warning-1");
     }
 }

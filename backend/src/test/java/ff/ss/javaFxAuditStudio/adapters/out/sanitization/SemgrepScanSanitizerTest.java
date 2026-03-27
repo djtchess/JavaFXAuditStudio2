@@ -194,6 +194,38 @@ class SemgrepScanSanitizerTest {
         assertThat(result).isNotNull();
     }
 
+    @Test
+    void should_include_extended_static_and_generic_rules_in_generated_yaml() {
+        SemgrepScanSanitizer sanitizer = buildSanitizer(false, false);
+
+        String yaml = sanitizer.buildRulesYaml();
+
+        assertThat(yaml)
+                .contains("jdbc-connection-string")
+                .contains("private-key-marker")
+                .contains("generic-jdbc-url")
+                .contains("generic-private-key-marker");
+    }
+
+    @Test
+    void should_include_denylist_terms_in_generated_rules_when_configured() {
+        SemgrepScanProperties props = new SemgrepScanProperties(
+                false,
+                "semgrep",
+                10,
+                false,
+                List.of(),
+                List.of("corp.local", "legacy-host"));
+        SemgrepScanSanitizer sanitizer = new SemgrepScanSanitizer(props, objectMapper);
+
+        String yaml = sanitizer.buildRulesYaml();
+
+        assertThat(yaml)
+                .contains("denylist-term")
+                .contains("\\Qcorp.local\\E")
+                .contains("\\Qlegacy-host\\E");
+    }
+
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------

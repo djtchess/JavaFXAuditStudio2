@@ -2,12 +2,18 @@ package ff.ss.javaFxAuditStudio.adapters.out.analysis;
 
 import ff.ss.javaFxAuditStudio.application.ports.out.RuleExtractionPort;
 import ff.ss.javaFxAuditStudio.configuration.AnalysisProperties;
+import ff.ss.javaFxAuditStudio.domain.analysis.ControllerDependency;
+import ff.ss.javaFxAuditStudio.domain.analysis.DependencyKind;
+import ff.ss.javaFxAuditStudio.domain.analysis.DetectionStatus;
+import ff.ss.javaFxAuditStudio.domain.analysis.StateMachineInsight;
+import ff.ss.javaFxAuditStudio.domain.analysis.StateTransition;
 import ff.ss.javaFxAuditStudio.domain.rules.BusinessRule;
 import ff.ss.javaFxAuditStudio.domain.rules.ExtractionCandidate;
 import ff.ss.javaFxAuditStudio.domain.rules.ExtractionResult;
 import ff.ss.javaFxAuditStudio.domain.rules.ResponsibilityClass;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -46,6 +52,16 @@ public final class JavaControllerRuleExtractionAdapter implements RuleExtraction
             Pattern.compile(
                 "(?:public|private|protected)\\s+(?:boolean|Boolean)\\s+" +
                 "((?:is|can|has|should)[A-Z]\\w*)\\s*\\(");
+    private static final Pattern STATE_FIELD_PATTERN =
+            Pattern.compile("(?:private|protected|public)\\s+(?:boolean|Boolean)\\s+(is\\w+(?:Mode|State|Step|Stage))\\b");
+    private static final Pattern METHOD_PATTERN =
+            Pattern.compile("(?:public|private|protected)\\s+[\\w<>]+\\s+(\\w+)\\s*\\([^)]*\\)\\s*\\{");
+    private static final Pattern DIRECT_CONTROLLER_FIELD_PATTERN =
+            Pattern.compile("(?:private|protected|public)\\s+(\\w+Controller)\\s+(\\w+)\\s*;");
+    private static final Pattern DIRECT_CONTROLLER_CREATION_PATTERN =
+            Pattern.compile("new\\s+(\\w+Controller)\\s*\\(");
+    private static final List<String> SHARED_SERVICE_SUFFIXES = List.of(
+            "Service", "Manager", "Handler", "Validator", "Facade", "Processor");
 
     private static final String UNKNOWN_REF = "unknown";
 
@@ -57,7 +73,8 @@ public final class JavaControllerRuleExtractionAdapter implements RuleExtraction
      * Initialise avec un ensemble vide de methodes exclues et des patterns par defaut.
      */
     public JavaControllerRuleExtractionAdapter() {
-        this(Set.of(), new AnalysisProperties.ClassificationPatterns(null, null, null, null, null, null));
+        this(Set.of(), new AnalysisProperties.ClassificationPatterns(
+                null, null, null, null, null, null, null, null));
     }
 
     /**
@@ -66,7 +83,8 @@ public final class JavaControllerRuleExtractionAdapter implements RuleExtraction
      */
     public JavaControllerRuleExtractionAdapter(final Set<String> lifecycleExcluded) {
         this(lifecycleExcluded,
-                new AnalysisProperties.ClassificationPatterns(null, null, null, null, null, null));
+                new AnalysisProperties.ClassificationPatterns(
+                        null, null, null, null, null, null, null, null));
     }
 
     /**
@@ -93,10 +111,17 @@ public final class JavaControllerRuleExtractionAdapter implements RuleExtraction
         extractFxmlFields(ref, javaContent, rules);
         extractBooleanGuards(ref, javaContent, rules, excludedCount);  // JAS-020
         extractInjectedServices(ref, javaContent, rules);
+        StateMachineInsight stateMachine = detectStateMachine(javaContent);
+        List<ControllerDependency> dependencies = detectDependencies(javaContent, ref);
         if (excludedCount[0] > 0) {
             log.info("{} methode(s) lifecycle exclue(s) - ref={}", excludedCount[0], ref);
         }
-        return ExtractionResult.regexFallback(List.copyOf(rules), "Analyse textuelle regex", excludedCount[0]);
+        return ExtractionResult.regexFallback(
+                List.copyOf(rules),
+                "Analyse textuelle regex",
+                excludedCount[0],
+                stateMachine,
+                dependencies);
     }
 
     private void extractFxmlHandlers(
@@ -165,6 +190,9 @@ public final class JavaControllerRuleExtractionAdapter implements RuleExtraction
         Matcher matcher = BOOLEAN_GUARD_PATTERN.matcher(content);
         while (matcher.find()) {
             String methodName = matcher.group(1);
+            if (isUiGuardMethod(methodName)) {
+                continue;
+            }
             if (lifecycleExcluded.contains(methodName)) {
                 excludedCount[0]++;
                 continue;
@@ -267,6 +295,15 @@ public final class JavaControllerRuleExtractionAdapter implements RuleExtraction
         return false;
     }
 
+    private boolean isUiGuardMethod(final String methodName) {
+        for (String uiGuardName : patterns.effectiveUiGuardMethodNames()) {
+            if (uiGuardName.equals(methodName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private boolean containsAnyKeyword(final String text, final List<String> keywords) {
         String lowerText = text.toLowerCase();
         for (String keyword : keywords) {
@@ -309,5 +346,116 @@ public final class JavaControllerRuleExtractionAdapter implements RuleExtraction
 
     private String buildHandlerDescription(final String methodName, final ResponsibilityClass rc) {
         return "Methode handler " + methodName + " : responsabilite " + rc.name() + " detectee";
+    }
+
+    private StateMachineInsight detectStateMachine(final String content) {
+        LinkedHashSet<String> stateFields = new LinkedHashSet<>();
+        Matcher matcher = STATE_FIELD_PATTERN.matcher(content);
+        while (matcher.find()) {
+            stateFields.add(matcher.group(1));
+        }
+        if (stateFields.size() < 2) {
+            return StateMachineInsight.absent();
+        }
+        List<StateTransition> transitions = collectTransitions(content, List.copyOf(stateFields));
+        double confidence = Math.min(1.0d, 0.20d + (stateFields.size() * 0.20d) + (transitions.size() * 0.15d));
+        DetectionStatus status = confidence >= patterns.effectiveStateMachineConfidenceThreshold()
+                ? DetectionStatus.CONFIRMED
+                : DetectionStatus.POSSIBLE;
+        return new StateMachineInsight(
+                status,
+                confidence,
+                stateFields.stream().map(this::normalizeStateName).toList(),
+                transitions);
+    }
+
+    private List<StateTransition> collectTransitions(final String content, final List<String> stateFields) {
+        LinkedHashSet<StateTransition> transitions = new LinkedHashSet<>();
+        Matcher matcher = METHOD_PATTERN.matcher(content);
+        while (matcher.find()) {
+            String methodName = matcher.group(1);
+            String body = extractApproximateBody(content, matcher.end() - 1);
+            List<String> activated = new ArrayList<>();
+            List<String> deactivated = new ArrayList<>();
+            for (String stateField : stateFields) {
+                if (body.contains(stateField + " = true")) {
+                    activated.add(stateField);
+                }
+                if (body.contains(stateField + " = false")) {
+                    deactivated.add(stateField);
+                }
+            }
+            if (!activated.isEmpty()) {
+                String fromState = deactivated.isEmpty()
+                        ? "CURRENT"
+                        : normalizeStateName(deactivated.get(0));
+                for (String activatedState : activated) {
+                    transitions.add(new StateTransition(
+                            fromState,
+                            normalizeStateName(activatedState),
+                            methodName));
+                }
+            }
+        }
+        return List.copyOf(transitions);
+    }
+
+    private String normalizeStateName(final String fieldName) {
+        String normalized = fieldName.startsWith("is") ? fieldName.substring(2) : fieldName;
+        String[] suffixes = {"Mode", "State", "Step", "Stage"};
+        for (String suffix : suffixes) {
+            if (normalized.endsWith(suffix) && normalized.length() > suffix.length()) {
+                normalized = normalized.substring(0, normalized.length() - suffix.length());
+                break;
+            }
+        }
+        return normalized;
+    }
+
+    private List<ControllerDependency> detectDependencies(final String content, final String ref) {
+        LinkedHashSet<ControllerDependency> dependencies = new LinkedHashSet<>();
+        String currentController = shortControllerRef(ref);
+        Matcher fieldMatcher = DIRECT_CONTROLLER_FIELD_PATTERN.matcher(content);
+        while (fieldMatcher.find()) {
+            String typeName = fieldMatcher.group(1);
+            String fieldName = fieldMatcher.group(2);
+            if (!typeName.equals(currentController)) {
+                dependencies.add(new ControllerDependency(
+                        DependencyKind.DIRECT_CONTROLLER,
+                        typeName,
+                        "field:" + fieldName));
+            }
+        }
+        Matcher creationMatcher = DIRECT_CONTROLLER_CREATION_PATTERN.matcher(content);
+        while (creationMatcher.find()) {
+            String typeName = creationMatcher.group(1);
+            if (!typeName.equals(currentController)) {
+                dependencies.add(new ControllerDependency(
+                        DependencyKind.DIRECT_CONTROLLER,
+                        typeName,
+                        "new:" + typeName));
+            }
+        }
+        Matcher injectedMatcher = INJECTED_SERVICE_PATTERN.matcher(content);
+        while (injectedMatcher.find()) {
+            String typeName = injectedMatcher.group(1);
+            String fieldName = injectedMatcher.group(2);
+            if (isSharedServiceType(typeName)) {
+                dependencies.add(new ControllerDependency(
+                        DependencyKind.SHARED_SERVICE,
+                        typeName,
+                        "field:" + fieldName));
+            }
+        }
+        return List.copyOf(dependencies);
+    }
+
+    private boolean isSharedServiceType(final String typeName) {
+        for (String suffix : SHARED_SERVICE_SUFFIXES) {
+            if (typeName.endsWith(suffix)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

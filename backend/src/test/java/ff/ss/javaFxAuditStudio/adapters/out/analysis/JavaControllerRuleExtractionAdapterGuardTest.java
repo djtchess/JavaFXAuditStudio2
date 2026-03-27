@@ -103,4 +103,22 @@ class JavaControllerRuleExtractionAdapterGuardTest {
         assertThat(gardes.get(0).responsibilityClass()).isEqualTo(ResponsibilityClass.BUSINESS);
         assertThat(gardes.get(0).extractionCandidate()).isEqualTo(ExtractionCandidate.POLICY);
     }
+
+    @Test
+    void isDisable_doitEtreExclueDesPolicies() {
+        String source = """
+                public class UiController {
+                    private boolean isDisable() {
+                        return button == null;
+                    }
+                }
+                """;
+
+        ExtractionResult result = adapter.extract("UiController.java", source);
+
+        boolean policyGuard = result.rules().stream()
+                .anyMatch(r -> r.description().contains("isDisable")
+                        && r.extractionCandidate() == ExtractionCandidate.POLICY);
+        assertThat(policyGuard).isFalse();
+    }
 }

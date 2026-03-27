@@ -29,6 +29,14 @@ public class JpaReclassificationAuditAdapter implements ReclassificationAuditPor
     }
 
     @Override
+    public List<ReclassificationAuditEntry> findByAnalysisId(final String analysisId) {
+        return repository.findByAnalysisIdOrderByCreatedAtAsc(analysisId)
+                .stream()
+                .map(this::toDomain)
+                .toList();
+    }
+
+    @Override
     public List<ReclassificationAuditEntry> findByAnalysisIdAndRuleId(
             final String analysisId,
             final String ruleId) {

@@ -1,31 +1,31 @@
 package ff.ss.javaFxAuditStudio.adapters.out.ai;
 
-import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Parse la reponse textuelle d'un LLM pour en extraire les suggestions.
  *
- * <p>Le LLM est invite a repondre avec le JSON :
- * {@code {"suggestions": {"controllerRef": "valeur"}}}
- *
- * <p>Si le JSON est invalide ou absent, le texte brut est retourne
- * comme suggestion sous la cle {@code controllerRef}.
+ * <p>Le LLM est invite a repondre avec un JSON contenant une cle {@code suggestions}
+ * au format objet. Le parser accepte le texte autour du JSON, mais il rejette les
+ * structures invalides ou tronquees de facon explicite avant de retomber sur le texte brut.
  */
 final class LlmResponseParser {
 
     private static final Logger LOG = LoggerFactory.getLogger(LlmResponseParser.class);
-    private static final TypeReference<Map<String, Map<String, String>>> SUGGESTIONS_TYPE =
-            new TypeReference<>() {};
+    private static final String SUGGESTIONS_KEY = "suggestions";
+    private static final String UNKNOWN_CONTROLLER_REF = "unknown";
 
     private final ObjectMapper objectMapper;
 
     LlmResponseParser(final ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
+        this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper must not be null");
     }
 
     /**
@@ -40,41 +40,128 @@ final class LlmResponseParser {
             final String responseText,
             final String controllerRef,
             final String requestId) {
+        String effectiveControllerRef = effectiveControllerRef(controllerRef);
         if (responseText == null || responseText.isBlank()) {
-            return Map.of(controllerRef, "");
+            return Map.of(effectiveControllerRef, "");
         }
-        // Tenter d'extraire le premier bloc JSON du texte (le LLM peut ajouter du texte autour)
-        String jsonCandidate = extractJsonBlock(responseText);
-        if (jsonCandidate != null) {
-            try {
-                Map<String, Map<String, String>> parsed =
-                        objectMapper.readValue(jsonCandidate, SUGGESTIONS_TYPE);
-                Map<String, String> suggestions = parsed.get("suggestions");
-                if (suggestions != null && !suggestions.isEmpty()) {
-                    return Map.copyOf(suggestions);
-                }
-                // JSON parse avec succes mais cle "suggestions" absente
-                LOG.warn("LLM response sans cle 'suggestions', fallback texte brut [requestId={}]",
-                        requestId);
-            } catch (Exception e) {
-                // JSON detecte mais parse echoue : reponse tronquee
-                LOG.warn("LLM response JSON tronque, fallback texte brut [requestId={}] : {}",
-                        requestId, e.getMessage());
+        JsonBlockExtraction extraction = extractJsonBlock(responseText);
+        if (extraction.candidate() == null) {
+            logMissingJson(requestId, extraction.truncated());
+            return fallback(effectiveControllerRef, responseText);
+        }
+        try {
+            JsonNode root = objectMapper.readTree(extraction.candidate());
+            Map<String, String> suggestions = extractSuggestions(root, requestId);
+            if (!suggestions.isEmpty()) {
+                return Map.copyOf(suggestions);
             }
-        } else {
-            // Aucun delimiteur JSON trouve : texte brut pur
-            LOG.warn("LLM response texte brut sans JSON, fallback [requestId={}]", requestId);
+            LOG.warn("LLM response sans suggestion exploitable [requestId={}, controllerRef={}]",
+                    requestId, effectiveControllerRef);
+        } catch (Exception e) {
+            LOG.warn("LLM response JSON invalide [requestId={}, controllerRef={}]: {}",
+                    requestId, effectiveControllerRef, e.getMessage());
         }
-        // Fallback : texte brut entier comme suggestion
+        return fallback(effectiveControllerRef, responseText);
+    }
+
+    private Map<String, String> extractSuggestions(final JsonNode root, final String requestId) {
+        if (root == null || !root.isObject()) {
+            LOG.warn("LLM response JSON racine invalide [requestId={}]", requestId);
+            return Map.of();
+        }
+        JsonNode suggestionsNode = root.get(SUGGESTIONS_KEY);
+        if (suggestionsNode == null || suggestionsNode.isNull()) {
+            LOG.warn("LLM response sans cle '{}' [requestId={}]", SUGGESTIONS_KEY, requestId);
+            return Map.of();
+        }
+        if (!suggestionsNode.isObject()) {
+            LOG.warn("LLM response '{}' non objet [requestId={}]", SUGGESTIONS_KEY, requestId);
+            return Map.of();
+        }
+        Map<String, String> suggestions = new LinkedHashMap<>();
+        int invalidCount = 0;
+        var fields = suggestionsNode.fields();
+        while (fields.hasNext()) {
+            Map.Entry<String, JsonNode> field = fields.next();
+            String key = field.getKey();
+            JsonNode valueNode = field.getValue();
+            if (key == null || key.isBlank() || valueNode == null || !valueNode.isTextual()) {
+                invalidCount++;
+                continue;
+            }
+            String value = valueNode.asText().strip();
+            if (value.isBlank()) {
+                invalidCount++;
+                continue;
+            }
+            suggestions.put(key, value);
+        }
+        if (invalidCount > 0) {
+            LOG.warn("LLM response suggestions partiellement invalides [requestId={}, invalidCount={}]",
+                    requestId, invalidCount);
+        }
+        return suggestions;
+    }
+
+    private Map<String, String> fallback(final String controllerRef, final String responseText) {
         return Map.of(controllerRef, responseText.strip());
     }
 
-    private String extractJsonBlock(final String text) {
-        int start = text.indexOf('{');
-        int end = text.lastIndexOf('}');
-        if (start >= 0 && end > start) {
-            return text.substring(start, end + 1);
+    private void logMissingJson(final String requestId, final boolean truncated) {
+        if (truncated) {
+            LOG.warn("LLM response JSON tronque [requestId={}]", requestId);
+        } else {
+            LOG.warn("LLM response sans JSON exploitable [requestId={}]", requestId);
         }
-        return null;
+    }
+
+    private String effectiveControllerRef(final String controllerRef) {
+        return (controllerRef == null || controllerRef.isBlank()) ? UNKNOWN_CONTROLLER_REF : controllerRef;
+    }
+
+    private JsonBlockExtraction extractJsonBlock(final String text) {
+        int start = text.indexOf('{');
+        if (start < 0) {
+            return new JsonBlockExtraction(null, false);
+        }
+        int depth = 0;
+        boolean inString = false;
+        boolean escaping = false;
+        char quote = '\0';
+        for (int index = start; index < text.length(); index++) {
+            char current = text.charAt(index);
+            if (inString) {
+                if (escaping) {
+                    escaping = false;
+                    continue;
+                }
+                if (current == '\\') {
+                    escaping = true;
+                } else if (current == quote) {
+                    inString = false;
+                }
+                continue;
+            }
+            if (current == '"' || current == '\'') {
+                inString = true;
+                quote = current;
+                continue;
+            }
+            if (current == '{') {
+                depth++;
+            } else if (current == '}') {
+                depth--;
+                if (depth == 0) {
+                    return new JsonBlockExtraction(text.substring(start, index + 1), false);
+                }
+                if (depth < 0) {
+                    break;
+                }
+            }
+        }
+        return new JsonBlockExtraction(null, true);
+    }
+
+    private record JsonBlockExtraction(String candidate, boolean truncated) {
     }
 }

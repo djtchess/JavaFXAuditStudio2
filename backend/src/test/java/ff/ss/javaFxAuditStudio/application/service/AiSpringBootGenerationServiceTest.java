@@ -74,7 +74,7 @@ class AiSpringBootGenerationServiceTest {
     }
 
     private static SanitizedBundle bundle(final String controllerRef) {
-        return new SanitizedBundle("bundle-id", controllerRef, "sanitized source", 10, "1.0");
+        return new SanitizedBundle("bundle-id", controllerRef, "sanitized source", 10, "1.0", null);
     }
 
     private static ClassificationResult classificationWithRules() {
@@ -221,12 +221,31 @@ class AiSpringBootGenerationServiceTest {
     }
 
     @Test
+    void should_ignore_unsupported_artifact_types_returned_by_llm() {
+        Map<String, String> llmSuggestions = Map.of(
+                "USE_CASE", "public interface Foo { void bar(); }",
+                "surprise", "public class ShouldBeIgnored {}");
+
+        when(sessionPort.findById("sess-7b")).thenReturn(Optional.of(session("sess-7b", "MyController")));
+        when(classificationPort.findBySessionId("sess-7b"))
+                .thenReturn(Optional.of(classificationWithRules()));
+        when(sanitizationPort.sanitize(any(), any(), any())).thenReturn(bundle("MyController"));
+        when(aiEnrichmentPort.enrich(any())).thenReturn(
+                new AiEnrichmentResult("req-7b", false, "", llmSuggestions, 50, LlmProvider.OPENAI_GPT54));
+
+        AiCodeGenerationResult result = service.generate("sess-7b");
+
+        assertThat(result.degraded()).isFalse();
+        assertThat(result.generatedClasses()).containsOnlyKeys("USE_CASE");
+    }
+
+    @Test
     void should_use_sanitized_bundle_as_source() {
         when(sessionPort.findById("sess-8")).thenReturn(Optional.of(session("sess-8", "PatientController")));
         when(classificationPort.findBySessionId("sess-8"))
                 .thenReturn(Optional.of(classificationWithRules()));
         when(sanitizationPort.sanitize(any(), any(), any()))
-                .thenReturn(new SanitizedBundle("b-id", "PatientController", "sanitized java code", 20, "1.0"));
+                .thenReturn(new SanitizedBundle("b-id", "PatientController", "sanitized java code", 20, "1.0", null));
         when(aiEnrichmentPort.enrich(any())).thenReturn(
                 AiEnrichmentResult.degraded("req-8", "disabled"));
 

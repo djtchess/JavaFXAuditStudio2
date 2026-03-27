@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { Component, signal } from '@angular/core';
 import { of, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import { ReclassifyModalComponent } from './reclassify-modal.component';
 import { ReclassificationApiService } from '../../../core/services/reclassification-api.service';
@@ -19,10 +19,14 @@ const MOCK_RESPONSE: ReclassifiedRuleResponse = {
 describe('ReclassifyModalComponent', () => {
   let fixture: ComponentFixture<ReclassifyModalComponent>;
   let component: ReclassifyModalComponent;
-  let reclassificationApiSpy: jasmine.SpyObj<ReclassificationApiService>;
+  let reclassificationApiSpy: {
+    reclassify: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(async () => {
-    reclassificationApiSpy = jasmine.createSpyObj('ReclassificationApiService', ['reclassify']);
+    reclassificationApiSpy = {
+      reclassify: vi.fn(),
+    };
 
     await TestBed.configureTestingModule({
       imports: [ReclassifyModalComponent],
@@ -72,11 +76,11 @@ describe('ReclassifyModalComponent', () => {
       .find(b => b.nativeElement.textContent.trim() === 'Annuler');
     cancelBtn!.nativeElement.click();
 
-    expect(closedEmitted).toBeTrue();
+    expect(closedEmitted).toBe(true);
   });
 
   it('should call reclassify and emit reclassified + closed on success', () => {
-    reclassificationApiSpy.reclassify.and.returnValue(of(MOCK_RESPONSE));
+    reclassificationApiSpy.reclassify.mockReturnValue(of(MOCK_RESPONSE));
 
     let reclassifiedResult: ReclassifiedRuleResponse | null = null;
     let closedEmitted = false;
@@ -96,14 +100,14 @@ describe('ReclassifyModalComponent', () => {
     expect(reclassificationApiSpy.reclassify).toHaveBeenCalledWith(
       'session-1',
       'rule-1',
-      jasmine.objectContaining({ category: 'APPLICATION' }),
+      expect.objectContaining({ category: 'APPLICATION' }),
     );
     expect(reclassifiedResult).toEqual(MOCK_RESPONSE);
-    expect(closedEmitted).toBeTrue();
+    expect(closedEmitted).toBe(true);
   });
 
   it('should display locked error message on 409 response', () => {
-    reclassificationApiSpy.reclassify.and.returnValue(
+    reclassificationApiSpy.reclassify.mockReturnValue(
       throwError(() => ({ status: 409, error: { message: 'Locked' } })),
     );
 
@@ -119,7 +123,7 @@ describe('ReclassifyModalComponent', () => {
   });
 
   it('should display generic error message on non-409 error', () => {
-    reclassificationApiSpy.reclassify.and.returnValue(
+    reclassificationApiSpy.reclassify.mockReturnValue(
       throwError(() => ({ status: 500, error: { message: 'Internal error' } })),
     );
 
@@ -139,6 +143,6 @@ describe('ReclassifyModalComponent', () => {
     const confirmBtn = fixture.debugElement.queryAll(By.css('button'))
       .find(b => b.nativeElement.textContent.includes('Confirmer'));
     // With UI pre-selected, confirm should be enabled
-    expect(confirmBtn!.nativeElement.disabled).toBeFalse();
+    expect(confirmBtn!.nativeElement.disabled).toBe(false);
   });
 });

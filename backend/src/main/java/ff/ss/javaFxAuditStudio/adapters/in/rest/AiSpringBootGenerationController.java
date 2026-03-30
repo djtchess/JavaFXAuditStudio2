@@ -3,6 +3,11 @@ package ff.ss.javaFxAuditStudio.adapters.in.rest;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -68,11 +73,28 @@ public class AiSpringBootGenerationController {
     }
 
     private void runStreamingGeneration(final String sessionId, final SseEmitter emitter) {
+        ScheduledExecutorService progressScheduler = Executors.newSingleThreadScheduledExecutor();
         try {
             emit(emitter, payload("sanitizing", "Preparation et sanitisation du contexte IA", 15, null));
             emit(emitter, payload("sending_to_llm", "Generation Spring Boot en cours", 40, null));
 
+            AtomicInteger progressCounter = new AtomicInteger(44);
+            ScheduledFuture<?> progressTask = progressScheduler.scheduleAtFixedRate(() -> {
+                int current = progressCounter.getAndAdd(4);
+                if (current <= 64) {
+                    try {
+                        String pulse = JSON.writeValueAsString(new GenerationStreamPayload(
+                                "sending_to_llm", "Generation Spring Boot en cours...",
+                                current, null, null, null, null, null, null, null, null));
+                        emitter.send(SseEmitter.event().data(pulse));
+                    } catch (Exception ignored) {
+                        // emitter already closed or serialization error — stop silently
+                    }
+                }
+            }, 5, 5, TimeUnit.SECONDS);
+
             AiCodeGenerationResult result = generateUseCase.generate(sessionId);
+            progressTask.cancel(false);
 
             emit(emitter, payload("parsing_response", "Analyse de la reponse IA", 70, result));
             emitGeneratedChunks(emitter, result);
@@ -84,6 +106,8 @@ public class AiSpringBootGenerationController {
         } catch (Exception exception) {
             LOG.warn("Erreur pendant le flux SSE de generation IA pour {} : {}", sessionId, exception.getMessage());
             completeWithError(emitter, "Erreur lors du flux de generation IA");
+        } finally {
+            progressScheduler.shutdownNow();
         }
     }
 

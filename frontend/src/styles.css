@@ -7,29 +7,33 @@
   --paper-grid: rgba(155, 197, 230, 0.08);
   --panel: rgba(10, 21, 32, 0.78);
   --panel-alt: rgba(14, 27, 42, 0.9);
-  --panel-soft: rgba(241, 236, 225, 0.94);
-  --panel-soft-alt: rgba(252, 248, 239, 0.97);
-  --surface-ink: #193147;
-  --surface-ink-strong: #102638;
-  --surface-ink-soft: #617588;
-  --surface-line: rgba(16, 38, 56, 0.12);
-  --surface-line-strong: rgba(16, 38, 56, 0.18);
-  --surface-chip: rgba(16, 38, 56, 0.06);
-  --surface-chip-strong: rgba(16, 38, 56, 0.1);
-  --surface-code-bg: #122133;
+  --panel-soft: rgba(9, 22, 35, 0.92);
+  --panel-soft-alt: rgba(13, 28, 43, 0.96);
+  --surface-ink: #d4e5f7;
+  --surface-ink-strong: #eef6ff;
+  --surface-ink-soft: #8ea7bc;
+  --surface-line: rgba(157, 190, 218, 0.16);
+  --surface-line-strong: rgba(157, 190, 218, 0.26);
+  --surface-chip: rgba(255, 255, 255, 0.05);
+  --surface-chip-strong: rgba(255, 255, 255, 0.1);
+  --surface-raised: rgba(255, 255, 255, 0.04);
+  --surface-raised-strong: rgba(255, 255, 255, 0.08);
+  --surface-input: rgba(255, 255, 255, 0.06);
+  --surface-input-strong: rgba(255, 255, 255, 0.1);
+  --surface-code-bg: #0b1724;
   --surface-code-ink: #dbe7f6;
-  --surface-success: #0f766e;
-  --surface-success-soft: rgba(76, 225, 198, 0.12);
-  --surface-warning: #9a5520;
-  --surface-warning-soft: rgba(255, 154, 77, 0.12);
-  --surface-danger: #a23c1c;
-  --surface-danger-soft: rgba(255, 118, 92, 0.12);
+  --surface-success: #63dbc4;
+  --surface-success-soft: rgba(76, 225, 198, 0.14);
+  --surface-warning: #ffb878;
+  --surface-warning-soft: rgba(255, 154, 77, 0.14);
+  --surface-danger: #ff9b84;
+  --surface-danger-soft: rgba(255, 118, 92, 0.16);
   --accent: #ff9a4d;
   --accent-soft: rgba(255, 154, 77, 0.16);
   --mint: #4ce1c6;
   --cyan: #65dfff;
   --cyan-soft: rgba(101, 223, 255, 0.16);
-  --slate: #11283c;
+  --slate: #d4e5f7;
   --line: rgba(157, 190, 218, 0.18);
   --line-strong: rgba(157, 214, 255, 0.34);
   --shadow: 0 26px 70px rgba(0, 0, 0, 0.38);
@@ -187,7 +191,7 @@ jas-ai-enrichment-view .generated-class-btn,
 jas-ai-enrichment-view .refine-btn,
 jas-ai-enrichment-view .btn-cancel {
   border-color: var(--surface-line);
-  background: rgba(255, 255, 255, 0.72);
+  background: var(--surface-chip);
   color: var(--surface-ink);
 }
 
@@ -198,7 +202,7 @@ jas-ai-enrichment-view .persisted-btn:hover,
 jas-ai-enrichment-view .generated-class-btn:hover,
 jas-ai-enrichment-view .refine-btn:hover,
 jas-ai-enrichment-view .btn-cancel:hover {
-  background: var(--surface-chip);
+  background: var(--surface-chip-strong);
 }
 
 jas-ai-enrichment-view .persisted-btn.secondary {
@@ -300,7 +304,7 @@ jas-ai-enrichment-view .generated-feedback.error {
 
 jas-ai-enrichment-view .refine-panel textarea {
   border-color: var(--surface-line);
-  background: rgba(255, 255, 255, 0.84);
+  background: var(--surface-input);
   color: var(--surface-ink);
 }
 

@@ -14,6 +14,7 @@ import ff.ss.javaFxAuditStudio.application.ports.out.AiArtifactPersistencePort;
 import ff.ss.javaFxAuditStudio.application.ports.out.AnalysisSessionPort;
 import ff.ss.javaFxAuditStudio.application.ports.out.CartographyPersistencePort;
 import ff.ss.javaFxAuditStudio.application.ports.out.ClassificationPersistencePort;
+import ff.ss.javaFxAuditStudio.application.ports.out.MigrationPlanPersistencePort;
 import ff.ss.javaFxAuditStudio.application.ports.out.ProjectReferencePatternPort;
 import ff.ss.javaFxAuditStudio.application.ports.out.ReclassificationAuditPort;
 import ff.ss.javaFxAuditStudio.application.ports.out.SanitizationPort;
@@ -26,6 +27,10 @@ import ff.ss.javaFxAuditStudio.domain.ai.SanitizedBundle;
 import ff.ss.javaFxAuditStudio.domain.cartography.ControllerCartography;
 import ff.ss.javaFxAuditStudio.domain.cartography.FxmlComponent;
 import ff.ss.javaFxAuditStudio.domain.cartography.HandlerBinding;
+import ff.ss.javaFxAuditStudio.domain.migration.MigrationPlan;
+import ff.ss.javaFxAuditStudio.domain.migration.PlannedLot;
+import ff.ss.javaFxAuditStudio.domain.migration.RegressionRisk;
+import ff.ss.javaFxAuditStudio.domain.migration.RiskLevel;
 import ff.ss.javaFxAuditStudio.domain.rules.BusinessRule;
 import ff.ss.javaFxAuditStudio.domain.rules.ClassificationResult;
 import ff.ss.javaFxAuditStudio.domain.rules.ExtractionCandidate;
@@ -65,6 +70,9 @@ class PromptContextPropagationTest {
     private ProjectReferencePatternPort projectReferencePatternPort;
 
     @Mock
+    private MigrationPlanPersistencePort migrationPlanPersistencePort;
+
+    @Mock
     private SanitizationPort sanitizationPort;
 
     @Mock
@@ -89,7 +97,13 @@ class PromptContextPropagationTest {
                 .thenReturn(List.of(reclassification()));
         when(sourceFileReaderPort.read("Controller")).thenReturn(Optional.of("class Controller {}"));
         when(sanitizationPort.sanitize(any(), any(), any()))
-                .thenReturn(new SanitizedBundle("bundle-ctx", "Controller", "sanitized", 10, "1.0", null));
+                .thenReturn(new SanitizedBundle(
+                        "bundle-ctx",
+                        "Controller",
+                        "import javafx.fxml.FXML;\nclass Controller {\n    @FXML\n    public void onSave() {\n        patientService.save();\n    }\n}",
+                        10,
+                        "1.0",
+                        null));
         when(aiEnrichmentPort.enrich(any())).thenReturn(
                 AiEnrichmentResult.degraded("req-ctx", "disabled"));
     }
@@ -97,6 +111,8 @@ class PromptContextPropagationTest {
     @Test
     void generation_service_propagates_screen_context_and_feedback() {
         when(projectReferencePatternPort.findAll()).thenReturn(List.of(projectPattern()));
+        when(migrationPlanPersistencePort.findBySessionId("sess-ctx"))
+                .thenReturn(Optional.of(migrationPlan()));
 
         AiSpringBootGenerationService service = new AiSpringBootGenerationService(
                 sessionPort,
@@ -105,6 +121,7 @@ class PromptContextPropagationTest {
                 reclassificationAuditPort,
                 aiArtifactPersistencePort,
                 projectReferencePatternPort,
+                migrationPlanPersistencePort,
                 aiEnrichmentPort,
                 sanitizationPort,
                 sourceFileReaderPort);
@@ -115,11 +132,19 @@ class PromptContextPropagationTest {
         verify(aiEnrichmentPort).enrich(captor.capture());
         assertThat(captor.getValue().extraContext()).containsKeys(
                 "screenContext",
+                "migrationPlan",
+                "ruleSourceSnippets",
                 "reclassificationFeedback",
                 "projectReferencePatterns");
         assertThat(captor.getValue().extraContext().get("screenContext").toString())
                 .contains("saveButton")
                 .contains("onSave");
+        assertThat(captor.getValue().extraContext().get("migrationPlan").toString())
+                .contains("Lot 3")
+                .contains("Handlers metier");
+        assertThat(captor.getValue().extraContext().get("ruleSourceSnippets").toString())
+                .contains("onSave")
+                .contains("patientService.save()");
         assertThat(captor.getValue().extraContext().get("projectReferencePatterns").toString())
                 .contains("USE_CASE")
                 .contains("ReferenceUseCase");
@@ -149,7 +174,7 @@ class PromptContextPropagationTest {
     private static ClassificationResult classification() {
         BusinessRule rule = new BusinessRule(
                 "RG-001",
-                "Orchestration du use case",
+                "Methode handler onSave : responsabilite APPLICATION detectee [complexite=1]",
                 "Controller.java",
                 12,
                 ResponsibilityClass.APPLICATION,
@@ -185,5 +210,20 @@ class PromptContextPropagationTest {
                 "ReferenceUseCase",
                 "package ff.example.usecase;\npublic interface ReferenceUseCase {}",
                 Instant.now());
+    }
+
+    private static MigrationPlan migrationPlan() {
+        return new MigrationPlan(
+                "Controller",
+                List.of(new PlannedLot(
+                        3,
+                        "Handlers metier",
+                        "Migration des handlers lourds",
+                        List.of("USE_CASE", "POLICY"),
+                        List.of(new RegressionRisk(
+                                "Regression sur les handlers",
+                                RiskLevel.MEDIUM,
+                                "Tests de non-regression")))),
+                true);
     }
 }

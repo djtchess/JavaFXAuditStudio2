@@ -122,4 +122,31 @@ class LlmServiceSupportTest {
         assertThat(summary).contains("PatientUseCase");
         assertThat(summary).contains("warning-1");
     }
+
+    @Test
+    void formatRuleSourceSnippets_extracts_matching_method_bodies() {
+        ClassificationResult classification = new ClassificationResult(
+                "Controller",
+                List.of(new BusinessRule(
+                        "RG-001",
+                        "Methode garde isNouvelExamenOperationVerif : decision metier BUSINESS detectee",
+                        "Controller.java",
+                        10,
+                        ResponsibilityClass.BUSINESS,
+                        ExtractionCandidate.POLICY,
+                        false)),
+                List.of());
+        String source = """
+                class Controller {
+                    private boolean isNouvelExamenOperationVerif() {
+                        return !lsElementsConstatExamen.isEmpty() || !lsElementsConstatMateriel.isEmpty();
+                    }
+                }
+                """;
+
+        String snippets = LlmServiceSupport.formatRuleSourceSnippets(source, classification);
+
+        assertThat(snippets).contains("isNouvelExamenOperationVerif");
+        assertThat(snippets).contains("!lsElementsConstatExamen.isEmpty()");
+    }
 }

@@ -91,7 +91,7 @@ const RESPONSIBILITY_COLORS: Record<string, string> = {
       padding: 0.65rem 0.75rem;
       border-radius: 12px;
       border: 1px solid var(--surface-line);
-      background: rgba(255, 255, 255, 0.48);
+      background: var(--surface-raised);
       font-size: 0.85rem;
     }
 

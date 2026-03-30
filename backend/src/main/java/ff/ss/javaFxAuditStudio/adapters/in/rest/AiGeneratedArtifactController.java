@@ -29,6 +29,7 @@ import ff.ss.javaFxAuditStudio.domain.ai.AiArtifactRefinementCommand;
 import ff.ss.javaFxAuditStudio.domain.ai.AiArtifactZipExport;
 import ff.ss.javaFxAuditStudio.domain.ai.AiCodeGenerationResult;
 import ff.ss.javaFxAuditStudio.domain.ai.AiGeneratedArtifact;
+import ff.ss.javaFxAuditStudio.domain.ai.AiArtifactImplementationInspector;
 import ff.ss.javaFxAuditStudio.domain.generation.ArtifactType;
 
 @RestController
@@ -177,7 +178,9 @@ public class AiGeneratedArtifactController {
                 artifact.requestId(),
                 artifact.provider().value(),
                 artifact.originTask().name(),
-                artifact.createdAt());
+                artifact.createdAt(),
+                AiArtifactImplementationInspector.resolveStatus(artifact.content()).name(),
+                AiArtifactImplementationInspector.resolveWarning(artifact.content()));
     }
 
     private AiCodeGenerationResponse toGenerationResponse(final AiCodeGenerationResult result) {

@@ -1,6 +1,7 @@
 package ff.ss.javaFxAuditStudio.application.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 
 import java.io.ByteArrayInputStream;
@@ -60,6 +61,56 @@ class AiArtifactCatalogServiceTest {
         assertThat(export.artifactCount()).isEqualTo(2);
         assertThat(listZipEntries(export.content()))
                 .contains("ff/example/usecase/PatientUseCase.java", "PatientViewModel.java");
+    }
+
+    @Test
+    void should_ignore_incomplete_ai_artifacts_during_zip_export() throws Exception {
+        AnalysisSession session = new AnalysisSession(
+                "sess-zip",
+                "Controller",
+                "Controller.java",
+                AnalysisStatus.COMPLETED,
+                Instant.now());
+        when(sessionPort.findById("sess-zip")).thenReturn(Optional.of(session));
+        when(aiArtifactPersistencePort.findLatestBySessionId("sess-zip")).thenReturn(List.of(
+                artifact(
+                        "USE_CASE",
+                        "PatientUseCase",
+                        "package ff.example.usecase;\npublic class PatientUseCase {}"),
+                artifact(
+                        "POLICY",
+                        "PatientPolicy",
+                        "package ff.example.policy;\npublic class PatientPolicy {\n    // TODO: implementer\n}")));
+
+        AiArtifactCatalogService service = new AiArtifactCatalogService(sessionPort, aiArtifactPersistencePort);
+
+        AiArtifactZipExport export = service.export("sess-zip");
+
+        assertThat(export.artifactCount()).isEqualTo(1);
+        assertThat(listZipEntries(export.content()))
+                .containsExactly("ff/example/usecase/PatientUseCase.java");
+    }
+
+    @Test
+    void should_fail_zip_export_when_only_incomplete_ai_artifacts_exist() {
+        AnalysisSession session = new AnalysisSession(
+                "sess-zip",
+                "Controller",
+                "Controller.java",
+                AnalysisStatus.COMPLETED,
+                Instant.now());
+        when(sessionPort.findById("sess-zip")).thenReturn(Optional.of(session));
+        when(aiArtifactPersistencePort.findLatestBySessionId("sess-zip")).thenReturn(List.of(
+                artifact(
+                        "POLICY",
+                        "PatientPolicy",
+                        "package ff.example.policy;\npublic class PatientPolicy {\n    // TODO: implementer\n}")));
+
+        AiArtifactCatalogService service = new AiArtifactCatalogService(sessionPort, aiArtifactPersistencePort);
+
+        assertThatThrownBy(() -> service.export("sess-zip"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Aucun artefact IA exportable");
     }
 
     private static AiGeneratedArtifact artifact(

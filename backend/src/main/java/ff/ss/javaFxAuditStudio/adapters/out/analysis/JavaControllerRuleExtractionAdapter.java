@@ -203,6 +203,14 @@ public final class JavaControllerRuleExtractionAdapter implements RuleExtraction
             if (alreadyExtracted) {
                 continue;
             }
+            String methodBody = extractApproximateBody(content, matcher.end());
+            if (containsAnyKeyword(methodBody, patterns.effectiveUiKeywords())) {
+                String ruleId = buildRuleId(ref, rules.size() + 1);
+                String description = "Methode " + methodName + "() : garde UI detectee";
+                rules.add(new BusinessRule(ruleId, description, ref, 0,
+                        ResponsibilityClass.UI, ExtractionCandidate.VIEW_MODEL, false));
+                continue;
+            }
             String ruleId = buildRuleId(ref, rules.size() + 1);
             String description = "Methode garde " + methodName
                     + " : decision metier BUSINESS detectee";

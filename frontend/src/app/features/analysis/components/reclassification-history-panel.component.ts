@@ -61,7 +61,7 @@ const CATEGORY_COLORS: Record<string, string> = {
       height: 2rem;
       border: 1px solid var(--surface-line);
       border-radius: 50%;
-      background: rgba(255, 255, 255, 0.72);
+      background: var(--surface-chip);
       cursor: pointer;
       font-size: 1rem;
       color: var(--surface-ink-soft);
@@ -70,7 +70,7 @@ const CATEGORY_COLORS: Record<string, string> = {
     }
 
     .btn-close:hover {
-      background: var(--surface-chip);
+      background: var(--surface-chip-strong);
     }
 
     .loading-msg {
@@ -99,7 +99,7 @@ const CATEGORY_COLORS: Record<string, string> = {
       padding: 0.65rem 0.85rem;
       border-radius: 10px;
       border: 1px solid var(--surface-line);
-      background: rgba(255, 255, 255, 0.54);
+      background: var(--surface-raised);
       display: flex;
       flex-direction: column;
       gap: 0.3rem;

@@ -43,7 +43,9 @@ public record AnalysisProperties(
         public List<String> effectiveUiKeywords() {
             return uiKeywords != null ? uiKeywords : List.of(
                 "setText", "setVisible", "getChildren", "setStyle", "setDisable", "getScene",
-                "setGraphic", "setManaged", "pseudoClassStateChanged", "setItems"
+                "setGraphic", "setManaged", "pseudoClassStateChanged", "setItems",
+                "isDisable", "isDisabled", "isVisible", "isSelected", "isManaged",
+                "isEditable", "getSelectionModel"
             );
         }
 

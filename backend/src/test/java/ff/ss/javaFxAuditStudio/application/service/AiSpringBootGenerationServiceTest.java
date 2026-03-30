@@ -240,6 +240,55 @@ class AiSpringBootGenerationServiceTest {
     }
 
     @Test
+    void should_reject_generated_todo_when_matching_source_snippet_is_available() {
+        AiSpringBootGenerationService serviceWithSourceReader = new AiSpringBootGenerationService(
+                sessionPort,
+                classificationPort,
+                null,
+                null,
+                null,
+                null,
+                aiEnrichmentPort,
+                sanitizationPort,
+                sourceFileReaderPort);
+        Map<String, String> llmSuggestions = Map.of(
+                "POLICY",
+                "package ff.example.policy;\npublic class PatientPolicy {\n    public boolean isReady() {\n        // TODO: implementer\n        return false;\n    }\n}");
+
+        when(sessionPort.findById("sess-7c")).thenReturn(Optional.of(session("sess-7c", "MyController")));
+        when(classificationPort.findBySessionId("sess-7c"))
+                .thenReturn(Optional.of(new ClassificationResult(
+                        "MyController",
+                        List.of(new BusinessRule(
+                                "RG-001",
+                                "Methode garde isReady : decision metier BUSINESS detectee",
+                                "MyController.java",
+                                12,
+                                ResponsibilityClass.BUSINESS,
+                                ExtractionCandidate.POLICY,
+                                false)),
+                        List.of())));
+        when(sourceFileReaderPort.read("MyController"))
+                .thenReturn(Optional.of("class MyController { private boolean isReady() { return true; } }"));
+        when(sanitizationPort.sanitize(any(), any(), any()))
+                .thenReturn(new SanitizedBundle(
+                        "b-id",
+                        "MyController",
+                        "class MyController { private boolean isReady() { return true; } }",
+                        20,
+                        "1.0",
+                        null));
+        when(aiEnrichmentPort.enrich(any())).thenReturn(
+                new AiEnrichmentResult("req-7c", false, "", llmSuggestions, 50, LlmProvider.OPENAI_GPT54));
+
+        AiCodeGenerationResult result = serviceWithSourceReader.generate("sess-7c");
+
+        assertThat(result.degraded()).isTrue();
+        assertThat(result.degradationReason()).contains("TODO");
+        assertThat(result.generatedClasses()).isEmpty();
+    }
+
+    @Test
     void should_use_sanitized_bundle_as_source() {
         when(sessionPort.findById("sess-8")).thenReturn(Optional.of(session("sess-8", "PatientController")));
         when(classificationPort.findBySessionId("sess-8"))

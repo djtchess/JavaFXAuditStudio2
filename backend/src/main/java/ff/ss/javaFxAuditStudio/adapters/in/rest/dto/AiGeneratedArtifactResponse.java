@@ -17,5 +17,7 @@ public record AiGeneratedArtifactResponse(
         String requestId,
         String provider,
         String originTask,
-        Instant createdAt) {
+        Instant createdAt,
+        String implementationStatus,
+        String implementationWarning) {
 }

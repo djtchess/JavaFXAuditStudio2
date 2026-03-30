@@ -183,7 +183,7 @@
 .status-panel {
   margin-top: 1.5rem;
   padding: 1rem 1.25rem;
-  color: var(--slate);
+  color: var(--surface-ink);
 }
 
 .status-panel.loading {
@@ -207,13 +207,14 @@
 
 .summary-card {
   padding: 1.4rem;
-  color: var(--slate);
+  color: var(--surface-ink);
 }
 
 .summary-card.highlight {
   background:
-    linear-gradient(155deg, rgba(255, 249, 240, 0.98), rgba(238, 229, 214, 0.96)),
-    linear-gradient(120deg, rgba(255, 154, 77, 0.16), rgba(76, 225, 198, 0.08));
+    radial-gradient(circle at top right, rgba(255, 154, 77, 0.14), transparent 34%),
+    radial-gradient(circle at bottom left, rgba(101, 223, 255, 0.1), transparent 30%),
+    linear-gradient(160deg, rgba(10, 22, 34, 0.96), rgba(15, 30, 46, 0.92));
 }
 
 .summary-card h2 {
@@ -224,7 +225,7 @@
 
 .summary-card p:last-child {
   margin-bottom: 0;
-  color: rgba(17, 40, 60, 0.72);
+  color: var(--surface-ink-soft);
   line-height: 1.6;
 }
 
@@ -239,7 +240,7 @@
   display: grid;
   gap: 0.7rem;
   padding: 1.25rem;
-  color: var(--slate);
+  color: var(--surface-ink);
   text-decoration: none;
   position: relative;
   overflow: hidden;
@@ -266,7 +267,7 @@
 
 .lane-card p:last-child {
   margin: 0;
-  color: rgba(17, 40, 60, 0.72);
+  color: var(--surface-ink-soft);
   line-height: 1.65;
 }
 
@@ -279,7 +280,7 @@
 
 .panel {
   padding: 1.5rem;
-  color: var(--slate);
+  color: var(--surface-ink);
 }
 
 .panel-heading {
@@ -323,7 +324,7 @@
 .lot-card p,
 .agent-card p {
   margin: 0;
-  color: rgba(17, 40, 60, 0.72);
+  color: var(--surface-ink-soft);
   line-height: 1.55;
 }
 
@@ -335,7 +336,7 @@
 }
 
 .agent-card small {
-  color: rgba(17, 40, 60, 0.54);
+  color: rgba(157, 190, 218, 0.62);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }

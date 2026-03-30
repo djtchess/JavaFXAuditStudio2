@@ -91,6 +91,8 @@ const PERSISTED_ARTIFACTS: AiGeneratedArtifactCollectionResponse = {
       provider: 'claude-code',
       originTask: 'SPRING_BOOT_GENERATION',
       createdAt: '2026-03-26T11:00:00Z',
+      implementationStatus: 'READY',
+      implementationWarning: null,
     },
   ],
 };

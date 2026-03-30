@@ -2,6 +2,7 @@ package ff.ss.javaFxAuditStudio.configuration;
 
 import ff.ss.javaFxAuditStudio.application.ports.in.ExportArtifactsUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.in.GenerateArtifactsUseCase;
+import ff.ss.javaFxAuditStudio.application.ports.out.AiArtifactPersistencePort;
 import ff.ss.javaFxAuditStudio.application.ports.out.ArtifactPersistencePort;
 import ff.ss.javaFxAuditStudio.application.ports.out.ClassificationPersistencePort;
 import ff.ss.javaFxAuditStudio.application.ports.out.CodeGenerationPort;
@@ -30,7 +31,9 @@ public class GenerationConfiguration {
     }
 
     @Bean
-    public ExportArtifactsUseCase exportArtifactsUseCase(final ArtifactPersistencePort artifactPersistencePort) {
-        return new ExportArtifactsService(artifactPersistencePort);
+    public ExportArtifactsUseCase exportArtifactsUseCase(
+            final ArtifactPersistencePort artifactPersistencePort,
+            final AiArtifactPersistencePort aiArtifactPersistencePort) {
+        return new ExportArtifactsService(artifactPersistencePort, aiArtifactPersistencePort);
     }
 }

@@ -22,7 +22,7 @@ function splitLines(code: string): string[] {
     .diff-shell {
       border-radius: 12px;
       border: 1px solid var(--surface-line);
-      background: rgba(255, 255, 255, 0.72);
+      background: var(--surface-raised);
       overflow: hidden;
     }
 
@@ -67,7 +67,7 @@ function splitLines(code: string): string[] {
       font-size: 0.75rem;
       font-weight: 700;
       color: var(--surface-ink-soft);
-      background: rgba(255, 255, 255, 0.36);
+      background: var(--surface-chip);
       border-bottom: 1px solid var(--surface-line);
     }
 
@@ -105,7 +105,7 @@ function splitLines(code: string): string[] {
 
     .same {
       color: var(--surface-ink);
-      background: rgba(16, 38, 56, 0.03);
+      background: rgba(255, 255, 255, 0.02);
     }
 
     .changed-left,

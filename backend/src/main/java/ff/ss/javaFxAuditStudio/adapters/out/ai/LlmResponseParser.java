@@ -1,5 +1,6 @@
 package ff.ss.javaFxAuditStudio.adapters.out.ai;
 
+import com.fasterxml.jackson.core.json.JsonReadFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -25,7 +26,7 @@ final class LlmResponseParser {
     private final ObjectMapper objectMapper;
 
     LlmResponseParser(final ObjectMapper objectMapper) {
-        this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper must not be null");
+        this.objectMapper = configureObjectMapper(objectMapper);
     }
 
     /**
@@ -160,6 +161,13 @@ final class LlmResponseParser {
             }
         }
         return new JsonBlockExtraction(null, true);
+    }
+
+    private ObjectMapper configureObjectMapper(final ObjectMapper sourceMapper) {
+        ObjectMapper configuredMapper = Objects.requireNonNull(sourceMapper, "objectMapper must not be null").copy();
+        configuredMapper.configure(JsonReadFeature.ALLOW_JAVA_COMMENTS.mappedFeature(), true);
+        configuredMapper.configure(JsonReadFeature.ALLOW_YAML_COMMENTS.mappedFeature(), true);
+        return configuredMapper;
     }
 
     private record JsonBlockExtraction(String candidate, boolean truncated) {

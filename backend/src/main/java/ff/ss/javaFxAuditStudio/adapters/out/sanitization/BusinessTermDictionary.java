@@ -1,6 +1,7 @@
 package ff.ss.javaFxAuditStudio.adapters.out.sanitization;
 
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -20,8 +21,22 @@ public final class BusinessTermDictionary {
     /**
      * Liste ordonnee des suffixes metier reconnus.
      * Toute modification ici se repercute automatiquement dans les deux sanitizers.
+     *
+     * <p>Couvre :
+     * <ul>
+     *   <li>Couche applicative courante : Service, Manager, Controller, Repository, etc.</li>
+     *   <li>Patterns DDD : Entity, ValueObject, Aggregate, DomainService, DomainEvent</li>
+     *   <li>Architecture hexagonale : Port, UseCase, Interactor, Command, Query, Event</li>
+     *   <li>GoF : Facade, Adapter, Delegate, Strategy, Observer, Decorator</li>
+     *   <li>Creation : Factory, Builder</li>
+     *   <li>Validation : Validator, Checker, Guard</li>
+     *   <li>Mapping : Mapper, Converter, Transformer, Assembler</li>
+     *   <li>JavaFX / MVP : Presenter, ViewModel, Model</li>
+     *   <li>Spring/Jakarta : Component, Bean, Configuration, Provider</li>
+     * </ul>
      */
     static final List<String> BUSINESS_SUFFIXES = List.of(
+            // Couche applicative courante
             "Service",
             "Manager",
             "Controller",
@@ -30,7 +45,44 @@ public final class BusinessTermDictionary {
             "Handler",
             "Processor",
             "Calculator",
-            "Engine"
+            "Engine",
+            // Patterns DDD
+            "Entity",
+            "ValueObject",
+            "Aggregate",
+            "DomainService",
+            "DomainEvent",
+            // Architecture hexagonale
+            "Port",
+            "UseCase",
+            "Interactor",
+            "Command",
+            "Query",
+            "Event",
+            // GoF
+            "Facade",
+            "Delegate",
+            "Strategy",
+            "Observer",
+            "Decorator",
+            // Creation
+            "Factory",
+            "Builder",
+            // Validation
+            "Validator",
+            "Checker",
+            "Guard",
+            // Mapping
+            "Mapper",
+            "Converter",
+            "Transformer",
+            "Assembler",
+            // JavaFX / MVP
+            "Presenter",
+            "ViewModel",
+            // Spring/Jakarta
+            "Component",
+            "Provider"
     );
 
     /**
@@ -67,6 +119,116 @@ public final class BusinessTermDictionary {
      */
     static final Pattern CLASS_NAME_PATTERN = Pattern.compile(
             "^[A-Z][A-Za-z0-9_]*(?:" + BUSINESS_SUFFIXES_ALTERNATION + ")$");
+
+    /**
+     * Pattern ciblant les noms de methodes metier publiques ou protected.
+     *
+     * <p>Une methode est consideree metier si son nom :
+     * <ul>
+     *   <li>se termine par un suffixe metier reconnu (ex : {@code processOrder}), OU</li>
+     *   <li>contient un radical metier connu (defini dans {@link #BUSINESS_METHOD_TERMS}).</li>
+     * </ul>
+     *
+     * <p>Ce pattern n'est utilise que dans le fallback regex.
+     */
+    static final Pattern METHOD_DECLARATION_PATTERN = Pattern.compile(
+            "(?m)^\\s*(?:public|protected)\\s+(?:[\\w<>\\[\\]]+\\s+)+"
+            + "([a-z][A-Za-z0-9_]*)\\s*\\(");
+
+    /**
+     * Termes qui, presents dans un nom de methode, la qualifient de metier.
+     * Insensibles a la casse lors de la comparaison (toLowerCase).
+     */
+    static final Set<String> BUSINESS_METHOD_TERMS = Set.of(
+            "calculer", "compute", "calculate",
+            "traiter", "process", "handle",
+            "valider", "validate", "check",
+            "enregistrer", "save", "persist",
+            "charger", "load", "fetch",
+            "generer", "generate", "build",
+            "convertir", "convert", "transform",
+            "exporter", "export",
+            "importer", "import",
+            "initialiser", "init", "setup",
+            "creer", "create",
+            "supprimer", "delete", "remove",
+            "modifier", "update", "edit",
+            "rechercher", "search", "find",
+            "afficher", "display", "show",
+            "notifier", "notify", "alert",
+            "planifier", "schedule",
+            "executer", "execute", "run",
+            "envoyer", "send", "publish",
+            "recevoir", "receive", "consume"
+    );
+
+    /**
+     * Methodes du cycle de vie Java/JavaFX/Spring qui ne doivent JAMAIS etre renommees.
+     */
+    static final Set<String> LIFECYCLE_METHODS = Set.of(
+            "main",
+            "toString",
+            "equals",
+            "hashCode",
+            "compareTo",
+            "clone",
+            "finalize",
+            "initialize",
+            "dispose",
+            "start",
+            "stop",
+            "init",
+            "destroy",
+            "shutdown",
+            "close",
+            "open",
+            "run",
+            "call",
+            "get",
+            "set",
+            "is"
+    );
+
+    /**
+     * Segments de packages organisationnels a anonymiser.
+     * Remplace les segments non-standards (noms d'organisations, projets, etc.)
+     * par {@code com.neutralized}.
+     */
+    static final Set<String> SENSITIVE_PACKAGE_SEGMENTS = Set.of(
+            "cnamts",
+            "ameli",
+            "cpam",
+            "assurance",
+            "sante",
+            "mutuelle",
+            "prevoyance",
+            "retraite",
+            "chomage",
+            "rsa",
+            "caf",
+            "secu",
+            "securite_sociale"
+    );
+
+    /**
+     * Packages techniques "safe" qui ne doivent jamais etre anonymises.
+     */
+    static final Set<String> SAFE_PACKAGE_PREFIXES = Set.of(
+            "java.",
+            "javax.",
+            "jakarta.",
+            "org.springframework.",
+            "com.fasterxml.",
+            "org.slf4j.",
+            "org.junit.",
+            "org.assertj.",
+            "org.mockito.",
+            "org.openrewrite.",
+            "com.github.",
+            "com.h2database.",
+            "org.postgresql.",
+            "org.flywaydb."
+    );
 
     private BusinessTermDictionary() {
         // utilitaire — pas d'instanciation

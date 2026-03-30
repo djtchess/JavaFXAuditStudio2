@@ -15,6 +15,7 @@ import ff.ss.javaFxAuditStudio.application.ports.in.ListAiGeneratedArtifactsUseC
 import ff.ss.javaFxAuditStudio.application.ports.out.AiArtifactPersistencePort;
 import ff.ss.javaFxAuditStudio.application.ports.out.AnalysisSessionPort;
 import ff.ss.javaFxAuditStudio.domain.ai.AiArtifactZipExport;
+import ff.ss.javaFxAuditStudio.domain.ai.AiArtifactImplementationInspector;
 import ff.ss.javaFxAuditStudio.domain.ai.AiGeneratedArtifact;
 
 /**
@@ -51,9 +52,9 @@ public class AiArtifactCatalogService implements ListAiGeneratedArtifactsUseCase
 
     @Override
     public AiArtifactZipExport export(final String sessionId) {
-        List<AiGeneratedArtifact> artifacts = listLatest(sessionId);
+        List<AiGeneratedArtifact> artifacts = resolveExportableArtifacts(sessionId);
         if (artifacts.isEmpty()) {
-            throw new IllegalStateException("Aucun artefact IA persiste pour la session : " + sessionId);
+            throw new IllegalStateException("Aucun artefact IA exportable pour la session : " + sessionId);
         }
 
         byte[] zipContent = buildZip(artifacts);
@@ -63,6 +64,13 @@ public class AiArtifactCatalogService implements ListAiGeneratedArtifactsUseCase
     private void ensureSessionExists(final String sessionId) {
         sessionPort.findById(sessionId)
                 .orElseThrow(() -> new IllegalArgumentException("Session introuvable : " + sessionId));
+    }
+
+    private List<AiGeneratedArtifact> resolveExportableArtifacts(final String sessionId) {
+        List<AiGeneratedArtifact> artifacts = listLatest(sessionId);
+        return artifacts.stream()
+                .filter(artifact -> !AiArtifactImplementationInspector.isIncomplete(artifact.content()))
+                .toList();
     }
 
     private byte[] buildZip(final List<AiGeneratedArtifact> artifacts) {

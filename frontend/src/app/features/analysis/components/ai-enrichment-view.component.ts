@@ -48,7 +48,7 @@ import { AiGenerationDiffComponent } from './ai-generation-diff.component';
       gap: 0.5rem;
       font-size: 0.9rem;
       margin-bottom: 1rem;
-      color: #374151;
+      color: var(--surface-ink);
     }
 
     .status-dot {
@@ -65,7 +65,7 @@ import { AiGenerationDiffComponent } from './ai-generation-diff.component';
     }
 
     .credential-missing {
-      color: #b45309;
+      color: var(--surface-warning);
       font-size: 0.82rem;
     }
 
@@ -97,9 +97,9 @@ import { AiGenerationDiffComponent } from './ai-generation-diff.component';
     .error-block {
       padding: 0.7rem 1rem;
       border-radius: 10px;
-      background: rgba(217, 95, 51, 0.06);
-      border: 1px solid rgba(217, 95, 51, 0.25);
-      color: #b94517;
+      background: var(--surface-danger-soft);
+      border: 1px solid rgba(255, 118, 92, 0.24);
+      color: var(--surface-danger);
       font-size: 0.85rem;
       margin-bottom: 1rem;
     }
@@ -107,32 +107,32 @@ import { AiGenerationDiffComponent } from './ai-generation-diff.component';
     .result-block {
       padding: 0.7rem 1rem;
       border-radius: 10px;
-      background: rgba(16, 185, 129, 0.06);
-      border: 1px solid rgba(16, 185, 129, 0.25);
+      background: var(--surface-success-soft);
+      border: 1px solid rgba(76, 225, 198, 0.22);
       margin-bottom: 1.25rem;
     }
 
     .result-block.degraded {
-      background: rgba(245, 158, 11, 0.06);
-      border-color: rgba(245, 158, 11, 0.3);
+      background: var(--surface-warning-soft);
+      border-color: rgba(255, 154, 77, 0.3);
     }
 
     .nominal-msg {
       margin: 0;
       font-size: 0.85rem;
-      color: #065f46;
+      color: var(--surface-success);
     }
 
     .degraded-msg {
       margin: 0;
       font-size: 0.85rem;
-      color: #92400e;
+      color: var(--surface-warning);
     }
 
     .confirm-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.45);
+      background: rgba(3, 8, 14, 0.62);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -141,11 +141,9 @@ import { AiGenerationDiffComponent } from './ai-generation-diff.component';
     }
 
     .confirm-card {
-      background: white;
       border-radius: 20px;
       padding: 2rem;
       width: min(480px, 100%);
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
       display: flex;
       flex-direction: column;
       gap: 1rem;
@@ -155,13 +153,13 @@ import { AiGenerationDiffComponent } from './ai-generation-diff.component';
       margin: 0;
       font-size: 1.05rem;
       font-weight: 700;
-      color: #122338;
+      color: var(--surface-ink-strong);
     }
 
     .confirm-card p {
       margin: 0;
       font-size: 0.88rem;
-      color: #374151;
+      color: var(--surface-ink-soft);
     }
 
     .confirm-actions {
@@ -173,18 +171,11 @@ import { AiGenerationDiffComponent } from './ai-generation-diff.component';
 
     .btn-cancel {
       padding: 0.5rem 1.2rem;
-      border: 1px solid #d1d5db;
       border-radius: 999px;
-      background: white;
-      color: #374151;
       font-weight: 600;
       font-size: 0.88rem;
       cursor: pointer;
       transition: background 0.15s;
-    }
-
-    .btn-cancel:hover {
-      background: #f9fafb;
     }
 
     .btn-confirm {
@@ -213,17 +204,17 @@ import { AiGenerationDiffComponent } from './ai-generation-diff.component';
     .audit-table th {
       text-align: left;
       padding: 0.5rem 0.75rem;
-      background: rgba(18, 35, 56, 0.04);
-      border-bottom: 2px solid rgba(18, 35, 56, 0.1);
+      background: var(--surface-chip);
+      border-bottom: 2px solid var(--surface-line);
       font-weight: 600;
-      color: #374151;
+      color: var(--surface-ink);
       white-space: nowrap;
     }
 
     .audit-table td {
       padding: 0.5rem 0.75rem;
-      border-bottom: 1px solid rgba(18, 35, 56, 0.06);
-      color: #4b5563;
+      border-bottom: 1px solid var(--surface-line);
+      color: var(--surface-ink);
       vertical-align: middle;
     }
 
@@ -232,15 +223,15 @@ import { AiGenerationDiffComponent } from './ai-generation-diff.component';
     }
 
     .degraded-row td {
-      background: rgba(239, 68, 68, 0.04);
+      background: var(--surface-danger-soft);
     }
 
     .badge-nominal {
       display: inline-block;
       padding: 0.2rem 0.6rem;
       border-radius: 999px;
-      background: rgba(16, 185, 129, 0.12);
-      color: #065f46;
+      background: var(--surface-success-soft);
+      color: var(--surface-success);
       font-weight: 600;
       font-size: 0.78rem;
     }
@@ -249,8 +240,8 @@ import { AiGenerationDiffComponent } from './ai-generation-diff.component';
       display: inline-block;
       padding: 0.2rem 0.6rem;
       border-radius: 999px;
-      background: rgba(245, 158, 11, 0.12);
-      color: #92400e;
+      background: var(--surface-warning-soft);
+      color: var(--surface-warning);
       font-weight: 600;
       font-size: 0.78rem;
     }
@@ -262,13 +253,13 @@ import { AiGenerationDiffComponent } from './ai-generation-diff.component';
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      color: #6b7280;
+      color: var(--surface-ink-soft);
     }
 
     .no-audit {
       margin: 0.5rem 0 0;
       font-size: 0.85rem;
-      color: #9ca3af;
+      color: var(--surface-ink-soft);
       font-style: italic;
     }
 
@@ -280,8 +271,8 @@ import { AiGenerationDiffComponent } from './ai-generation-diff.component';
     }
 
     .suggestion-item {
-      background: white;
-      border: 1px solid rgba(16, 185, 129, 0.2);
+      background: var(--surface-raised);
+      border: 1px solid var(--surface-line);
       border-radius: 8px;
       padding: 0.6rem 0.85rem;
     }
@@ -289,21 +280,21 @@ import { AiGenerationDiffComponent } from './ai-generation-diff.component';
     .suggestion-handler {
       font-weight: 700;
       font-size: 0.82rem;
-      color: #065f46;
+      color: var(--surface-ink-strong);
       font-family: monospace;
       margin-bottom: 0.3rem;
     }
 
     .suggestion-text {
       font-size: 0.84rem;
-      color: #374151;
+      color: var(--surface-ink);
       white-space: pre-wrap;
       word-break: break-word;
     }
 
     .no-suggestions {
       font-size: 0.83rem;
-      color: #9ca3af;
+      color: var(--surface-ink-soft);
       font-style: italic;
       margin: 0.5rem 0 0;
     }
@@ -312,7 +303,7 @@ import { AiGenerationDiffComponent } from './ai-generation-diff.component';
       margin: 1.25rem 0 0.5rem;
       font-size: 0.9rem;
       font-weight: 700;
-      color: #122338;
+      color: var(--surface-ink-strong);
       letter-spacing: 0.03em;
     }
 
@@ -338,13 +329,13 @@ import { AiGenerationDiffComponent } from './ai-generation-diff.component';
 
     .review-header-text {
       font-size: 0.88rem;
-      color: #374151;
+      color: var(--surface-ink);
     }
 
     .review-header-text strong {
       display: block;
       font-size: 0.95rem;
-      color: #122338;
+      color: var(--surface-ink-strong);
       margin-bottom: 0.2rem;
     }
 
@@ -353,13 +344,11 @@ import { AiGenerationDiffComponent } from './ai-generation-diff.component';
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.06em;
-      color: #6b7280;
+      color: var(--surface-ink-soft);
       margin: 1rem 0 0.4rem;
     }
 
     .artifact-review-item {
-      background: #f9fafb;
-      border: 1px solid #e5e7eb;
       border-radius: 8px;
       padding: 0.6rem 0.85rem;
       margin-bottom: 0.5rem;
@@ -369,8 +358,8 @@ import { AiGenerationDiffComponent } from './ai-generation-diff.component';
       display: inline-block;
       padding: 0.15rem 0.55rem;
       border-radius: 999px;
-      background: rgba(18, 35, 56, 0.08);
-      color: #122338;
+      background: var(--surface-chip);
+      color: var(--surface-ink-strong);
       font-weight: 700;
       font-size: 0.75rem;
       font-family: monospace;
@@ -379,7 +368,7 @@ import { AiGenerationDiffComponent } from './ai-generation-diff.component';
 
     .artifact-review-text {
       font-size: 0.83rem;
-      color: #374151;
+      color: var(--surface-ink);
       white-space: pre-wrap;
       word-break: break-word;
     }
@@ -396,15 +385,15 @@ import { AiGenerationDiffComponent } from './ai-generation-diff.component';
     .uncertain-rule-id {
       font-weight: 700;
       font-family: monospace;
-      color: #92400e;
+      color: var(--surface-warning);
       margin-right: 0.5rem;
     }
 
     .global-suggestion-item {
       padding: 0.4rem 0;
       font-size: 0.84rem;
-      color: #374151;
-      border-bottom: 1px dashed #e5e7eb;
+      color: var(--surface-ink);
+      border-bottom: 1px dashed var(--surface-line);
     }
 
     .global-suggestion-item:last-child {
@@ -416,19 +405,12 @@ import { AiGenerationDiffComponent } from './ai-generation-diff.component';
       align-items: center;
       gap: 0.4rem;
       padding: 0.5rem 1.2rem;
-      border: 1px solid #122338;
       border-radius: 999px;
-      background: white;
-      color: #122338;
       font-weight: 700;
       font-size: 0.85rem;
       cursor: pointer;
       transition: background 0.15s;
       margin-bottom: 1.25rem;
-    }
-
-    .review-btn:hover:not(:disabled) {
-      background: rgba(18, 35, 56, 0.06);
     }
 
     .review-btn:disabled {
@@ -438,7 +420,7 @@ import { AiGenerationDiffComponent } from './ai-generation-diff.component';
 
     .section-divider {
       border: none;
-      border-top: 1px solid #e5e7eb;
+      border-top: 1px solid var(--surface-line);
       margin: 1.5rem 0;
     }
 
@@ -447,19 +429,12 @@ import { AiGenerationDiffComponent } from './ai-generation-diff.component';
       align-items: center;
       gap: 0.4rem;
       padding: 0.5rem 1.2rem;
-      border: 1px solid #4f46e5;
       border-radius: 999px;
-      background: white;
-      color: #4f46e5;
       font-weight: 700;
       font-size: 0.85rem;
       cursor: pointer;
       transition: background 0.15s;
       margin-bottom: 1.25rem;
-    }
-
-    .generate-btn:hover:not(:disabled) {
-      background: rgba(79, 70, 229, 0.06);
     }
 
     .generate-btn:disabled {
@@ -473,8 +448,8 @@ import { AiGenerationDiffComponent } from './ai-generation-diff.component';
       gap: 0.45rem;
       padding: 0.8rem 0.95rem;
       border-radius: 12px;
-      border: 1px solid rgba(79, 70, 229, 0.16);
-      background: rgba(79, 70, 229, 0.04);
+      border: 1px solid rgba(61, 134, 198, 0.18);
+      background: rgba(61, 134, 198, 0.08);
       margin-bottom: 1rem;
     }
 
@@ -485,27 +460,27 @@ import { AiGenerationDiffComponent } from './ai-generation-diff.component';
       gap: 0.75rem;
       flex-wrap: wrap;
       font-size: 0.82rem;
-      color: #3730a3;
+      color: #3d86c6;
     }
 
     .progress-track {
       height: 8px;
       border-radius: 999px;
-      background: rgba(79, 70, 229, 0.1);
+      background: rgba(61, 134, 198, 0.14);
       overflow: hidden;
     }
 
     .progress-fill {
       height: 100%;
       border-radius: 999px;
-      background: linear-gradient(90deg, #4f46e5, #0ea5e9);
+      background: linear-gradient(90deg, var(--cyan), var(--accent));
       transition: width 0.25s ease;
     }
 
     .generation-log {
       margin: 0;
       padding-left: 1rem;
-      color: #4338ca;
+      color: #3d86c6;
       font-size: 0.8rem;
     }
 
@@ -516,8 +491,6 @@ import { AiGenerationDiffComponent } from './ai-generation-diff.component';
     .generated-class-item.streaming {
       border-radius: 12px;
       padding: 0.75rem;
-      background: rgba(255, 255, 255, 0.72);
-      border: 1px solid rgba(18, 35, 56, 0.08);
     }
 
     .generated-class-header {
@@ -537,17 +510,10 @@ import { AiGenerationDiffComponent } from './ai-generation-diff.component';
 
     .generated-class-btn {
       padding: 0.22rem 0.65rem;
-      border: 1px solid rgba(79, 70, 229, 0.18);
       border-radius: 999px;
-      background: white;
-      color: #4338ca;
       font-size: 0.75rem;
       cursor: pointer;
       transition: background 0.15s, color 0.15s;
-    }
-
-    .generated-class-btn:hover {
-      background: rgba(79, 70, 229, 0.08);
     }
 
     .generated-class-code {
@@ -568,19 +534,17 @@ import { AiGenerationDiffComponent } from './ai-generation-diff.component';
     .generated-feedback {
       margin-top: 0.35rem;
       font-size: 0.75rem;
-      color: #0f766e;
+      color: var(--surface-success);
     }
 
     .generated-feedback.error {
-      color: #b91c1c;
+      color: var(--surface-danger);
     }
 
     .refine-panel {
       margin-top: 0.55rem;
       padding: 0.8rem;
       border-radius: 12px;
-      border: 1px solid rgba(18, 35, 56, 0.1);
-      background: rgba(255, 255, 255, 0.82);
       display: grid;
       gap: 0.55rem;
     }
@@ -589,17 +553,17 @@ import { AiGenerationDiffComponent } from './ai-generation-diff.component';
       width: 100%;
       min-height: 84px;
       resize: vertical;
-      border: 1px solid rgba(18, 35, 56, 0.14);
+      border: 1px solid var(--surface-line);
       border-radius: 10px;
       padding: 0.7rem 0.8rem;
       font: inherit;
       font-size: 0.82rem;
-      background: white;
-      color: #1f2937;
+      background: var(--surface-input);
+      color: var(--surface-ink);
     }
 
     .refine-panel textarea:focus {
-      outline: 2px solid rgba(79, 70, 229, 0.24);
+      outline: 2px solid rgba(101, 223, 255, 0.24);
       outline-offset: 1px;
     }
 
@@ -612,10 +576,7 @@ import { AiGenerationDiffComponent } from './ai-generation-diff.component';
 
     .refine-btn {
       padding: 0.38rem 0.9rem;
-      border: 1px solid #4f46e5;
       border-radius: 999px;
-      background: white;
-      color: #4338ca;
       font-size: 0.8rem;
       font-weight: 700;
       cursor: pointer;
@@ -637,9 +598,6 @@ import { AiGenerationDiffComponent } from './ai-generation-diff.component';
       gap: 0.35rem;
       padding: 0.45rem 1rem;
       border-radius: 999px;
-      border: 1px solid rgba(18, 35, 56, 0.12);
-      background: white;
-      color: #374151;
       font-weight: 700;
       font-size: 0.82rem;
       cursor: pointer;
@@ -677,17 +635,9 @@ import { AiGenerationDiffComponent } from './ai-generation-diff.component';
       gap: 0.35rem;
       padding: 0.42rem 0.95rem;
       border-radius: 999px;
-      border: 1px solid rgba(18, 35, 56, 0.14);
-      background: white;
-      color: #374151;
       font-size: 0.8rem;
       font-weight: 700;
       cursor: pointer;
-    }
-
-    .persisted-btn.secondary {
-      color: #4338ca;
-      border-color: rgba(79, 70, 229, 0.18);
     }
 
     .persisted-btn.tiny {
@@ -701,11 +651,8 @@ import { AiGenerationDiffComponent } from './ai-generation-diff.component';
     }
 
     .persisted-card {
-      border: 1px solid rgba(18, 35, 56, 0.1);
       border-radius: 16px;
-      background: rgba(255, 255, 255, 0.78);
       padding: 0.9rem;
-      box-shadow: var(--shadow);
     }
 
     .persisted-card-header {
@@ -723,9 +670,36 @@ import { AiGenerationDiffComponent } from './ai-generation-diff.component';
     }
 
     .persisted-meta {
-      color: var(--ink-soft);
+      color: var(--surface-ink-soft);
       font-size: 0.78rem;
       margin-top: 0.15rem;
+    }
+
+    .persisted-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.2rem 0.55rem;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .persisted-status-badge.ready {
+      background: var(--surface-success-soft);
+      color: var(--surface-success);
+    }
+
+    .persisted-status-badge.incomplete {
+      background: var(--surface-warning-soft);
+      color: var(--surface-warning);
+    }
+
+    .persisted-warning {
+      margin: 0.65rem 0 0;
+      font-size: 0.8rem;
+      color: var(--surface-warning);
     }
 
     .persisted-code {
@@ -744,17 +718,17 @@ import { AiGenerationDiffComponent } from './ai-generation-diff.component';
       gap: 0.6rem;
       flex-wrap: wrap;
       font-size: 0.76rem;
-      color: #374151;
+      color: var(--surface-ink);
       padding: 0.45rem 0.55rem;
       border-radius: 10px;
-      background: rgba(18, 35, 56, 0.03);
+      background: var(--surface-chip);
     }
 
     .persisted-version-badge {
       padding: 0.15rem 0.45rem;
       border-radius: 999px;
       background: rgba(79, 70, 229, 0.1);
-      color: #4338ca;
+      color: #3d86c6;
       font-weight: 700;
     }
 
@@ -769,7 +743,7 @@ import { AiGenerationDiffComponent } from './ai-generation-diff.component';
       gap: 0.15rem;
       padding: 0.45rem 0.6rem;
       border-radius: 10px;
-      background: rgba(18, 35, 56, 0.03);
+      background: var(--surface-chip);
     }
 
     .persisted-finding-key {
@@ -781,7 +755,7 @@ import { AiGenerationDiffComponent } from './ai-generation-diff.component';
     .persisted-finding-value,
     .persisted-global-findings {
       font-size: 0.8rem;
-      color: #374151;
+      color: var(--surface-ink);
     }
 
     .persisted-global-findings {
@@ -790,7 +764,7 @@ import { AiGenerationDiffComponent } from './ai-generation-diff.component';
     }
 
     .empty-persisted-state {
-      color: var(--ink-soft);
+      color: var(--surface-ink-soft);
       font-size: 0.78rem;
       font-style: italic;
     }
@@ -800,19 +774,12 @@ import { AiGenerationDiffComponent } from './ai-generation-diff.component';
       align-items: center;
       gap: 0.4rem;
       padding: 0.5rem 1.2rem;
-      border: 1px solid #6b7280;
       border-radius: 999px;
-      background: white;
-      color: #374151;
       font-weight: 700;
       font-size: 0.85rem;
       cursor: pointer;
       transition: background 0.15s;
       margin-bottom: 1.25rem;
-    }
-
-    .preview-btn:hover:not(:disabled) {
-      background: #f9fafb;
     }
 
     .preview-btn:disabled {
@@ -830,18 +797,18 @@ import { AiGenerationDiffComponent } from './ai-generation-diff.component';
     }
 
     .sanitized-badge.yes {
-      background: rgba(16, 185, 129, 0.12);
-      color: #065f46;
+      background: var(--surface-success-soft);
+      color: var(--surface-success);
     }
 
     .sanitized-badge.no {
-      background: rgba(245, 158, 11, 0.12);
-      color: #92400e;
+      background: var(--surface-warning-soft);
+      color: var(--surface-warning);
     }
 
     .source-meta {
       font-size: 0.82rem;
-      color: #6b7280;
+      color: var(--surface-ink-soft);
       margin: 0.4rem 0 0.75rem;
     }
 
@@ -1185,6 +1152,15 @@ import { AiGenerationDiffComponent } from './ai-generation-diff.component';
       <div class="error-block" role="alert">{{ persistedCoherenceError() }}</div>
     }
 
+    @if (hasIncompletePersistedArtifacts()) {
+      <div class="result-block degraded">
+        <p class="degraded-msg">
+          {{ incompletePersistedArtifactCount() }} artefact(s) persiste(s) contiennent encore des placeholders d'implementation.
+          Ces versions ne doivent pas etre considerees comme une migration finalisee.
+        </p>
+      </div>
+    }
+
     @if (hasPersistedArtifacts()) {
       <div class="persisted-list">
         @for (artifact of persistedArtifactEntries(); track artifact.artifactType + '-' + artifact.versionNumber) {
@@ -1196,11 +1172,21 @@ import { AiGenerationDiffComponent } from './ai-generation-diff.component';
                   v{{ artifact.versionNumber }} - {{ artifact.provider }} - {{ artifact.originTask }} - {{ artifact.createdAt | date:'dd/MM/yyyy HH:mm:ss' }}
                 </div>
               </div>
+              <span
+                class="persisted-status-badge"
+                [class.ready]="artifact.implementationStatus === 'READY'"
+                [class.incomplete]="artifact.implementationStatus === 'INCOMPLETE'"
+              >
+                {{ artifact.implementationStatus === 'INCOMPLETE' ? 'Incomplet' : 'Pret' }}
+              </span>
               <button class="persisted-btn tiny" (click)="togglePersistedArtifactVersions(artifact.artifactType)">
                 @if (activePersistedArtifactType() === artifact.artifactType) { Masquer versions }
                 @else { Voir versions }
               </button>
             </div>
+            @if (artifact.implementationWarning) {
+              <p class="persisted-warning">{{ artifact.implementationWarning }}</p>
+            }
             <code class="generated-class-code persisted-code">{{ artifact.content }}</code>
 
             @if (activePersistedArtifactType() === artifact.artifactType) {
@@ -1213,6 +1199,13 @@ import { AiGenerationDiffComponent } from './ai-generation-diff.component';
                   @for (version of getPersistedArtifactVersionsFor(artifact.artifactType); track version.versionNumber) {
                     <div class="persisted-version-row">
                       <span class="persisted-version-badge">v{{ version.versionNumber }}</span>
+                      <span
+                        class="persisted-status-badge"
+                        [class.ready]="version.implementationStatus === 'READY'"
+                        [class.incomplete]="version.implementationStatus === 'INCOMPLETE'"
+                      >
+                        {{ version.implementationStatus === 'INCOMPLETE' ? 'Incomplet' : 'Pret' }}
+                      </span>
                       <span>{{ version.requestId }}</span>
                       <span>{{ version.provider }}</span>
                       <span>{{ version.createdAt | date:'dd/MM/yyyy HH:mm:ss' }}</span>
@@ -1381,6 +1374,14 @@ export class AiEnrichmentViewComponent implements OnInit {
     this.persistedArtifacts()?.artifacts ?? []
   );
   protected readonly hasPersistedArtifacts = computed(() => this.persistedArtifactEntries().length > 0);
+  protected readonly incompletePersistedArtifactCount = computed(() =>
+    this.persistedArtifactEntries()
+      .filter(artifact => artifact.implementationStatus === 'INCOMPLETE')
+      .length
+  );
+  protected readonly hasIncompletePersistedArtifacts = computed(() =>
+    this.incompletePersistedArtifactCount() > 0
+  );
   protected readonly persistedCoherenceFindings = computed(() =>
     Object.entries(this.persistedCoherence()?.artifactFindings ?? {}).map(([key, value]) => ({ key, value }))
   );

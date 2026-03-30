@@ -67,7 +67,25 @@ class AiGeneratedArtifactControllerIT {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.sessionId").value("sess-1"))
                 .andExpect(jsonPath("$.artifacts[0].artifactType").value("USE_CASE"))
-                .andExpect(jsonPath("$.artifacts[0].versionNumber").value(2));
+                .andExpect(jsonPath("$.artifacts[0].versionNumber").value(2))
+                .andExpect(jsonPath("$.artifacts[0].implementationStatus").value("READY"));
+    }
+
+    @Test
+    void should_expose_incomplete_status_for_artifact_with_todo_placeholder() throws Exception {
+        when(listAiGeneratedArtifactsUseCase.listLatest("sess-1"))
+                .thenReturn(List.of(aiArtifact(
+                        "POLICY",
+                        "PatientPolicy",
+                        3,
+                        "package ff.example.policy;\npublic class PatientPolicy {\n    // TODO: implementer\n    boolean isReady() {\n        return false;\n    }\n}")));
+
+        mockMvc.perform(get("/api/v1/analyses/sess-1/artifacts/ai"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.artifacts[0].artifactType").value("POLICY"))
+                .andExpect(jsonPath("$.artifacts[0].implementationStatus").value("INCOMPLETE"))
+                .andExpect(jsonPath("$.artifacts[0].implementationWarning")
+                        .value("Artefact IA incomplet detecte : placeholder d'implementation residuel."));
     }
 
     @Test
@@ -115,12 +133,24 @@ class AiGeneratedArtifactControllerIT {
             final String artifactType,
             final String className,
             final int versionNumber) {
+        return aiArtifact(
+                artifactType,
+                className,
+                versionNumber,
+                "package ff.example;\npublic class " + className + " {}");
+    }
+
+    private static AiGeneratedArtifact aiArtifact(
+            final String artifactType,
+            final String className,
+            final int versionNumber,
+            final String content) {
         return new AiGeneratedArtifact(
                 "version-" + versionNumber,
                 "sess-1",
                 artifactType,
                 className,
-                "package ff.example;\npublic class " + className + " {}",
+                content,
                 versionNumber,
                 null,
                 "req-" + versionNumber,

@@ -43,6 +43,24 @@ class LlmResponseParserTest {
     }
 
     @Test
+    void should_parse_json_with_comments_from_llm_output() {
+        String response = """
+                {
+                  // commentaire du modele
+                  "suggestions": {
+                    "USE_CASE": "package ff.example.usecase;\\npublic interface PatientUseCase {}"
+                  }
+                }
+                """;
+
+        Map<String, String> result = parser.parse(response, "ctrl", "req-test");
+
+        assertThat(result).containsEntry(
+                "USE_CASE",
+                "package ff.example.usecase;\npublic interface PatientUseCase {}");
+    }
+
+    @Test
     void should_fallback_to_raw_text_when_no_json() {
         String rawText = "SavePatientUseCase";
 

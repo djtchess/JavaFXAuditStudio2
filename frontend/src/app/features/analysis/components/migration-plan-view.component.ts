@@ -59,7 +59,7 @@ import { MigrationPlanResponse } from '../../../core/models/analysis.model';
       color: var(--surface-ink-strong);
       font-weight: 700;
       font-size: 0.85rem;
-      border: 2px solid rgba(255, 255, 255, 0.7);
+      border: 2px solid rgba(157, 190, 218, 0.28);
     }
 
     .lot-title {
@@ -97,7 +97,7 @@ import { MigrationPlanResponse } from '../../../core/models/analysis.model';
 
     .empty-msg {
       padding: 0.6rem 0;
-      color: var(--ink-soft);
+      color: var(--surface-ink-soft);
       font-size: 0.85rem;
       font-style: italic;
     }

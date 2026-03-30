@@ -41,7 +41,7 @@ import { AnalysisApiService } from '../../../core/services/analysis-api.service'
       border: 1px solid var(--surface-line);
       border-radius: 10px;
       font-size: 0.82rem;
-      background: rgba(255, 255, 255, 0.72);
+      background: var(--surface-input);
       color: var(--surface-ink);
       font-family: monospace;
     }
@@ -101,7 +101,7 @@ import { AnalysisApiService } from '../../../core/services/analysis-api.service'
       padding: 0.35rem 0.85rem;
       border: 1px solid var(--surface-line);
       border-radius: 999px;
-      background: rgba(255, 255, 255, 0.5);
+      background: var(--surface-chip);
       color: var(--surface-ink-soft);
       font-weight: 600;
       font-size: 0.82rem;
@@ -110,14 +110,14 @@ import { AnalysisApiService } from '../../../core/services/analysis-api.service'
     }
 
     .tab-btn:hover {
-      background: var(--surface-chip);
+      background: var(--surface-chip-strong);
       color: var(--surface-ink-strong);
     }
 
     .tab-btn.active {
-      background: rgba(16, 38, 56, 0.1);
+      background: var(--surface-chip-strong);
       color: var(--surface-ink-strong);
-      border-color: rgba(42, 82, 116, 0.18);
+      border-color: rgba(101, 223, 255, 0.22);
     }
 
     .artifacts-grid {
@@ -128,7 +128,7 @@ import { AnalysisApiService } from '../../../core/services/analysis-api.service'
     .artifact-card {
       border-radius: 14px;
       border: 1px solid var(--surface-line);
-      background: rgba(255, 255, 255, 0.48);
+      background: var(--surface-raised);
       overflow: hidden;
     }
 
@@ -195,7 +195,7 @@ import { AnalysisApiService } from '../../../core/services/analysis-api.service'
       padding: 0.22rem 0.65rem;
       border: 1px solid var(--surface-line);
       border-radius: 999px;
-      background: rgba(255, 255, 255, 0.7);
+      background: var(--surface-chip);
       color: var(--surface-ink-soft);
       font-size: 0.75rem;
       cursor: pointer;
@@ -203,7 +203,7 @@ import { AnalysisApiService } from '../../../core/services/analysis-api.service'
     }
 
     .artifact-action-btn:hover {
-      background: var(--surface-chip);
+      background: var(--surface-chip-strong);
       color: var(--surface-ink-strong);
     }
 

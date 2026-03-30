@@ -254,8 +254,9 @@ function emptyStep<T>(): StepState<T> {
       border: 1px solid var(--surface-line-strong);
       border-radius: 26px;
       background:
-        radial-gradient(circle at top right, rgba(101, 223, 255, 0.06), transparent 34%),
-        linear-gradient(155deg, rgba(252, 248, 239, 0.98), rgba(237, 230, 218, 0.96));
+        radial-gradient(circle at top right, rgba(101, 223, 255, 0.12), transparent 34%),
+        radial-gradient(circle at bottom left, rgba(255, 154, 77, 0.1), transparent 34%),
+        linear-gradient(160deg, rgba(10, 22, 34, 0.96), rgba(15, 31, 46, 0.92));
       color: var(--surface-ink);
       box-shadow: var(--shadow);
       overflow: hidden;
@@ -305,9 +306,9 @@ function emptyStep<T>(): StepState<T> {
       justify-content: center;
       min-height: 2.7rem;
       padding: 0.55rem 1rem;
-      border: 1px solid rgba(42, 82, 116, 0.16);
+      border: 1px solid var(--surface-line);
       border-radius: 999px;
-      background: rgba(16, 38, 56, 0.08);
+      background: var(--surface-chip);
       color: var(--surface-ink-strong);
       font-weight: 700;
       font-size: 0.76rem;
@@ -320,7 +321,7 @@ function emptyStep<T>(): StepState<T> {
     .run-btn:hover:not(:disabled) {
       transform: translateY(-1px);
       border-color: rgba(101, 223, 255, 0.32);
-      background: rgba(101, 223, 255, 0.12);
+      background: var(--surface-chip-strong);
     }
 
     .run-btn:disabled {
@@ -340,7 +341,7 @@ function emptyStep<T>(): StepState<T> {
       border-radius: 16px;
       background: rgba(255, 154, 77, 0.08);
       border: 1px solid rgba(255, 154, 77, 0.26);
-      color: #8a4519;
+      color: var(--surface-warning);
       font-size: 0.85rem;
       margin-bottom: 1rem;
     }
@@ -355,7 +356,7 @@ function emptyStep<T>(): StepState<T> {
       border-radius: 16px;
       background: rgba(76, 225, 198, 0.08);
       border: 1px solid rgba(76, 225, 198, 0.24);
-      color: var(--surface-ink);
+      color: var(--surface-success);
       font-size: 0.9rem;
     }
 
@@ -364,7 +365,7 @@ function emptyStep<T>(): StepState<T> {
       border-radius: 16px;
       background: rgba(255, 118, 92, 0.08);
       border: 1px solid rgba(255, 118, 92, 0.25);
-      color: #9e3213;
+      color: var(--surface-danger);
       font-size: 0.9rem;
     }
 

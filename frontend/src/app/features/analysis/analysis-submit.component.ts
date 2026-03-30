@@ -51,8 +51,9 @@ import { SubmitAnalysisRequest, AnalysisSessionResponse } from '../../core/model
     .form-panel {
       padding: 1.7rem;
       background:
-        radial-gradient(circle at top right, rgba(101, 223, 255, 0.08), transparent 34%),
-        linear-gradient(155deg, rgba(252, 248, 239, 0.98), rgba(238, 231, 219, 0.96));
+        radial-gradient(circle at top right, rgba(101, 223, 255, 0.12), transparent 34%),
+        radial-gradient(circle at bottom left, rgba(255, 154, 77, 0.12), transparent 34%),
+        linear-gradient(160deg, rgba(10, 22, 34, 0.96), rgba(15, 30, 45, 0.92));
       color: var(--surface-ink);
     }
 
@@ -194,17 +195,17 @@ import { SubmitAnalysisRequest, AnalysisSessionResponse } from '../../core/model
       border-radius: 18px;
       font-family: inherit;
       font-size: 0.97rem;
-      background: rgba(255, 255, 255, 0.72);
+      background: var(--surface-input);
       color: var(--surface-ink-strong);
       outline: none;
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.32);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
     }
 
     input:focus, textarea:focus {
       border-color: rgba(101, 223, 255, 0.42);
       box-shadow:
-        0 0 0 4px rgba(101, 223, 255, 0.12),
-        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+        0 0 0 4px rgba(101, 223, 255, 0.14),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
     }
 
     textarea {
@@ -279,7 +280,7 @@ import { SubmitAnalysisRequest, AnalysisSessionResponse } from '../../core/model
       padding: 1rem 1.1rem;
       border-radius: 20px;
       border: 1px solid var(--surface-line);
-      background: rgba(255, 255, 255, 0.76);
+      background: var(--surface-raised-strong);
     }
 
     .status-panel.error {

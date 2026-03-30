@@ -100,6 +100,27 @@ const MOCK_PERSISTED_ARTIFACTS: AiGeneratedArtifactCollectionResponse = {
       provider: 'claude-code',
       originTask: 'SPRING_BOOT_GENERATION',
       createdAt: '2026-03-26T11:00:00Z',
+      implementationStatus: 'READY',
+      implementationWarning: null,
+    },
+  ],
+};
+
+const MOCK_INCOMPLETE_PERSISTED_ARTIFACTS: AiGeneratedArtifactCollectionResponse = {
+  sessionId: 'session-abc',
+  artifacts: [
+    {
+      artifactType: 'POLICY',
+      className: 'MyControllerPolicy',
+      content: 'class MyControllerPolicy {\n  // TODO: implementer\n  boolean isReady() { return false; }\n}',
+      versionNumber: 3,
+      parentVersionId: 'artifact-2',
+      requestId: 'req-todo',
+      provider: 'claude-code',
+      originTask: 'SPRING_BOOT_GENERATION',
+      createdAt: '2026-03-26T12:00:00Z',
+      implementationStatus: 'INCOMPLETE',
+      implementationWarning: 'Artefact IA incomplet detecte : placeholder d\'implementation residuel.',
     },
   ],
 };
@@ -407,6 +428,27 @@ describe('AiEnrichmentViewComponent', () => {
     expect(apiSpy.verifyPersistedArtifactCoherence).toHaveBeenCalledWith('session-abc');
     expect(fixture.nativeElement.textContent).toContain('Coherence verifiee');
     expect(fixture.nativeElement.textContent).toContain('Aucun conflit detecte.');
+  });
+
+  it('should highlight incomplete persisted artifacts', async () => {
+    const { fixture, apiSpy } = await createFixture(MOCK_STATUS_ENABLED, [MOCK_AUDIT_ENTRY]);
+    apiSpy.getPersistedArtifacts.mockReturnValue(of(MOCK_INCOMPLETE_PERSISTED_ARTIFACTS));
+    apiSpy.getPersistedArtifactVersions.mockReturnValue(of(MOCK_INCOMPLETE_PERSISTED_ARTIFACTS));
+
+    const refreshBtn = fixture.debugElement.query(By.css('.persisted-btn'));
+    refreshBtn.nativeElement.click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('contiennent encore des placeholders d\'implementation');
+    expect(fixture.nativeElement.textContent).toContain('Incomplet');
+    expect(fixture.nativeElement.textContent).toContain('placeholder d\'implementation residuel');
+
+    const versionsBtn = fixture.debugElement.query(By.css('.persisted-btn.tiny'));
+    versionsBtn.nativeElement.click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('req-todo');
+    expect(fixture.nativeElement.textContent).toContain('Incomplet');
   });
 
   it('should export the generated ZIP as a blob when the button is clicked', async () => {

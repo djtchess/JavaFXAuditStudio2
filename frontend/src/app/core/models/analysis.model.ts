@@ -310,6 +310,8 @@ export interface AiGeneratedArtifactResponse {
   provider: string;
   originTask: string;
   createdAt: string;
+  implementationStatus: 'READY' | 'INCOMPLETE';
+  implementationWarning?: string | null;
 }
 
 export interface AiGeneratedArtifactCollectionResponse {

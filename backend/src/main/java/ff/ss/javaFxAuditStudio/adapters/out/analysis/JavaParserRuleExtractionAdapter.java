@@ -193,7 +193,9 @@ public final class JavaParserRuleExtractionAdapter implements RuleExtractionPort
         boolean isFxml = method.getAnnotationByName("FXML").isPresent();
         String bodyText = method.getBody().map(Object::toString).orElse("");
         ResponsibilityClass rc;
-        if (isGuardMethod(method)) {
+        boolean policyGuard = isGuardMethod(method);
+        boolean uiLikeGuard = policyGuard && containsUiKeywords(bodyText);
+        if (policyGuard && !uiLikeGuard) {
             rc = ResponsibilityClass.BUSINESS;
         } else {
             rc = classifyMethod(isFxml, bodyText, injectedTypes);
@@ -237,7 +239,7 @@ public final class JavaParserRuleExtractionAdapter implements RuleExtractionPort
         if (containsCoordination(bodyText, injectedTypes)) {
             return ResponsibilityClass.APPLICATION;
         }
-        if (isFxml && containsUiKeywords(bodyText)) {
+        if (containsUiKeywords(bodyText)) {
             return ResponsibilityClass.UI;
         }
         if (isFxml) {
@@ -391,7 +393,8 @@ public final class JavaParserRuleExtractionAdapter implements RuleExtractionPort
             final int complexity) {
         // JAS-020 : format special pour les gardes booléennes
         String returnTypeStr = method.getTypeAsString();
-        if ("boolean".equals(returnTypeStr) || "Boolean".equals(returnTypeStr)) {
+        if (rc == ResponsibilityClass.BUSINESS
+                && ("boolean".equals(returnTypeStr) || "Boolean".equals(returnTypeStr))) {
             for (String prefix : patterns.effectivePolicyGuardPrefixes()) {
                 if (methodName.length() > prefix.length()
                         && methodName.startsWith(prefix)

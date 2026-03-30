@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +28,8 @@ import ff.ss.javaFxAuditStudio.domain.cartography.FxmlComponent;
 import ff.ss.javaFxAuditStudio.domain.cartography.HandlerBinding;
 import ff.ss.javaFxAuditStudio.domain.generation.CodeArtifact;
 import ff.ss.javaFxAuditStudio.domain.generation.GenerationResult;
+import ff.ss.javaFxAuditStudio.domain.migration.MigrationPlan;
+import ff.ss.javaFxAuditStudio.domain.migration.PlannedLot;
 import ff.ss.javaFxAuditStudio.domain.rules.BusinessRule;
 import ff.ss.javaFxAuditStudio.domain.rules.ClassificationResult;
 import ff.ss.javaFxAuditStudio.domain.rules.ReclassificationAuditEntry;
@@ -104,6 +108,65 @@ public final class LlmServiceSupport {
                         rule.responsibilityClass().name(),
                         rule.uncertain() ? " WARNING UNCERTAIN" : ""))
                 .collect(Collectors.joining("\n"));
+    }
+
+    /**
+     * Format a migration plan so it can guide downstream generation prompts.
+     */
+    public static String formatMigrationPlan(final MigrationPlan migrationPlan) {
+        if (migrationPlan == null) {
+            return "Aucun plan de migration disponible.";
+        }
+
+        StringJoiner joiner = new StringJoiner("\n");
+        joiner.add("Controller: " + migrationPlan.controllerRef());
+        joiner.add("Compilable: " + migrationPlan.compilable());
+        for (PlannedLot lot : migrationPlan.lots()) {
+            joiner.add("Lot " + lot.lotNumber() + " - " + lot.title() + " : " + lot.objective());
+            if (!lot.extractionCandidates().isEmpty()) {
+                joiner.add("  Cibles: " + String.join(", ", lot.extractionCandidates()));
+            }
+            if (!lot.risks().isEmpty()) {
+                joiner.add("  Risques: " + lot.risks().stream()
+                        .map(risk -> risk.level().name() + " - " + risk.description()
+                                + " / mitigation: " + risk.mitigation())
+                        .collect(Collectors.joining(" | ")));
+            }
+        }
+        return joiner.toString();
+    }
+
+    /**
+     * Build focused source snippets for the classified rules so the LLM can preserve
+     * the original business or UI decision logic instead of emitting placeholders.
+     */
+    public static String formatRuleSourceSnippets(
+            final String source,
+            final ClassificationResult classification) {
+        if (source == null || source.isBlank() || classification == null) {
+            return "Aucun extrait de source disponible.";
+        }
+
+        StringJoiner joiner = new StringJoiner("\n\n");
+        int added = 0;
+        for (BusinessRule rule : allRules(classification)) {
+            if (added >= 8) {
+                break;
+            }
+            String methodName = extractMethodName(rule);
+            String snippet = extractMethodSnippet(source, methodName);
+            if (methodName != null && !methodName.isBlank() && snippet != null && !snippet.isBlank()) {
+                joiner.add("## " + rule.ruleId()
+                        + " / " + methodName
+                        + optionalSuffix(Integer.toString(rule.sourceLine()), " / line ")
+                        + "\n```java\n" + limitSnippet(snippet) + "\n```");
+                added++;
+            }
+        }
+        if (added == 0) {
+            return "Aucun extrait de methode associe aux regles classifiees.";
+        }
+        return joiner.toString();
     }
 
     /**
@@ -328,6 +391,97 @@ public final class LlmServiceSupport {
             summary += "; ... (+" + remaining + " more)";
         }
         return summary;
+    }
+
+    private static String extractMethodName(final BusinessRule rule) {
+        String description = rule.description();
+        if (description.startsWith("Methode handler ")) {
+            return extractUntilColon(description.substring("Methode handler ".length()));
+        }
+        if (description.startsWith("Methode garde ")) {
+            return extractUntilColon(description.substring("Methode garde ".length()));
+        }
+        if (description.startsWith("Methode ")) {
+            String tail = description.substring("Methode ".length());
+            int parenIndex = tail.indexOf('(');
+            if (parenIndex > 0) {
+                return tail.substring(0, parenIndex).trim();
+            }
+        }
+        return null;
+    }
+
+    private static String extractUntilColon(final String value) {
+        int colonIndex = value.indexOf(':');
+        String extracted = (colonIndex >= 0) ? value.substring(0, colonIndex) : value;
+        return extracted.trim();
+    }
+
+    private static String extractMethodSnippet(final String source, final String methodName) {
+        if (methodName == null || methodName.isBlank()) {
+            return "";
+        }
+        Pattern pattern = Pattern.compile(
+                "(?s)(@FXML\\s+)?(?:public|private|protected)\\s+[\\w<>\\[\\], ?]+\\s+"
+                        + Pattern.quote(methodName)
+                        + "\\s*\\([^)]*\\)\\s*\\{");
+        Matcher matcher = pattern.matcher(source);
+        if (!matcher.find()) {
+            return "";
+        }
+        int openBrace = source.indexOf('{', matcher.end() - 1);
+        int closeBrace = matchingBrace(source, openBrace);
+        if (openBrace < 0 || closeBrace <= openBrace) {
+            return "";
+        }
+        return source.substring(matcher.start(), closeBrace + 1).strip();
+    }
+
+    private static int matchingBrace(final String source, final int openBrace) {
+        if (openBrace < 0 || openBrace >= source.length()) {
+            return -1;
+        }
+        int depth = 0;
+        boolean inString = false;
+        boolean escaping = false;
+        char quote = '\0';
+        for (int index = openBrace; index < source.length(); index++) {
+            char current = source.charAt(index);
+            if (inString) {
+                if (escaping) {
+                    escaping = false;
+                    continue;
+                }
+                if (current == '\\') {
+                    escaping = true;
+                } else if (current == quote) {
+                    inString = false;
+                }
+                continue;
+            }
+            if (current == '"' || current == '\'') {
+                inString = true;
+                quote = current;
+                continue;
+            }
+            if (current == '{') {
+                depth++;
+            } else if (current == '}') {
+                depth--;
+                if (depth == 0) {
+                    return index;
+                }
+            }
+        }
+        return -1;
+    }
+
+    private static String limitSnippet(final String snippet) {
+        int maxLength = 1600;
+        if (snippet.length() <= maxLength) {
+            return snippet;
+        }
+        return snippet.substring(0, maxLength) + "\n// ... extrait tronque";
     }
 
     private static String optionalSuffix(final String value, final String prefix) {

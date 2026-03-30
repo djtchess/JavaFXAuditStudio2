@@ -107,4 +107,53 @@ class ParsingModeSuiteTest {
         assertThat(regexResult.rules())
                 .noneMatch(r -> r.description().contains("handler initialize"));
     }
+
+    @Test
+    void astMode_should_classify_ui_boolean_guard_as_ui_instead_of_policy() {
+        String content = """
+                import javafx.fxml.FXML;
+                import javafx.scene.control.Button;
+
+                public class SampleController {
+                    @FXML
+                    private Button acquisitionButton;
+
+                    public boolean isNotDisabledAcquisitionButton() {
+                        return !acquisitionButton.isDisable();
+                    }
+                }
+                """;
+        var regex = new JavaControllerRuleExtractionAdapter(Set.of(), DEFAULT_PATTERNS);
+        var adapter = new JavaParserRuleExtractionAdapter(regex, Set.of(), DEFAULT_PATTERNS);
+
+        ExtractionResult result = adapter.extract("SampleController.java", content);
+
+        assertThat(result.rules())
+                .anyMatch(rule -> rule.description().contains("isNotDisabledAcquisitionButton")
+                        && rule.responsibilityClass() == ResponsibilityClass.UI);
+    }
+
+    @Test
+    void regexMode_should_classify_ui_boolean_guard_as_ui_instead_of_policy() {
+        String content = """
+                import javafx.fxml.FXML;
+                import javafx.scene.control.Button;
+
+                public class SampleController {
+                    @FXML
+                    private Button acquisitionButton;
+
+                    public boolean isNotDisabledAcquisitionButton() {
+                        return !acquisitionButton.isDisable();
+                    }
+                }
+                """;
+        var regex = new JavaControllerRuleExtractionAdapter(Set.of(), DEFAULT_PATTERNS);
+
+        ExtractionResult result = regex.extract("SampleController.java", content);
+
+        assertThat(result.rules())
+                .anyMatch(rule -> rule.description().contains("isNotDisabledAcquisitionButton")
+                        && rule.responsibilityClass() == ResponsibilityClass.UI);
+    }
 }

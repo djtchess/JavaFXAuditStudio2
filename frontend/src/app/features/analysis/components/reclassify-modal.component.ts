@@ -113,6 +113,8 @@ const CATEGORIES = ['UI', 'APPLICATION', 'BUSINESS', 'TECHNICAL', 'UNKNOWN'] as 
       resize: vertical;
       font-family: inherit;
       box-sizing: border-box;
+      background: var(--surface-input);
+      color: var(--surface-ink);
     }
 
     .reason-textarea:focus {
@@ -170,7 +172,7 @@ const CATEGORIES = ['UI', 'APPLICATION', 'BUSINESS', 'TECHNICAL', 'UNKNOWN'] as 
       padding: 0.55rem 1.2rem;
       border: 1px solid var(--surface-line);
       border-radius: 999px;
-      background: rgba(255, 255, 255, 0.74);
+      background: var(--surface-chip);
       color: var(--surface-ink);
       font-weight: 600;
       font-size: 0.88rem;
@@ -179,7 +181,7 @@ const CATEGORIES = ['UI', 'APPLICATION', 'BUSINESS', 'TECHNICAL', 'UNKNOWN'] as 
     }
 
     .btn-cancel:hover {
-      background: var(--surface-chip);
+      background: var(--surface-chip-strong);
     }
   `,
   template: `

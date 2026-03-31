@@ -118,7 +118,9 @@ public class ReviewArtifactsService implements ReviewArtifactsUseCase {
                 PROMPT_TEMPLATE,
                 buildExtraContext(session, classification, formattedRules, cartography));
 
-        AiEnrichmentResult result = aiEnrichmentPort.enrich(request, provider);
+        AiEnrichmentResult result = provider == null
+                ? aiEnrichmentPort.enrich(request)
+                : aiEnrichmentPort.enrich(request, provider);
         return mapToReview(result);
     }
 

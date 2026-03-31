@@ -125,12 +125,15 @@ public class VerifyAiArtifactCoherenceService implements VerifyAiArtifactCoheren
         ControllerCartography cartography = (cartographyPort != null)
                 ? cartographyPort.findBySessionId(sessionId).orElse(null)
                 : null;
-        AiEnrichmentResult llmResult = aiEnrichmentPort.enrich(new AiEnrichmentRequest(
+        AiEnrichmentRequest request = new AiEnrichmentRequest(
                 requestId,
                 bundle,
                 TaskType.ARTIFACT_COHERENCE,
                 PROMPT_TEMPLATE,
-                buildExtraContext(requestId, session, classification, cartography, artifacts)), provider);
+                buildExtraContext(requestId, session, classification, cartography, artifacts));
+        AiEnrichmentResult llmResult = provider == null
+                ? aiEnrichmentPort.enrich(request)
+                : aiEnrichmentPort.enrich(request, provider);
 
         return mapToCoherenceResult(llmResult);
     }

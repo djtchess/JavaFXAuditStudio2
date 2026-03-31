@@ -128,7 +128,9 @@ public class RefineArtifactService implements RefineArtifactUseCase {
                 PROMPT_TEMPLATE,
                 buildExtraContext(requestId, session, classification, request, cartography));
 
-        AiEnrichmentResult result = aiEnrichmentPort.enrich(enrichmentRequest, provider);
+        AiEnrichmentResult result = provider == null
+                ? aiEnrichmentPort.enrich(enrichmentRequest)
+                : aiEnrichmentPort.enrich(enrichmentRequest, provider);
         return mapToGenerationResult(result);
     }
 

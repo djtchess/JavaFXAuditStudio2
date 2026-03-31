@@ -133,12 +133,15 @@ public class RefineAiArtifactService implements RefineAiArtifactUseCase {
                     "Aucun contenu precedent disponible pour l'artefact " + command.artifactType());
         }
 
-        AiEnrichmentResult llmResult = aiEnrichmentPort.enrich(new AiEnrichmentRequest(
+        AiEnrichmentRequest request = new AiEnrichmentRequest(
                 requestId,
                 bundle,
                 TaskType.ARTIFACT_REFINEMENT,
                 PROMPT_TEMPLATE,
-                buildExtraContext(requestId, session, classification, cartography, command, previousCode)), provider);
+                buildExtraContext(requestId, session, classification, cartography, command, previousCode));
+        AiEnrichmentResult llmResult = provider == null
+                ? aiEnrichmentPort.enrich(request)
+                : aiEnrichmentPort.enrich(request, provider);
 
         return mapToRefinementResult(sessionId, command, llmResult);
     }

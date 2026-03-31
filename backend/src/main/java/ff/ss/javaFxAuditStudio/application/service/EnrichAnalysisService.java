@@ -152,7 +152,9 @@ public class EnrichAnalysisService implements EnrichAnalysisUseCase {
         Instant llmCallStartedAt = Instant.now();
         AiEnrichmentResult result;
         try {
-            result = enrichmentPort.enrich(request, provider);
+            result = provider == null
+                    ? enrichmentPort.enrich(request)
+                    : enrichmentPort.enrich(request, provider);
         } catch (RuntimeException ex) {
             observabilityPort.recordLlmEnrichment(
                     "unknown",

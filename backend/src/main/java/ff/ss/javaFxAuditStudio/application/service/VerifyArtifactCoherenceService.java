@@ -119,7 +119,9 @@ public class VerifyArtifactCoherenceService implements VerifyArtifactCoherenceUs
                 PROMPT_TEMPLATE,
                 buildExtraContext(session, classification, generationResult, cartography));
 
-        AiEnrichmentResult result = aiEnrichmentPort.enrich(enrichmentRequest, provider);
+        AiEnrichmentResult result = provider == null
+                ? aiEnrichmentPort.enrich(enrichmentRequest)
+                : aiEnrichmentPort.enrich(enrichmentRequest, provider);
         return mapToCoherenceResult(result);
     }
 

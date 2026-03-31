@@ -187,7 +187,9 @@ public class AiSpringBootGenerationService implements GenerateSpringBootClassesU
                         migrationPlan,
                         ruleSourceSnippets));
 
-        AiEnrichmentResult llmResult = aiEnrichmentPort.enrich(request, provider);
+        AiEnrichmentResult llmResult = provider == null
+                ? aiEnrichmentPort.enrich(request)
+                : aiEnrichmentPort.enrich(request, provider);
 
         return mapToGenerationResult(sessionId, llmResult, ruleSourceSnippets);
     }

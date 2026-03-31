@@ -1,8 +1,10 @@
 package ff.ss.javaFxAuditStudio.adapters.out.persistence;
 
 import ff.ss.javaFxAuditStudio.application.ports.out.ProjectDashboardPort;
+import ff.ss.javaFxAuditStudio.domain.workbench.AnalysisStatus;
 import ff.ss.javaFxAuditStudio.domain.workbench.ProjectDashboard;
 
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,16 +17,10 @@ import java.util.Optional;
  */
 public class JpaProjectDashboardAdapter implements ProjectDashboardPort {
 
-    private static final List<String> ANALYSING_STATUSES = List.of(
-            "PENDING",
-            "IN_PROGRESS",
-            "RUNNING",
-            "INGESTING",
-            "CARTOGRAPHING",
-            "CLASSIFYING",
-            "PLANNING",
-            "GENERATING",
-            "REPORTING");
+    private static final List<String> ANALYSING_STATUSES = Arrays.stream(AnalysisStatus.values())
+            .filter(AnalysisStatus::isPipelineActive)
+            .map(AnalysisStatus::name)
+            .toList();
 
     private final AnalysisSessionRepository sessionRepository;
     private final BusinessRuleRepository businessRuleRepository;

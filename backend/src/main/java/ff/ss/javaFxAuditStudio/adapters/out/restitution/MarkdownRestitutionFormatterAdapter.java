@@ -29,6 +29,8 @@ public class MarkdownRestitutionFormatterAdapter implements RestitutionFormatter
         appendSynthesis(sb, summary);
         appendMetrics(sb, summary);
         appendDistribution(sb, summary);
+        appendLots(sb, report);
+        appendArtifacts(sb, report);
         appendFindings(sb, report);
         appendUnknowns(sb, report);
         appendContradictions(sb, report);
@@ -117,6 +119,26 @@ public class MarkdownRestitutionFormatterAdapter implements RestitutionFormatter
             sb.append("_Aucun finding enregistre._");
         } else {
             appendBulletList(sb, report.findings());
+        }
+        sb.append(SECTION_BREAK);
+    }
+
+    private void appendLots(final StringBuilder sb, final RestitutionReport report) {
+        sb.append("## Lots").append(LINE_BREAK);
+        if (report.lotSummaries().isEmpty()) {
+            sb.append("_Aucun lot de migration disponible._");
+        } else {
+            appendBulletList(sb, report.lotSummaries());
+        }
+        sb.append(SECTION_BREAK);
+    }
+
+    private void appendArtifacts(final StringBuilder sb, final RestitutionReport report) {
+        sb.append("## Artefacts").append(LINE_BREAK);
+        if (report.artifactSummaries().isEmpty()) {
+            sb.append("_Aucun artefact genere._");
+        } else {
+            appendBulletList(sb, report.artifactSummaries());
         }
         sb.append(SECTION_BREAK);
     }

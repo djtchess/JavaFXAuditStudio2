@@ -55,6 +55,17 @@ public class RestitutionReportEntity {
     @Convert(converter = StringListJsonbConverter.class)
     private List<String> findings;
 
+    @Column(name = "lot_summaries", columnDefinition = "text")
+    @Convert(converter = StringListJsonbConverter.class)
+    private List<String> lotSummaries;
+
+    @Column(name = "artifact_summaries", columnDefinition = "text")
+    @Convert(converter = StringListJsonbConverter.class)
+    private List<String> artifactSummaries;
+
+    @Column(name = "markdown", columnDefinition = "text", nullable = false)
+    private String markdown;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -74,6 +85,9 @@ public class RestitutionReportEntity {
             final List<String> contradictions,
             final List<String> unknowns,
             final List<String> findings,
+            final List<String> lotSummaries,
+            final List<String> artifactSummaries,
+            final String markdown,
             final Instant createdAt) {
         this.sessionId = sessionId;
         this.controllerRef = controllerRef;
@@ -86,6 +100,9 @@ public class RestitutionReportEntity {
         this.contradictions = contradictions;
         this.unknowns = unknowns;
         this.findings = findings;
+        this.lotSummaries = lotSummaries;
+        this.artifactSummaries = artifactSummaries;
+        this.markdown = markdown;
         this.createdAt = createdAt;
     }
 
@@ -135,6 +152,18 @@ public class RestitutionReportEntity {
 
     public List<String> getFindings() {
         return findings;
+    }
+
+    public List<String> getLotSummaries() {
+        return lotSummaries;
+    }
+
+    public List<String> getArtifactSummaries() {
+        return artifactSummaries;
+    }
+
+    public String getMarkdown() {
+        return markdown;
     }
 
     public Instant getCreatedAt() {

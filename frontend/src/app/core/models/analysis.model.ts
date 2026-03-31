@@ -12,6 +12,8 @@ export interface AnalysisSessionResponse {
   status: string;
   sessionName: string;
   controllerRef: string;
+  sourceSnippetRef: string;
+  createdAt: string;
 }
 
 // --- Cartography ---
@@ -161,6 +163,18 @@ export interface ActuatorHealthResponse {
   components?: Record<string, ActuatorHealthComponent>;
 }
 
+export interface ActuatorAiHealthResponse {
+  status: string;
+  enabled: boolean;
+  provider: string;
+  circuitBreakerState: string;
+  totalRequests: number;
+  successRate: number;
+  p95LatencyMs: number;
+  totalTokens: number;
+  outcomes: Record<string, number>;
+}
+
 export interface ActuatorMetricMeasurement {
   statistic: string;
   value: number;
@@ -192,9 +206,11 @@ export interface MonitoringStageDuration {
 
 export interface MonitoringDashboardResponse {
   health: ActuatorHealthResponse;
+  aiHealth: ActuatorAiHealthResponse;
   totalSessions: number;
   sessionsByStatus: MonitoringMetricValue[];
   stageDurations: MonitoringStageDuration[];
+  pipelineOutcomes: MonitoringMetricValue[];
 }
 
 // --- Project Dashboard ---

@@ -1,6 +1,8 @@
 package ff.ss.javaFxAuditStudio.adapters.in.rest;
 
 import java.io.IOException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.UUID;
 
 import org.slf4j.MDC;
@@ -17,6 +19,8 @@ public class CorrelationFilter extends OncePerRequestFilter {
 
     private static final String HEADER_NAME = "X-Correlation-Id";
     private static final String MDC_KEY = "correlationId";
+    private static final String SESSION_MDC_KEY = "sessionId";
+    private static final Pattern SESSION_PATH_PATTERN = Pattern.compile("/analysis/sessions/([^/]+)");
 
     @Override
     protected void doFilterInternal(
@@ -25,12 +29,15 @@ public class CorrelationFilter extends OncePerRequestFilter {
             final FilterChain filterChain) throws ServletException, IOException {
 
         String correlationId = resolveCorrelationId(request);
+        String sessionId = resolveSessionId(request);
         try {
             MDC.put(MDC_KEY, correlationId);
+            populateSessionId(sessionId);
             response.setHeader(HEADER_NAME, correlationId);
             filterChain.doFilter(request, response);
         } finally {
             MDC.remove(MDC_KEY);
+            MDC.remove(SESSION_MDC_KEY);
         }
     }
 
@@ -40,5 +47,22 @@ public class CorrelationFilter extends OncePerRequestFilter {
             return header;
         }
         return UUID.randomUUID().toString();
+    }
+
+    private void populateSessionId(final String sessionId) {
+        if (sessionId != null && !sessionId.isBlank()) {
+            MDC.put(SESSION_MDC_KEY, sessionId);
+        }
+    }
+
+    private String resolveSessionId(final HttpServletRequest request) {
+        Matcher matcher = SESSION_PATH_PATTERN.matcher(request.getRequestURI());
+        String sessionId;
+
+        sessionId = null;
+        if (matcher.find()) {
+            sessionId = matcher.group(1);
+        }
+        return sessionId;
     }
 }

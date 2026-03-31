@@ -11,16 +11,34 @@
         un MaskingPatternLayout sur les patterns contenant "api-key", "apiKey", "Bearer ".
     -->
 
-    <!-- Appender CONSOLE commun a tous les profils -->
+    <!-- Appender CONSOLE commun aux profils texte -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} level=%-5level app=${APP_NAME} corr=%X{correlationId:-no-corr} thread=%thread logger=%logger{36} msg=%msg%n</pattern>
+            <pattern>%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} level=%-5level app=${APP_NAME} corr=%X{correlationId:-no-corr} session=%X{sessionId:-no-session} thread=%thread logger=%logger{36} msg=%msg%n</pattern>
             <charset>UTF-8</charset>
         </encoder>
     </appender>
 
-    <!-- Profil par defaut : INFO pour le package applicatif -->
-    <springProfile name="default">
+    <!-- Profil prod : logs JSON structures -->
+    <springProfile name="prod">
+        <appender name="JSON_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+                <customFields>{"app":"${APP_NAME}"}</customFields>
+                <includeMdc>true</includeMdc>
+                <includeContext>false</includeContext>
+                <includeCallerData>false</includeCallerData>
+            </encoder>
+        </appender>
+        <logger name="ff.ss.javaFxAuditStudio" level="INFO" additivity="false">
+            <appender-ref ref="JSON_CONSOLE"/>
+        </logger>
+        <root level="WARN">
+            <appender-ref ref="JSON_CONSOLE"/>
+        </root>
+    </springProfile>
+
+    <!-- Profil par defaut/test : INFO pour le package applicatif -->
+    <springProfile name="default,test">
         <logger name="ff.ss.javaFxAuditStudio" level="INFO" additivity="false">
             <appender-ref ref="CONSOLE"/>
         </logger>

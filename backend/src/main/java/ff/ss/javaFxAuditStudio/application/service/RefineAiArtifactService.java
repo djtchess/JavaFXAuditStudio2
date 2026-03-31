@@ -15,6 +15,7 @@ import ff.ss.javaFxAuditStudio.application.ports.out.AnalysisSessionPort;
 import ff.ss.javaFxAuditStudio.application.ports.out.CartographyPersistencePort;
 import ff.ss.javaFxAuditStudio.application.ports.out.ClassificationPersistencePort;
 import ff.ss.javaFxAuditStudio.application.ports.out.ProjectReferencePatternPort;
+import ff.ss.javaFxAuditStudio.application.ports.out.PromptContextSanitizerPort;
 import ff.ss.javaFxAuditStudio.application.ports.out.ReclassificationAuditPort;
 import ff.ss.javaFxAuditStudio.application.ports.out.SanitizationPort;
 import ff.ss.javaFxAuditStudio.application.ports.out.SourceFileReaderPort;
@@ -46,6 +47,7 @@ public class RefineAiArtifactService implements RefineAiArtifactUseCase {
     private final AiEnrichmentPort aiEnrichmentPort;
     private final SanitizationPort sanitizationPort;
     private final SourceFileReaderPort sourceFileReaderPort;
+    private final PromptContextSanitizerPort promptContextSanitizerPort;
 
     public RefineAiArtifactService(
             final AnalysisSessionPort sessionPort,
@@ -57,6 +59,22 @@ public class RefineAiArtifactService implements RefineAiArtifactUseCase {
             final AiEnrichmentPort aiEnrichmentPort,
             final SanitizationPort sanitizationPort,
             final SourceFileReaderPort sourceFileReaderPort) {
+        this(sessionPort, classificationPort, cartographyPort, reclassificationAuditPort,
+                aiArtifactPersistencePort, projectReferencePatternPort, aiEnrichmentPort,
+                sanitizationPort, sourceFileReaderPort, null);
+    }
+
+    public RefineAiArtifactService(
+            final AnalysisSessionPort sessionPort,
+            final ClassificationPersistencePort classificationPort,
+            final CartographyPersistencePort cartographyPort,
+            final ReclassificationAuditPort reclassificationAuditPort,
+            final AiArtifactPersistencePort aiArtifactPersistencePort,
+            final ProjectReferencePatternPort projectReferencePatternPort,
+            final AiEnrichmentPort aiEnrichmentPort,
+            final SanitizationPort sanitizationPort,
+            final SourceFileReaderPort sourceFileReaderPort,
+            final PromptContextSanitizerPort promptContextSanitizerPort) {
         this.sessionPort = Objects.requireNonNull(sessionPort, "sessionPort must not be null");
         this.classificationPort = Objects.requireNonNull(classificationPort, "classificationPort must not be null");
         this.cartographyPort = cartographyPort;
@@ -68,6 +86,7 @@ public class RefineAiArtifactService implements RefineAiArtifactUseCase {
         this.aiEnrichmentPort = Objects.requireNonNull(aiEnrichmentPort, "aiEnrichmentPort must not be null");
         this.sanitizationPort = sanitizationPort;
         this.sourceFileReaderPort = sourceFileReaderPort;
+        this.promptContextSanitizerPort = promptContextSanitizerPort;
     }
 
     @Override
@@ -110,7 +129,7 @@ public class RefineAiArtifactService implements RefineAiArtifactUseCase {
                 bundle,
                 TaskType.ARTIFACT_REFINEMENT,
                 PROMPT_TEMPLATE,
-                buildExtraContext(session, classification, cartography, command, previousCode)));
+                buildExtraContext(requestId, session, classification, cartography, command, previousCode)));
 
         return mapToRefinementResult(sessionId, command, llmResult);
     }
@@ -134,6 +153,7 @@ public class RefineAiArtifactService implements RefineAiArtifactUseCase {
     }
 
     private Map<String, Object> buildExtraContext(
+            final String requestId,
             final AnalysisSession session,
             final ClassificationResult classification,
             final ControllerCartography cartography,
@@ -141,8 +161,12 @@ public class RefineAiArtifactService implements RefineAiArtifactUseCase {
             final String previousCode) {
         Map<String, Object> context = new HashMap<>();
         context.put("artifactType", command.artifactType());
-        context.put("refineInstruction", command.instruction());
-        context.put("currentArtifactCode", previousCode);
+        context.put("refineInstruction", promptContextSanitizerPort != null
+                ? promptContextSanitizerPort.sanitizeInstruction(command.instruction(), 2000)
+                : command.instruction());
+        context.put("currentArtifactCode", promptContextSanitizerPort != null
+                ? promptContextSanitizerPort.sanitizeCodeFragment(requestId, previousCode, "currentArtifactCode")
+                : previousCode);
         context.put("classifiedRules", LlmServiceSupport.formatRules(classification));
         context.put("screenContext", LlmServiceSupport.formatScreenContext(session, classification, cartography));
         context.put(
@@ -153,7 +177,11 @@ public class RefineAiArtifactService implements RefineAiArtifactUseCase {
                         reclassificationAuditPort));
         context.put(
                 "projectReferencePatterns",
-                LlmServiceSupport.formatProjectReferencePatterns(loadProjectReferencePatterns(command.artifactType())));
+                promptContextSanitizerPort != null
+                        ? promptContextSanitizerPort.sanitizeReferencePatterns(
+                                requestId, loadProjectReferencePatterns(command.artifactType()))
+                        : LlmServiceSupport.formatProjectReferencePatterns(
+                                loadProjectReferencePatterns(command.artifactType())));
         return context;
     }
 

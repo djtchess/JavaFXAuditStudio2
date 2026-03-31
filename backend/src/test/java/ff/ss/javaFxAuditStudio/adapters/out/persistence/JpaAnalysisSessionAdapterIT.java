@@ -56,6 +56,7 @@ class JpaAnalysisSessionAdapterIT {
         createdAt = Instant.parse("2026-01-15T10:00:00Z");
         session = new AnalysisSession(
                 sessionId,
+                "Mon audit",
                 "com/example/MyController.java",
                 "snippets/MyController.txt",
                 AnalysisStatus.CREATED,
@@ -66,6 +67,7 @@ class JpaAnalysisSessionAdapterIT {
 
         assertThat(found).isPresent();
         assertThat(found.get().sessionId()).isEqualTo(sessionId);
+        assertThat(found.get().sessionName()).isEqualTo("Mon audit");
         assertThat(found.get().controllerName()).isEqualTo("com/example/MyController.java");
         assertThat(found.get().sourceSnippetRef()).isEqualTo("snippets/MyController.txt");
         assertThat(found.get().status()).isEqualTo(AnalysisStatus.CREATED);
@@ -99,6 +101,7 @@ class JpaAnalysisSessionAdapterIT {
         sessionId = "sess-jpa-02";
         sessionCreated = new AnalysisSession(
                 sessionId,
+                "Transition audit",
                 "com/example/TransitionController.java",
                 null,
                 AnalysisStatus.CREATED,
@@ -108,6 +111,7 @@ class JpaAnalysisSessionAdapterIT {
 
         sessionInProgress = new AnalysisSession(
                 sessionId,
+                sessionCreated.sessionName(),
                 sessionCreated.controllerName(),
                 sessionCreated.sourceSnippetRef(),
                 AnalysisStatus.IN_PROGRESS,
@@ -133,6 +137,7 @@ class JpaAnalysisSessionAdapterIT {
             sessionId = "sess-status-" + status.name();
             session = new AnalysisSession(
                     sessionId,
+                    "Status audit " + status.name(),
                     "com/example/StatusController.java",
                     null,
                     status,

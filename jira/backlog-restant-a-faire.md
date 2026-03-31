@@ -63,6 +63,7 @@ Centraliser le reste a faire reel du produit a partir des sources de verite du r
 - `P0-07` Produire le lot DevOps manquant : `Dockerfile` backend, `Dockerfile` frontend, workflows CI, scripts de build/run et README racine exploitable. References : `JAS-701` a `JAS-704`.
 - `P0-08` Produire la documentation technique manquante : ADR, guide developpeur backend, guide d'integration frontend/backend. References : `JAS-901` a `JAS-903`.
 - `P0-09` Fermer les fuites potentielles cote IA/sanitisation, en particulier les logs DEBUG du prompt complet et les ecarts de sanitisation encore ouverts. References : `AI-1`, `QW-3`, `AI-4`.
+- `P0-10` Sanitiser tout le contexte promptable envoye aux fournisseurs LLM et bloquer l'ecrasement des variables reservees de template. References : `AI-5`, `AI-6`.
 
 ### P1 - qualite moteur et IA
 
@@ -72,6 +73,7 @@ Centraliser le reste a faire reel du produit a partir des sources de verite du r
 - `P1-04` Finaliser l'experience IA cote produit : streaming SSE, vue diff template/IA, raffinement multi-tour, feedback visuel de progression, copie/telechargement unitaire cote UI. References : `IAP-20` a `IAP-24`.
 - `P1-05` Finaliser la persistance/versioning des artefacts IA, y compris historique et export ZIP. References : `IAP-25` a `IAP-28`.
 - `P1-06` Finaliser le contexte IA enrichi : contexte ecran complet, injection du feedback de reclassification, verification de coherence inter-artefacts et apprentissage de patterns projet. References : `IAP-29` a `IAP-32`.
+- `P1-07` Durcir les contrats fournisseur Claude/OpenAI : sorties structurees strictes, budgets de contexte par tache et reduction explicite des donnees envoyees. References : `AI-7`, `AI-8`.
 
 ### P2 - industrialisation et extensions produit
 
@@ -85,8 +87,8 @@ Centraliser le reste a faire reel du produit a partir des sources de verite du r
 ### Sprint 1 - realignement socle et garde-fous
 
 - Objectif : remettre le socle pipeline en conformite avant toute extension.
-- Contenu : `P0-01`, `P0-02`, `P0-03`, `P0-09`.
-- Sortie attendue : API/session coherente, statuts de pipeline fins, restitution markdown branchee, logs IA nettoyes.
+- Contenu : `P0-01`, `P0-02`, `P0-03`, `P0-09`, `P0-10`.
+- Sortie attendue : API/session coherente, statuts de pipeline fins, restitution markdown branchee, logs IA nettoyes et contexte promptable sanitise.
 
 ### Sprint 2 - qualite executable et couverture
 
@@ -103,8 +105,8 @@ Centraliser le reste a faire reel du produit a partir des sources de verite du r
 ### Sprint 4 - qualite moteur
 
 - Objectif : fiabiliser le moteur d'analyse et la generation avant d'aller plus loin cote IA.
-- Contenu : `P1-01`, `P1-02`, `P1-03`.
-- Sortie attendue : meilleur AST/regex, artefacts generes plus fiables, heuristiques metier avancees stabilisees.
+- Contenu : `P1-01`, `P1-02`, `P1-03`, `P1-07`.
+- Sortie attendue : meilleur AST/regex, artefacts generes plus fiables, heuristiques metier avancees stabilisees et contrats fournisseur IA durcis.
 
 ### Sprint 5 - IA produit
 
@@ -136,7 +138,8 @@ Centraliser le reste a faire reel du produit a partir des sources de verite du r
 | `P0-02` | Statuts de pipeline fins et persistants | `backend-hexagonal` | `database-postgres`, `observabilite-exploitation` | 8 SP |
 | `P0-03` | Restitution markdown branchee dans la chaine applicative | `backend-hexagonal` | `implementation-moteur-analyse` | 3 SP |
 | `P0-09` | Nettoyage logs IA et ecarts de sanitisation critiques | `securite` | `transparence-openai`, `backend-hexagonal` | 5 SP |
-| **Total sprint 1** |  |  |  | **21 SP** |
+| `P0-10` | Sanitisation du contexte promptable et protection des variables reservees | `securite` | `backend-hexagonal`, `transparence-openai` | 13 SP |
+| **Total sprint 1** |  |  |  | **34 SP** |
 
 ### Sprint 2 - tickets
 
@@ -162,7 +165,8 @@ Centraliser le reste a faire reel du produit a partir des sources de verite du r
 | `P1-01` | Qualite AST/regex et validation LLM | `implementation-moteur-analyse` | `backend-hexagonal`, `securite` | 8 SP |
 | `P1-02` | Qualite des artefacts generes | `implementation-moteur-analyse` | `test-automation`, `qa-backend` | 8 SP |
 | `P1-03` | Analyse metier avancee | `implementation-moteur-analyse` | `analyste-regles-metier`, `architecture-moteur-analyse` | 13 SP |
-| **Total sprint 4** |  |  |  | **29 SP** |
+| `P1-07` | Contrats fournisseur stricts et budgets de contexte | `backend-hexagonal` | `securite`, `observabilite-exploitation` | 8 SP |
+| **Total sprint 4** |  |  |  | **37 SP** |
 
 ### Sprint 5 - tickets
 
@@ -185,19 +189,19 @@ Centraliser le reste a faire reel du produit a partir des sources de verite du r
 
 ## charge consolidee
 
-- `Sprint 1` : 21 SP
+- `Sprint 1` : 34 SP
 - `Sprint 2` : 13 SP
 - `Sprint 3` : 21 SP
-- `Sprint 4` : 29 SP
+- `Sprint 4` : 37 SP
 - `Sprint 5` : 34 SP
 - `Sprint 6` : 18 SP
-- **Total programme restant** : **136 SP**
+- **Total programme restant** : **157 SP**
 
 ## lecture de capacite
 
-- Avec une seule equipe fullstack, `Sprint 4` et `Sprint 5` sont les sprints les plus charges et devront sans doute etre recoupes.
+- Avec une seule equipe fullstack, `Sprint 1`, `Sprint 4` et `Sprint 5` sont les sprints les plus charges et devront sans doute etre recoupes.
 - Avec deux equipes, il est pertinent de faire tourner `Sprint 2` et `Sprint 3` en parallele apres `Sprint 1`.
-- Si la capacite est faible, la premiere coupe naturelle consiste a repousser `P2-01` a `P2-04`, puis a fractionner `P1-04` et `P1-06`.
+- Si la capacite est faible, la premiere coupe naturelle consiste a repousser `P2-01` a `P2-04`, puis a fractionner `P0-10`, `P1-04` et `P1-06`.
 
 ## sous-backlogs actifs
 

@@ -1,8 +1,6 @@
 package ff.ss.javaFxAuditStudio.adapters.in.rest;
 
-import java.time.Instant;
 import java.util.Optional;
-import java.util.UUID;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -40,9 +38,11 @@ import ff.ss.javaFxAuditStudio.application.ports.in.AnalysisOrchestrationUseCase
 import ff.ss.javaFxAuditStudio.application.ports.in.CartographyUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.in.ClassifyResponsibilitiesUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.in.ExportArtifactsUseCase;
+import ff.ss.javaFxAuditStudio.application.ports.in.GetAnalysisSessionUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.in.GenerateArtifactsUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.in.ProduceMigrationPlanUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.in.ProduceRestitutionUseCase;
+import ff.ss.javaFxAuditStudio.application.ports.in.SubmitAnalysisUseCase;
 import ff.ss.javaFxAuditStudio.domain.generation.ExportResult;
 import ff.ss.javaFxAuditStudio.application.ports.out.AnalysisSessionPort;
 import ff.ss.javaFxAuditStudio.domain.workbench.AnalysisSession;
@@ -59,6 +59,8 @@ public class AnalysisController {
     private final GenerateArtifactsUseCase generateArtifactsUseCase;
     private final ProduceMigrationPlanUseCase produceMigrationPlanUseCase;
     private final ProduceRestitutionUseCase produceRestitutionUseCase;
+    private final SubmitAnalysisUseCase submitAnalysisUseCase;
+    private final GetAnalysisSessionUseCase getAnalysisSessionUseCase;
     private final AnalysisSessionPort analysisSessionPort;
     private final AnalysisOrchestrationUseCase analysisOrchestrationUseCase;
     private final AnalysisSessionResponseMapper analysisSessionResponseMapper;
@@ -76,6 +78,8 @@ public class AnalysisController {
             final GenerateArtifactsUseCase generateArtifactsUseCase,
             final ProduceMigrationPlanUseCase produceMigrationPlanUseCase,
             final ProduceRestitutionUseCase produceRestitutionUseCase,
+            final SubmitAnalysisUseCase submitAnalysisUseCase,
+            final GetAnalysisSessionUseCase getAnalysisSessionUseCase,
             final AnalysisSessionPort analysisSessionPort,
             final AnalysisOrchestrationUseCase analysisOrchestrationUseCase,
             final AnalysisSessionResponseMapper analysisSessionResponseMapper,
@@ -91,6 +95,8 @@ public class AnalysisController {
         this.generateArtifactsUseCase = generateArtifactsUseCase;
         this.produceMigrationPlanUseCase = produceMigrationPlanUseCase;
         this.produceRestitutionUseCase = produceRestitutionUseCase;
+        this.submitAnalysisUseCase = submitAnalysisUseCase;
+        this.getAnalysisSessionUseCase = getAnalysisSessionUseCase;
         this.analysisSessionPort = analysisSessionPort;
         this.analysisOrchestrationUseCase = analysisOrchestrationUseCase;
         this.analysisSessionResponseMapper = analysisSessionResponseMapper;
@@ -111,21 +117,7 @@ public class AnalysisController {
     @PostMapping("/sessions")
     @ResponseStatus(HttpStatus.CREATED)
     public AnalysisSessionResponse submitSession(@RequestBody final SubmitAnalysisRequest request) {
-        String javaPath = request.sourceFilePaths().stream()
-                .filter(p -> p.endsWith(".java"))
-                .findFirst()
-                .orElse(request.sourceFilePaths().get(0));
-        String fxmlPath = request.sourceFilePaths().stream()
-                .filter(p -> p.endsWith(".fxml"))
-                .findFirst()
-                .orElse(null);
-        AnalysisSession session = new AnalysisSession(
-                UUID.randomUUID().toString(),
-                javaPath,
-                fxmlPath,
-                AnalysisStatus.CREATED,
-                Instant.now());
-        analysisSessionPort.save(session);
+        AnalysisSession session = submitAnalysisUseCase.handle(request.sourceFilePaths(), request.sessionName());
         return analysisSessionResponseMapper.toResponse(session);
     }
 
@@ -138,7 +130,7 @@ public class AnalysisController {
     public ResponseEntity<AnalysisSessionResponse> getSession(
             @Parameter(name = "sessionId", description = "Identifiant de la session", required = true)
             @PathVariable final String sessionId) {
-        return analysisSessionPort.findById(sessionId)
+        return getAnalysisSessionUseCase.handle(sessionId)
                 .map(session -> ResponseEntity.ok(analysisSessionResponseMapper.toResponse(session)))
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }

@@ -117,13 +117,13 @@ describe('ArtifactsViewComponent', () => {
     actionButtons[0].nativeElement.click();
     fixture.detectChanges();
     expect(clipboardWrite).toHaveBeenCalled();
-    expect(fixture.nativeElement.textContent).toContain('copié');
+    expect(fixture.nativeElement.textContent).toContain('Code copie dans le presse-papiers');
 
     actionButtons[1].nativeElement.click();
     fixture.detectChanges();
     expect(createObjectUrlSpy).toHaveBeenCalled();
     expect(revokeObjectUrlSpy).toHaveBeenCalled();
-    expect(fixture.nativeElement.textContent).toContain('téléchargé');
+    expect(fixture.nativeElement.textContent).toContain('Fichier MainControllerUseCase.java telecharge');
 
     anchorClickSpy.mockRestore();
     createObjectUrlSpy.mockRestore();

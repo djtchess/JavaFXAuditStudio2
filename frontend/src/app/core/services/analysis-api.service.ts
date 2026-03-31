@@ -23,6 +23,10 @@ export class AnalysisApiService {
     return this.http.post<AnalysisSessionResponse>(this.base, request);
   }
 
+  getSession(sessionId: string): Observable<AnalysisSessionResponse> {
+    return this.http.get<AnalysisSessionResponse>(`${this.base}/${sessionId}`);
+  }
+
   getCartography(sessionId: string): Observable<CartographyResponse> {
     return this.http.get<CartographyResponse>(`${this.base}/${sessionId}/cartography`);
   }

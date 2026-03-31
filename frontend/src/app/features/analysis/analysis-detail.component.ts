@@ -3,6 +3,7 @@ import { ActivatedRoute } from '@angular/router';
 
 import { AnalysisApiService } from '../../core/services/analysis-api.service';
 import {
+  AnalysisSessionResponse,
   ArtifactsResponse,
   CartographyResponse,
   ClassificationResponse,
@@ -117,6 +118,22 @@ function emptyStep<T>(): StepState<T> {
       font-family: var(--font-mono);
       letter-spacing: 0.04em;
       text-transform: none;
+    }
+
+    .session-status {
+      margin: 0.8rem 0 0;
+      display: inline-flex;
+      width: fit-content;
+      align-items: center;
+      gap: 0.55rem;
+      padding: 0.45rem 0.85rem;
+      border-radius: 999px;
+      background: rgba(101, 223, 255, 0.1);
+      border: 1px solid rgba(101, 223, 255, 0.2);
+      color: rgba(221, 245, 255, 0.92);
+      font-size: 0.8rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
     }
 
     .hero-meta {
@@ -242,6 +259,27 @@ function emptyStep<T>(): StepState<T> {
 
     .pipeline-error {
       font-size: 0.82rem;
+      color: #ffd1c6;
+    }
+
+    .session-loading,
+    .session-error {
+      margin-top: 0.9rem;
+      padding: 0.75rem 0.95rem;
+      border-radius: 16px;
+      font-size: 0.84rem;
+      line-height: 1.5;
+    }
+
+    .session-loading {
+      background: rgba(76, 225, 198, 0.08);
+      border: 1px solid rgba(76, 225, 198, 0.24);
+      color: var(--surface-success);
+    }
+
+    .session-error {
+      background: rgba(255, 118, 92, 0.08);
+      border: 1px solid rgba(255, 118, 92, 0.24);
       color: #ffd1c6;
     }
 
@@ -380,29 +418,37 @@ function emptyStep<T>(): StepState<T> {
       <section class="session-hero">
         <div>
           <p class="eyebrow">Mission Control</p>
-          <h1>Detail de la session</h1>
+          <h1>{{ sessionTitle() }}</h1>
           <p class="lead">
             Execute les etapes une par une pour inspecter finement les sorties, ou lance le pipeline
             complet pour piloter la migration depuis une seule console.
           </p>
           <p class="session-id">Session <span>{{ sessionId }}</span></p>
+          @if (session().data) {
+            <p class="session-status">Statut {{ session().data!.status }}</p>
+          }
+          @if (session().isLoading) {
+            <div class="session-loading">Chargement des metadonnees de session...</div>
+          } @else if (session().error) {
+            <div class="session-error">{{ session().error }}</div>
+          }
         </div>
 
         <div class="hero-meta">
           <article class="meta-card">
-            <p class="meta-label">Pipeline</p>
-            <strong>5 etapes</strong>
-            <span>Cartographie, classification, plan, artefacts et restitution.</span>
+            <p class="meta-label">Session</p>
+            <strong>{{ sessionNameLabel() }}</strong>
+            <span>Nom fonctionnel persiste avec la session d'analyse.</span>
           </article>
           <article class="meta-card">
-            <p class="meta-label">Mode</p>
-            <strong>Orchestration guidee</strong>
-            <span>Run complet ou execution ciblee selon le besoin d'analyse.</span>
+            <p class="meta-label">Controller</p>
+            <strong>{{ controllerLabel() }}</strong>
+            <span>Reference backend exploitee par le pipeline et les use cases.</span>
           </article>
           <article class="meta-card">
-            <p class="meta-label">Extension</p>
-            <strong>Analyse IA</strong>
-            <span>Enrichissement additionnel depuis la meme session de travail.</span>
+            <p class="meta-label">Source secondaire</p>
+            <strong>{{ sourceRefLabel() }}</strong>
+            <span>FXML, snippet ou reference technique complementaire de la session.</span>
           </article>
         </div>
       </section>
@@ -604,6 +650,7 @@ export class AnalysisDetailComponent {
   private readonly analysisApi = inject(AnalysisApiService);
 
   protected readonly sessionId = this.route.snapshot.paramMap.get('sessionId') ?? '';
+  protected readonly session = signal<StepState<AnalysisSessionResponse>>(emptyStep());
 
   protected readonly cartography = signal<StepState<CartographyResponse>>(emptyStep());
   protected readonly classification = signal<StepState<ClassificationResponse>>(emptyStep());
@@ -615,6 +662,33 @@ export class AnalysisDetailComponent {
   protected readonly pipelineStep = signal(0);
   protected readonly pipelineProgressPercent = signal(0);
   protected readonly pipelineError = signal<string | null>(null);
+
+  protected readonly sessionTitle = signal('Detail de la session');
+  protected readonly sessionNameLabel = signal('Chargement...');
+  protected readonly controllerLabel = signal('En attente');
+  protected readonly sourceRefLabel = signal('Aucune');
+
+  constructor() {
+    this.loadSession();
+  }
+
+  private loadSession(): void {
+    this.session.set({ isLoading: true, error: null, data: null });
+    this.analysisApi.getSession(this.sessionId).subscribe({
+      next: data => {
+        this.session.set({ isLoading: false, error: null, data });
+        this.sessionTitle.set(data.sessionName);
+        this.sessionNameLabel.set(data.sessionName);
+        this.controllerLabel.set(data.controllerRef);
+        this.sourceRefLabel.set(data.sourceSnippetRef || 'Aucune');
+      },
+      error: err => this.session.set({
+        isLoading: false,
+        error: err?.error?.message ?? 'Erreur lors du chargement de la session.',
+        data: null,
+      }),
+    });
+  }
 
   protected runFullPipeline(): void {
     this.pipelineRunning.set(true);
@@ -669,6 +743,17 @@ export class AnalysisDetailComponent {
           error: null,
           data: result.restitutionReport,
         });
+        if (this.session().data) {
+          const currentSession = this.session().data!;
+          this.session.set({
+            isLoading: false,
+            error: null,
+            data: {
+              ...currentSession,
+              status: result.finalStatus,
+            },
+          });
+        }
 
         this.pipelineRunning.set(false);
 

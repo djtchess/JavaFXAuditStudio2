@@ -28,6 +28,8 @@ public record AiEnrichmentRequest(
         Objects.requireNonNull(taskType, "taskType must not be null");
         Objects.requireNonNull(promptTemplate, "promptTemplate must not be null");
         extraContext = extraContext != null ? Map.copyOf(extraContext) : Map.of();
+        ReservedPromptVariables.assertNoCollision(extraContext, requestId);
+        ExtraContextPolicy.warnUnexpectedKeys(taskType, extraContext, requestId);
     }
 
     /**

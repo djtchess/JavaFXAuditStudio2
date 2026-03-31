@@ -13,6 +13,8 @@ import java.util.Objects;
  * @param contradictions  liste des contradictions detectees (peut etre vide)
  * @param unknowns        liste des inconnues non resolues (peut etre vide)
  * @param findings        liste des observations et recommandations (peut etre vide)
+ * @param lotSummaries    synthese textuelle des lots de migration (peut etre vide)
+ * @param artifactSummaries synthese textuelle des artefacts generes (peut etre vide)
  * @param markdown        version markdown de la restitution
  */
 public record RestitutionReport(
@@ -20,6 +22,8 @@ public record RestitutionReport(
         List<String> contradictions,
         List<String> unknowns,
         List<String> findings,
+        List<String> lotSummaries,
+        List<String> artifactSummaries,
         String markdown) {
 
     public RestitutionReport {
@@ -27,9 +31,13 @@ public record RestitutionReport(
         Objects.requireNonNull(contradictions, "contradictions must not be null");
         Objects.requireNonNull(unknowns, "unknowns must not be null");
         Objects.requireNonNull(findings, "findings must not be null");
+        Objects.requireNonNull(lotSummaries, "lotSummaries must not be null");
+        Objects.requireNonNull(artifactSummaries, "artifactSummaries must not be null");
         contradictions = List.copyOf(contradictions);
         unknowns = List.copyOf(unknowns);
         findings = List.copyOf(findings);
+        lotSummaries = List.copyOf(lotSummaries);
+        artifactSummaries = List.copyOf(artifactSummaries);
         markdown = markdown == null ? "" : markdown;
     }
 
@@ -38,7 +46,16 @@ public record RestitutionReport(
             final List<String> contradictions,
             final List<String> unknowns,
             final List<String> findings) {
-        this(summary, contradictions, unknowns, findings, "");
+        this(summary, contradictions, unknowns, findings, List.of(), List.of(), "");
+    }
+
+    public RestitutionReport(
+            final RestitutionSummary summary,
+            final List<String> contradictions,
+            final List<String> unknowns,
+            final List<String> findings,
+            final String markdown) {
+        this(summary, contradictions, unknowns, findings, List.of(), List.of(), markdown);
     }
 
     /**

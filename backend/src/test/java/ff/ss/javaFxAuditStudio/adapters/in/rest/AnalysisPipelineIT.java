@@ -1,5 +1,7 @@
 package ff.ss.javaFxAuditStudio.adapters.in.rest;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,20 +12,24 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.hasItems;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * JAS-90 — Test d'integration bout-en-bout du pipeline d'analyse avec SampleController.java.
- *
- * Enchaîne POST /sessions puis POST /sessions/{id}/run sur le contexte Spring complet
- * (H2 in-memory, adapteurs reels, aucun mock).
- *
- * La fixture SampleController.java est passee comme chemin de reference de session.
- * Si le pipeline echoue pour une raison filesystem, la reponse doit quand meme
- * etre 200 avec un finalStatus dans le body (COMPLETED ou FAILED), jamais 5xx.
+ * Test d'integration bout-en-bout du pipeline d'analyse avec les fixtures simples.
+ * Verifie que le pipeline complet expose un contenu metier exploitable sur les endpoints REST.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @ActiveProfiles("test")
@@ -31,6 +37,9 @@ class AnalysisPipelineIT {
 
     @Autowired
     private WebApplicationContext wac;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     private MockMvc mockMvc;
 
@@ -40,84 +49,102 @@ class AnalysisPipelineIT {
     }
 
     @Test
-    void pipeline_withSampleController_returns200WithFinalStatus() throws Exception {
-        // --- Etape 1 : creation de la session ---
-        String createBody;
-        MvcResult createResult;
-        String createResponse;
-        String sessionId;
+    void pipeline_withSampleFixtures_returnsRichBusinessOutputs() throws Exception {
+        String sessionId = createSession("SampleControllerSession", "SampleController.java", "SampleView.fxml");
 
-        createBody = """
-                {
-                    "sessionName": "SampleControllerSession",
-                    "sourceFilePaths": ["fixtures/SampleController.java"]
-                }
-                """;
-
-        createResult = mockMvc.perform(post("/api/v1/analysis/sessions")
-                        .contentType(APPLICATION_JSON)
-                        .content(createBody))
-                .andExpect(status().isCreated())
-                .andReturn();
-
-        createResponse = createResult.getResponse().getContentAsString();
-        assertThat(createResponse).contains("sessionId");
-
-        // Extraction naive du sessionId depuis le JSON retourne
-        sessionId = extractJsonField(createResponse, "sessionId");
-        assertThat(sessionId).isNotBlank();
-
-        // --- Etape 2 : lancement du pipeline ---
-        MvcResult runResult;
-        String runResponse;
-
-        runResult = mockMvc.perform(post("/api/v1/analysis/sessions/{sessionId}/run", sessionId)
+        mockMvc.perform(post("/api/v1/analysis/sessions/{sessionId}/run", sessionId)
                         .contentType(APPLICATION_JSON))
-                // Accepte 200 uniquement — jamais de 5xx meme si le pipeline echoue en interne
                 .andExpect(status().isOk())
-                .andReturn();
+                .andExpect(jsonPath("$.sessionId").value(sessionId))
+                .andExpect(jsonPath("$.finalStatus").value("COMPLETED"))
+                .andExpect(jsonPath("$.cartography.components.length()").value(greaterThanOrEqualTo(4)))
+                .andExpect(jsonPath("$.cartography.components[*].fxId").value(hasItems(
+                        "nameField",
+                        "submitButton",
+                        "resetButton",
+                        "statusLabel")))
+                .andExpect(jsonPath("$.cartography.handlers[*].methodName").value(hasItems(
+                        "handleSubmit",
+                        "handleReset",
+                        "handleClose")))
+                .andExpect(jsonPath("$.classification.ruleCount").value(greaterThanOrEqualTo(1)))
+                .andExpect(jsonPath("$.classification.rules[*].extractionCandidate").value(hasItems(
+                        "VIEW_MODEL",
+                        "USE_CASE")))
+                .andExpect(jsonPath("$.classification.dependencies[*].target").value(hasItems(
+                        "UserService",
+                        "NotificationService")))
+                .andExpect(jsonPath("$.migrationPlan.lots.length()").value(greaterThanOrEqualTo(4)))
+                .andExpect(jsonPath("$.generationResult.artifacts.length()").value(greaterThanOrEqualTo(3)))
+                .andExpect(jsonPath("$.generationResult.artifacts[*].type").value(hasItems(
+                        "CONTROLLER_SLIM",
+                        "VIEW_MODEL",
+                        "USE_CASE")))
+                .andExpect(jsonPath("$.restitutionReport.markdown").value(containsString("## Lots")))
+                .andExpect(jsonPath("$.restitutionReport.markdown").value(containsString("## Artefacts")));
 
-        // --- Etape 3 : verification du body ---
-        runResponse = runResult.getResponse().getContentAsString();
+        mockMvc.perform(get("/api/v1/analysis/sessions/{sessionId}", sessionId)
+                        .contentType(APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("COMPLETED"))
+                .andExpect(jsonPath("$.controllerRef").value(fixturePath("SampleController.java")))
+                .andExpect(jsonPath("$.sourceSnippetRef").value(fixturePath("SampleView.fxml")));
 
-        assertThat(runResponse).as("Le body /run doit contenir finalStatus").contains("finalStatus");
+        mockMvc.perform(get("/api/v1/analysis/sessions/{sessionId}/classification", sessionId)
+                        .contentType(APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.ruleCount").value(greaterThanOrEqualTo(1)))
+                .andExpect(jsonPath("$.rules.length()").value(greaterThanOrEqualTo(5)))
+                .andExpect(jsonPath("$.rules[*].description").value(hasItems(
+                        containsString("handler handleSubmit"),
+                        containsString("Champ FXML Button submitButton"))));
 
-        // Le finalStatus doit etre COMPLETED ou FAILED (le pipeline peut echouer
-        // sur les fichiers fixtures qui ne sont pas de vrais fichiers filesystem)
-        boolean isCompleted = runResponse.contains("\"finalStatus\":\"COMPLETED\"")
-                || runResponse.contains("\"finalStatus\": \"COMPLETED\"");
-        boolean isFailed = runResponse.contains("\"finalStatus\":\"FAILED\"")
-                || runResponse.contains("\"finalStatus\": \"FAILED\"");
+        mockMvc.perform(get("/api/v1/analysis/sessions/{sessionId}/artifacts", sessionId)
+                        .contentType(APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.artifacts[*].className").value(hasItems(
+                        "SampleSlimController",
+                        "SampleViewModel",
+                        "SampleUseCase")));
 
-        assertThat(isCompleted || isFailed)
-                .as("finalStatus doit etre COMPLETED ou FAILED, body obtenu : %s", runResponse)
-                .isTrue();
+        mockMvc.perform(get("/api/v1/analysis/sessions/{sessionId}/report", sessionId)
+                        .contentType(APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.artifactCount").value(greaterThanOrEqualTo(1)))
+                .andExpect(jsonPath("$.unknowns.length()").value(greaterThanOrEqualTo(1)))
+                .andExpect(jsonPath("$.markdown").value(containsString("# Restitution")));
     }
 
-    /**
-     * Extraction minimaliste d'un champ scalaire depuis un JSON plat.
-     * Evite une dependance Jackson supplementaire dans le corps du test.
-     */
-    private static String extractJsonField(String json, String fieldName) {
-        String marker;
-        int start;
-        int end;
+    private String createSession(
+            final String sessionName,
+            final String controllerFixture,
+            final String fxmlFixture) throws Exception {
+        String requestBody = objectMapper.writeValueAsString(Map.of(
+                "sessionName", sessionName,
+                "sourceFilePaths", List.of(
+                        fixturePath(controllerFixture),
+                        fixturePath(fxmlFixture))));
 
-        marker = "\"" + fieldName + "\":\"";
-        start = json.indexOf(marker);
-        if (start < 0) {
-            // Tente avec espace apres les deux-points
-            marker = "\"" + fieldName + "\": \"";
-            start = json.indexOf(marker);
+        MvcResult createResult = mockMvc.perform(post("/api/v1/analysis/sessions")
+                        .contentType(APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.sessionId").isNotEmpty())
+                .andReturn();
+        JsonNode response = objectMapper.readTree(createResult.getResponse().getContentAsString());
+        String sessionId = response.path("sessionId").asText();
+
+        assertThat(sessionId).isNotBlank();
+        return sessionId;
+    }
+
+    private static String fixturePath(final String fixtureName) {
+        try {
+            return Path.of(Objects.requireNonNull(
+                    AnalysisPipelineIT.class.getClassLoader().getResource("fixtures/" + fixtureName),
+                    "Fixture introuvable: " + fixtureName).toURI()).toString();
+        } catch (Exception exception) {
+            throw new IllegalStateException("Impossible de resoudre la fixture " + fixtureName, exception);
         }
-        if (start < 0) {
-            return "";
-        }
-        start += marker.length();
-        end = json.indexOf('"', start);
-        if (end < 0) {
-            return "";
-        }
-        return json.substring(start, end);
     }
 }

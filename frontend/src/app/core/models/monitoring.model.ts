@@ -43,12 +43,24 @@ export interface MonitoringHealthComponent {
   status: string;
 }
 
+export interface MonitoringAiHealth {
+  status: string;
+  enabled: boolean;
+  provider: string;
+  circuitBreakerState: string;
+  totalRequests: number;
+  successRate: number;
+  p95LatencyMs: number;
+  totalTokens: number;
+}
+
 export interface MonitoringSnapshot {
   totalSessions: number;
   statusMetrics: MonitoringStatusMetric[];
   stageMetrics: MonitoringStageMetric[];
   healthStatus: string;
   healthComponents: MonitoringHealthComponent[];
+  aiHealth: MonitoringAiHealth | null;
   pipelineOutcomes: Record<string, number>;
   llmOutcomes: Record<string, number>;
   refreshedAt: string;

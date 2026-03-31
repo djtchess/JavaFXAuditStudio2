@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:semgrep.dev)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:help.semgrep.dev)",
+      "WebFetch(domain:docs.openrewrite.org)",
+      "Bash(./backend/mvnw.cmd -f backend/pom.xml test)",
+      "Bash(find ./backend/src/main/java/ff/ss/javaFxAuditStudio/adapters/out/ai -type f -name *.java)"
+    ]
+  }
+}

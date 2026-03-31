@@ -25,6 +25,8 @@ const SESSION_RESPONSE: AnalysisSessionResponse = {
   status: 'CREATED',
   sessionName: 'Audit MainController',
   controllerRef: 'src/main/java/com/app/MainController.java',
+  sourceSnippetRef: 'src/main/resources/view/Main.fxml',
+  createdAt: '2026-03-30T10:15:00Z',
 };
 
 const CARTOGRAPHY: CartographyResponse = {
@@ -109,6 +111,16 @@ describe('AnalysisApiService', () => {
     req.flush(SESSION_RESPONSE);
   });
 
+  it('should GET session metadata for a session', () => {
+    service.getSession('session-1').subscribe(result => {
+      expect(result).toEqual(SESSION_RESPONSE);
+    });
+
+    const req = httpMock.expectOne('/api/v1/analysis/sessions/session-1');
+    expect(req.request.method).toBe('GET');
+    req.flush(SESSION_RESPONSE);
+  });
+
   it('should GET cartography for a session', () => {
     service.getCartography('session-1').subscribe(result => {
       expect(result).toEqual(CARTOGRAPHY);
@@ -117,6 +129,16 @@ describe('AnalysisApiService', () => {
     const req = httpMock.expectOne('/api/v1/analysis/sessions/session-1/cartography');
     expect(req.request.method).toBe('GET');
     req.flush(CARTOGRAPHY);
+  });
+
+  it('should GET classification for a session', () => {
+    service.getClassification('session-1').subscribe(result => {
+      expect(result).toEqual(PIPELINE_RESULT.classification);
+    });
+
+    const req = httpMock.expectOne('/api/v1/analysis/sessions/session-1/classification');
+    expect(req.request.method).toBe('GET');
+    req.flush(PIPELINE_RESULT.classification);
   });
 
   it('should GET migration plan and report for a session', () => {
@@ -134,6 +156,16 @@ describe('AnalysisApiService', () => {
     const reportReq = httpMock.expectOne('/api/v1/analysis/sessions/session-1/report');
     expect(reportReq.request.method).toBe('GET');
     reportReq.flush(REPORT);
+  });
+
+  it('should GET artifacts for a session', () => {
+    service.getArtifacts('session-1').subscribe(result => {
+      expect(result).toEqual(ARTIFACTS);
+    });
+
+    const req = httpMock.expectOne('/api/v1/analysis/sessions/session-1/artifacts');
+    expect(req.request.method).toBe('GET');
+    req.flush(ARTIFACTS);
   });
 
   it('should POST the full pipeline endpoint with a null body', () => {

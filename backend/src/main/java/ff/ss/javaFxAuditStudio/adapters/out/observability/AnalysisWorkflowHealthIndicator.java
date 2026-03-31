@@ -8,6 +8,7 @@ import org.springframework.boot.health.contributor.Health;
 import org.springframework.boot.health.contributor.HealthIndicator;
 
 import ff.ss.javaFxAuditStudio.application.ports.out.AnalysisSessionPort;
+import ff.ss.javaFxAuditStudio.application.ports.out.AnalysisSessionStatusHistoryPort;
 import ff.ss.javaFxAuditStudio.domain.workbench.AnalysisSession;
 import ff.ss.javaFxAuditStudio.domain.workbench.AnalysisStatus;
 
@@ -16,20 +17,14 @@ import ff.ss.javaFxAuditStudio.domain.workbench.AnalysisStatus;
  */
 public final class AnalysisWorkflowHealthIndicator implements HealthIndicator {
 
-    private static final List<AnalysisStatus> ACTIVE_STATUSES = List.of(
-            AnalysisStatus.IN_PROGRESS,
-            AnalysisStatus.RUNNING,
-            AnalysisStatus.INGESTING,
-            AnalysisStatus.CARTOGRAPHING,
-            AnalysisStatus.CLASSIFYING,
-            AnalysisStatus.PLANNING,
-            AnalysisStatus.GENERATING,
-            AnalysisStatus.REPORTING);
-
     private final AnalysisSessionPort analysisSessionPort;
+    private final AnalysisSessionStatusHistoryPort statusHistoryPort;
 
-    public AnalysisWorkflowHealthIndicator(final AnalysisSessionPort analysisSessionPort) {
+    public AnalysisWorkflowHealthIndicator(
+            final AnalysisSessionPort analysisSessionPort,
+            final AnalysisSessionStatusHistoryPort statusHistoryPort) {
         this.analysisSessionPort = Objects.requireNonNull(analysisSessionPort, "analysisSessionPort must not be null");
+        this.statusHistoryPort = (statusHistoryPort != null) ? statusHistoryPort : AnalysisSessionStatusHistoryPort.noop();
     }
 
     @Override
@@ -53,7 +48,7 @@ public final class AnalysisWorkflowHealthIndicator implements HealthIndicator {
 
     private static long countActiveSessions(final List<AnalysisSession> sessions) {
         return sessions.stream()
-                .filter(session -> ACTIVE_STATUSES.contains(session.status()))
+                .filter(session -> session.status().isPipelineActive())
                 .count();
     }
 
@@ -65,12 +60,16 @@ public final class AnalysisWorkflowHealthIndicator implements HealthIndicator {
                 .count();
     }
 
-    private static long latestTimestamp(final List<AnalysisSession> sessions) {
-        return sessions.stream()
+    private long latestTimestamp(final List<AnalysisSession> sessions) {
+        long latestSessionCreation = sessions.stream()
                 .map(AnalysisSession::createdAt)
                 .filter(Objects::nonNull)
                 .mapToLong(Instant::toEpochMilli)
                 .max()
                 .orElse(0L);
+        long latestTransition = statusHistoryPort.findLatestTransitionAt()
+                .map(Instant::toEpochMilli)
+                .orElse(0L);
+        return Math.max(latestSessionCreation, latestTransition);
     }
 }

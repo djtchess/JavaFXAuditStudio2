@@ -13,9 +13,11 @@ import ff.ss.javaFxAuditStudio.application.ports.in.AnalysisOrchestrationUseCase
 import ff.ss.javaFxAuditStudio.application.ports.in.CartographyUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.in.ClassifyResponsibilitiesUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.in.ExportArtifactsUseCase;
+import ff.ss.javaFxAuditStudio.application.ports.in.GetAnalysisSessionUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.in.GenerateArtifactsUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.in.ProduceMigrationPlanUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.in.ProduceRestitutionUseCase;
+import ff.ss.javaFxAuditStudio.application.ports.in.SubmitAnalysisUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.out.AnalysisSessionPort;
 import ff.ss.javaFxAuditStudio.domain.workbench.AnalysisSession;
 import ff.ss.javaFxAuditStudio.domain.workbench.AnalysisStatus;
@@ -57,6 +59,12 @@ class AnalysisControllerRunEndpointTest {
     private AnalysisSessionPort analysisSessionPort;
 
     @Mock
+    private SubmitAnalysisUseCase submitAnalysisUseCase;
+
+    @Mock
+    private GetAnalysisSessionUseCase getAnalysisSessionUseCase;
+
+    @Mock
     private AnalysisOrchestrationUseCase analysisOrchestrationUseCase;
 
     @Mock
@@ -93,6 +101,8 @@ class AnalysisControllerRunEndpointTest {
                 generateArtifactsUseCase,
                 produceMigrationPlanUseCase,
                 produceRestitutionUseCase,
+                submitAnalysisUseCase,
+                getAnalysisSessionUseCase,
                 analysisSessionPort,
                 analysisOrchestrationUseCase,
                 analysisSessionResponseMapper,
@@ -128,9 +138,10 @@ class AnalysisControllerRunEndpointTest {
         sessionId = "session-en-cours";
         sessionEnCours = new AnalysisSession(
                 sessionId,
+                "Audit en cours",
                 "com/example/MyController.java",
                 null,
-                AnalysisStatus.IN_PROGRESS,
+                AnalysisStatus.INGESTING,
                 Instant.now());
 
         when(analysisSessionPort.findById(sessionId)).thenReturn(Optional.of(sessionEnCours));
@@ -199,10 +210,12 @@ class AnalysisControllerRunEndpointTest {
         responseDto = new AnalysisSessionResponse(
                 sessionId,
                 "CARTOGRAPHING",
+                "Audit detaille",
                 "com/example/MyController.java",
-                "snippets/MyController.txt");
+                "snippets/MyController.txt",
+                session.createdAt());
 
-        when(analysisSessionPort.findById(sessionId)).thenReturn(Optional.of(session));
+        when(getAnalysisSessionUseCase.handle(sessionId)).thenReturn(Optional.of(session));
         when(analysisSessionResponseMapper.toResponse(session)).thenReturn(responseDto);
 
         response = controller.getSession(sessionId);
@@ -219,7 +232,7 @@ class AnalysisControllerRunEndpointTest {
         ResponseEntity<AnalysisSessionResponse> response;
 
         sessionId = "session-absente";
-        when(analysisSessionPort.findById(sessionId)).thenReturn(Optional.empty());
+        when(getAnalysisSessionUseCase.handle(sessionId)).thenReturn(Optional.empty());
 
         response = controller.getSession(sessionId);
 

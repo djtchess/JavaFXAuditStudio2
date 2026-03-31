@@ -12,6 +12,8 @@ const SUCCESS_RESPONSE: AnalysisSessionResponse = {
   status: 'CREATED',
   sessionName: 'Audit MainController',
   controllerRef: 'src/main/java/com/app/MainController.java',
+  sourceSnippetRef: 'src/main/resources/view/Main.fxml',
+  createdAt: '2026-03-30T10:15:00Z',
 };
 
 type AnalysisApiSpy = {
@@ -118,6 +120,81 @@ describe('AnalysisSubmitComponent', () => {
     const errorPanel = fixture.nativeElement.querySelector('.status-panel.error');
     expect(errorPanel).toBeTruthy();
     expect(errorPanel.textContent).toContain('Backend unavailable');
+    expect(routerSpy.navigate).not.toHaveBeenCalled();
+  });
+
+  it('should ignore submission when the form is blank', async () => {
+    const apiSpy: AnalysisApiSpy = {
+      submitSession: vi.fn(),
+    };
+
+    const routerSpy: RouterSpy = {
+      navigate: vi.fn(),
+    };
+
+    await TestBed.configureTestingModule({
+      imports: [AnalysisSubmitComponent],
+      providers: [
+        { provide: AnalysisApiService, useValue: apiSpy },
+        { provide: Router, useValue: routerSpy },
+        { provide: ActivatedRoute, useValue: { snapshot: {} } },
+      ],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(AnalysisSubmitComponent);
+    fixture.detectChanges();
+
+    const component = fixture.componentInstance as unknown as {
+      sessionName: string;
+      sourceFilePathsRaw: string;
+      onSubmit: () => void;
+    };
+    component.sessionName = '   ';
+    component.sourceFilePathsRaw = '   ';
+
+    component.onSubmit();
+    fixture.detectChanges();
+
+    expect(apiSpy.submitSession).not.toHaveBeenCalled();
+    expect(routerSpy.navigate).not.toHaveBeenCalled();
+  });
+
+  it('should show the fallback error message when the backend does not provide one', async () => {
+    const apiSpy: AnalysisApiSpy = {
+      submitSession: vi.fn().mockReturnValue(
+        throwError(() => ({})),
+      ),
+    };
+
+    const routerSpy: RouterSpy = {
+      navigate: vi.fn(),
+    };
+
+    await TestBed.configureTestingModule({
+      imports: [AnalysisSubmitComponent],
+      providers: [
+        { provide: AnalysisApiService, useValue: apiSpy },
+        { provide: Router, useValue: routerSpy },
+        { provide: ActivatedRoute, useValue: { snapshot: {} } },
+      ],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(AnalysisSubmitComponent);
+    fixture.detectChanges();
+
+    const component = fixture.componentInstance as unknown as {
+      sessionName: string;
+      sourceFilePathsRaw: string;
+      onSubmit: () => void;
+    };
+    component.sessionName = 'Audit MainController';
+    component.sourceFilePathsRaw = 'src/main/java/com/app/MainController.java';
+
+    component.onSubmit();
+    fixture.detectChanges();
+
+    const errorPanel = fixture.nativeElement.querySelector('.status-panel.error');
+    expect(errorPanel.textContent).toContain('Erreur lors de la soumission');
     expect(routerSpy.navigate).not.toHaveBeenCalled();
   });
 });

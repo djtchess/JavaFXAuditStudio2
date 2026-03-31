@@ -18,9 +18,28 @@ function createMetricsServiceSpy() {
         { stage: 'cartography', label: 'Cartographie', count: 2, averageMs: 220 },
       ],
       healthStatus: 'UP',
-      healthComponents: [],
-      pipelineOutcomes: {},
-      llmOutcomes: {},
+      healthComponents: [
+        { name: 'analysisWorkflow', status: 'UP' },
+        { name: 'llmEnrichment', status: 'UP' },
+      ],
+      aiHealth: {
+        status: 'UP',
+        enabled: true,
+        provider: 'claude-code',
+        circuitBreakerState: 'CLOSED',
+        totalRequests: 5,
+        successRate: 80,
+        p95LatencyMs: 420,
+        totalTokens: 1280,
+      },
+      pipelineOutcomes: {
+        success: 7,
+        failure: 1,
+      },
+      llmOutcomes: {
+        success: 4,
+        failure: 1,
+      },
       refreshedAt: '2026-03-27T07:00:00Z',
     })),
   };
@@ -53,6 +72,12 @@ describe('MonitoringDashboardComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('10');
     expect(fixture.nativeElement.textContent).toContain('Creees');
     expect(fixture.nativeElement.textContent).toContain('150 ms');
+    expect(fixture.nativeElement.textContent).toContain("Sante IA");
+    expect(fixture.nativeElement.textContent).toContain('claude-code');
+    expect(fixture.nativeElement.textContent).toContain('Ferme');
+    expect(fixture.nativeElement.textContent).toContain('420 ms');
+    expect(fixture.nativeElement.textContent).toContain('Resultats pipeline');
+    expect(fixture.nativeElement.textContent).toContain('Sante backend');
 
     vi.advanceTimersByTime(30_000);
     await Promise.resolve();

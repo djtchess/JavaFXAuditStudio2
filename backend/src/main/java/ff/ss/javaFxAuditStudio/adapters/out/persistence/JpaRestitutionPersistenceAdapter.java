@@ -49,6 +49,9 @@ public class JpaRestitutionPersistenceAdapter implements RestitutionPersistenceP
                 report.contradictions(),
                 report.unknowns(),
                 report.findings(),
+                report.lotSummaries(),
+                report.artifactSummaries(),
+                report.markdown(),
                 Instant.now());
     }
 
@@ -66,6 +69,9 @@ public class JpaRestitutionPersistenceAdapter implements RestitutionPersistenceP
                 summary,
                 e.getContradictions(),
                 e.getUnknowns(),
-                e.getFindings());
+                e.getFindings(),
+                e.getLotSummaries(),
+                e.getArtifactSummaries(),
+                e.getMarkdown());
     }
 }

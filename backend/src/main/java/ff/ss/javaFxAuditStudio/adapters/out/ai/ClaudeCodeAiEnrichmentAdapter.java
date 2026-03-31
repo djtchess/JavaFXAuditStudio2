@@ -55,9 +55,11 @@ public class ClaudeCodeAiEnrichmentAdapter {
         LOG.debug("Claude — envoi requete pour controllerRef={}, taskType={}",
                 bundle.controllerRef(), request.taskType());
 
+        String systemPrompt = buildSystemPrompt(request);
         ClaudeHttpDtos.MessagesRequest body = new ClaudeHttpDtos.MessagesRequest(
                 DEFAULT_MODEL,
                 properties.effectiveMaxTokens(request.taskType()),
+                systemPrompt,
                 List.of(new ClaudeHttpDtos.Message("user", prompt)));
 
         ClaudeHttpDtos.MessagesResponse response = restClient.post()
@@ -122,6 +124,13 @@ public class ClaudeCodeAiEnrichmentAdapter {
         context.put("taskType", request.taskType().name());
         context.putAll(request.extraContext());
         return templateLoader.render(request.promptTemplate(), context);
+    }
+
+    private String buildSystemPrompt(final AiEnrichmentRequest request) {
+        return "Tu es un expert en migration JavaFX vers Spring Boot / architecture hexagonale."
+                + " Controleur de reference : " + request.bundle().controllerRef()
+                + ". Tache : " + request.taskType().name()
+                + ". Reponds uniquement avec du JSON valide selon le format demande dans le prompt utilisateur.";
     }
 
     private String validateAndGetApiKey() {

@@ -263,10 +263,11 @@ import { MonitoringSnapshot } from '../../core/models/monitoring.model';
       <section class="hero">
         <div class="hero-copy">
           <p class="eyebrow">Observabilite</p>
-          <h1>Monitoring technique frontend</h1>
+          <h1>Monitoring d'exploitation</h1>
           <p class="lead">
             Le tableau de bord lit directement les metriques exposees par Actuator pour suivre le
-            volume de sessions, la repartition par statut et le temps moyen par etape du pipeline.
+            volume de sessions, la sante IA, les resultats du pipeline et les temps moyens des
+            etapes critiques.
           </p>
         </div>
 
@@ -313,6 +314,54 @@ import { MonitoringSnapshot } from '../../core/models/monitoring.model';
         </section>
 
         <section class="section">
+          <h2 class="section-title">Sante IA</h2>
+          @if (data.aiHealth; as aiHealth) {
+            <div class="summary-grid">
+              <article class="card">
+                <p class="card-label">Etat IA</p>
+                <p class="card-value">{{ aiHealth.status }}</p>
+                <p class="card-subtitle">{{ aiHealth.provider }}</p>
+              </article>
+              <article class="card">
+                <p class="card-label">Circuit breaker</p>
+                <p class="card-value">{{ formatCircuitBreakerState(aiHealth.circuitBreakerState) }}</p>
+                <p class="card-subtitle">{{ aiHealth.totalRequests }} appel(s)</p>
+              </article>
+              <article class="card">
+                <p class="card-label">Succes</p>
+                <p class="card-value">{{ aiHealth.successRate | number:'1.0-1' }} %</p>
+                <p class="card-subtitle">Taux de succes LLM</p>
+              </article>
+              <article class="card">
+                <p class="card-label">P95 latence</p>
+                <p class="card-value">{{ aiHealth.p95LatencyMs | number:'1.0-0' }} ms</p>
+                <p class="card-subtitle">Metric llm.requests.duration</p>
+              </article>
+              <article class="card">
+                <p class="card-label">Tokens</p>
+                <p class="card-value">{{ aiHealth.totalTokens | number:'1.0-0' }}</p>
+                <p class="card-subtitle">Consommation cumulee</p>
+              </article>
+            </div>
+            @if (describeOutcomes(data.llmOutcomes).length > 0) {
+              <div class="status-list">
+                @for (metric of describeOutcomes(data.llmOutcomes); track metric.key) {
+                  <article class="status-row">
+                    <div class="status-name">{{ metric.label }}</div>
+                    <div class="status-count">{{ metric.value }}</div>
+                    <div class="status-hint">outcome = {{ metric.key }}</div>
+                  </article>
+                }
+              </div>
+            } @else {
+              <div class="empty-state">Aucun appel LLM observe pour le moment.</div>
+            }
+          } @else {
+            <div class="empty-state">Aucune synthese IA disponible pour le moment.</div>
+          }
+        </section>
+
+        <section class="section">
           <h2 class="section-title">Sessions par statut</h2>
           @if (data.statusMetrics.length > 0) {
             <div class="status-list">
@@ -326,6 +375,23 @@ import { MonitoringSnapshot } from '../../core/models/monitoring.model';
             </div>
           } @else {
             <div class="empty-state">Aucune valeur de statut disponible pour le moment.</div>
+          }
+        </section>
+
+        <section class="section">
+          <h2 class="section-title">Resultats pipeline</h2>
+          @if (describeOutcomes(data.pipelineOutcomes).length > 0) {
+            <div class="status-list">
+              @for (metric of describeOutcomes(data.pipelineOutcomes); track metric.key) {
+                <article class="status-row">
+                  <div class="status-name">{{ metric.label }}</div>
+                  <div class="status-count">{{ metric.value }}</div>
+                  <div class="status-hint">outcome = {{ metric.key }}</div>
+                </article>
+              }
+            </div>
+          } @else {
+            <div class="empty-state">Aucun resultat de pipeline disponible pour le moment.</div>
           }
         </section>
 
@@ -345,6 +411,30 @@ import { MonitoringSnapshot } from '../../core/models/monitoring.model';
             <div class="empty-state">Aucune mesure de duree par etape disponible pour le moment.</div>
           }
         </section>
+
+        <section class="section">
+          <h2 class="section-title">Sante backend</h2>
+          <div class="summary-grid">
+            <article class="card">
+              <p class="card-label">Etat global</p>
+              <p class="card-value">{{ data.healthStatus }}</p>
+              <p class="card-subtitle">Health Actuator</p>
+            </article>
+          </div>
+          @if (data.healthComponents.length > 0) {
+            <div class="status-list">
+              @for (component of data.healthComponents; track component.name) {
+                <article class="status-row">
+                  <div class="status-name">{{ formatHealthComponentName(component.name) }}</div>
+                  <div class="status-count">{{ component.status }}</div>
+                  <div class="status-hint">component = {{ component.name }}</div>
+                </article>
+              }
+            </div>
+          } @else {
+            <div class="empty-state">Aucun composant de sante detaille n'est expose.</div>
+          }
+        </section>
       }
     </main>
   `,
@@ -358,6 +448,15 @@ export class MonitoringDashboardComponent implements OnInit {
   protected readonly refreshing = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly lastRefreshed = signal<Date | null>(null);
+  protected readonly outcomeLabels: Record<string, string> = {
+    success: 'Succes',
+    degraded: 'Degrade',
+    failure: 'Echec',
+    blocked: 'Bloque',
+    circuit_open: 'Circuit ouvert',
+    not_found: 'Introuvable',
+  };
+  protected readonly outcomeOrder = ['success', 'degraded', 'failure', 'blocked', 'circuit_open', 'not_found'];
 
   ngOnInit(): void {
     interval(30_000)
@@ -401,5 +500,51 @@ export class MonitoringDashboardComponent implements OnInit {
       }
     }
     return message;
+  }
+
+  protected describeOutcomes(outcomes: Record<string, number>): Array<{ key: string; label: string; value: number }> {
+    return Object.entries(outcomes)
+      .sort(([left], [right]) => this.compareByKnownOrder(left, right))
+      .map(([key, value]) => ({
+        key,
+        label: this.outcomeLabels[key] ?? this.formatLabel(key),
+        value,
+      }));
+  }
+
+  protected formatCircuitBreakerState(state: string): string {
+    const labels: Record<string, string> = {
+      CLOSED: 'Ferme',
+      OPEN: 'Ouvert',
+      HALF_OPEN: 'Semi-ouvert',
+    };
+    return labels[state] ?? state;
+  }
+
+  protected formatHealthComponentName(name: string): string {
+    return this.formatLabel(name);
+  }
+
+  private formatLabel(value: string): string {
+    return value
+      .split(/(?=[A-Z])|_/)
+      .filter(Boolean)
+      .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+      .join(' ');
+  }
+
+  private compareByKnownOrder(left: string, right: string): number {
+    const leftIndex = this.outcomeOrder.indexOf(left);
+    const rightIndex = this.outcomeOrder.indexOf(right);
+    if (leftIndex >= 0 && rightIndex >= 0) {
+      return leftIndex - rightIndex;
+    }
+    if (leftIndex >= 0) {
+      return -1;
+    }
+    if (rightIndex >= 0) {
+      return 1;
+    }
+    return left.localeCompare(right);
   }
 }

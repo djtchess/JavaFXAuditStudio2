@@ -45,6 +45,7 @@ describe('ReportViewComponent', () => {
     expect(fixture.debugElement.query(By.css('.actionable-yes'))).toBeTruthy();
     expect(fixture.debugElement.query(By.css('.findings-list'))).toBeTruthy();
     expect(fixture.debugElement.query(By.css('.unknowns-list'))).toBeTruthy();
+    expect(fixture.debugElement.query(By.css('.section-label')).nativeElement.textContent).toContain('Conclusions');
     expect(fixture.debugElement.query(By.css('.markdown-panel pre')).nativeElement.textContent).toContain('# Restitution');
   });
 
@@ -57,7 +58,14 @@ describe('ReportViewComponent', () => {
     fixture.componentRef.setInput('data', REPORT_WITHOUT_MARKDOWN);
     fixture.detectChanges();
 
+    const component = fixture.componentInstance as unknown as {
+      confidenceColor: () => string;
+    };
+
     expect(fixture.debugElement.query(By.css('.actionable-no'))).toBeTruthy();
+    expect(fixture.debugElement.query(By.css('.findings-list'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('.unknowns-list'))).toBeNull();
     expect(fixture.debugElement.query(By.css('.markdown-panel'))).toBeNull();
+    expect(component.confidenceColor()).toBe('#a23c1c');
   });
 });

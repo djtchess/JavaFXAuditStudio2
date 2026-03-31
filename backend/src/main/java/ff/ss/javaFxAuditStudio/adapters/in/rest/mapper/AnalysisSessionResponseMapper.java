@@ -12,7 +12,9 @@ public class AnalysisSessionResponseMapper {
         return new AnalysisSessionResponse(
                 session.sessionId(),
                 session.status().name(),
+                session.sessionName(),
                 session.controllerName(),
-                session.sourceSnippetRef() != null ? session.sourceSnippetRef() : "");
+                session.sourceSnippetRef(),
+                session.createdAt());
     }
 }

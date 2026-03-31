@@ -1,5 +1,7 @@
 package ff.ss.javaFxAuditStudio.adapters.in.rest;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,16 +12,23 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.nio.file.Path;
+import java.util.Map;
+import java.util.Objects;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * JAS-92 — Test d'integration bout-en-bout du pipeline d'analyse avec ComplexController.java.
+ * JAS-92 — Test d'integration bout-en-bout du pipeline avec les fixtures complexes.
  *
- * Meme pattern que JAS-90 (AnalysisPipelineIT) mais avec la fixture complexe.
- * Verifie que le pipeline ne produit pas de 5xx et retourne un finalStatus non nul.
+ * <p>Verifie la richesse du contenu metier produit par le pipeline sur un controller
+ * plus dense qu'un simple smoke test HTTP.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @ActiveProfiles("test")
@@ -27,6 +36,9 @@ class ComplexControllerPipelineIT {
 
     @Autowired
     private WebApplicationContext wac;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     private MockMvc mockMvc;
 
@@ -36,78 +48,116 @@ class ComplexControllerPipelineIT {
     }
 
     @Test
-    void pipeline_withComplexController_returns200WithNonNullFinalStatus() throws Exception {
-        // --- Etape 1 : creation de la session avec la fixture complexe ---
-        String createBody;
-        MvcResult createResult;
-        String createResponse;
-        String sessionId;
+    void pipeline_withComplexFixtures_returnsRichAndTraceableBusinessContent() throws Exception {
+        String sessionId = createSession("ComplexControllerSession", "ComplexController.java", "ComplexView.fxml");
+        JsonNode runPayload = postJson("/api/v1/analysis/sessions/{sessionId}/run", sessionId);
+        JsonNode cartographyPayload = getJson("/api/v1/analysis/sessions/{sessionId}/cartography", sessionId);
+        JsonNode classificationPayload = getJson("/api/v1/analysis/sessions/{sessionId}/classification", sessionId);
+        JsonNode planPayload = getJson("/api/v1/analysis/sessions/{sessionId}/plan", sessionId);
+        JsonNode artifactsPayload = getJson("/api/v1/analysis/sessions/{sessionId}/artifacts", sessionId);
+        JsonNode reportPayload = getJson("/api/v1/analysis/sessions/{sessionId}/report", sessionId);
 
-        createBody = """
-                {
-                    "sessionName": "ComplexControllerSession",
-                    "sourceFilePaths": ["fixtures/ComplexController.java"]
-                }
-                """;
+        assertThat(runPayload.path("finalStatus").asText()).isEqualTo("COMPLETED");
 
-        createResult = mockMvc.perform(post("/api/v1/analysis/sessions")
-                        .contentType(APPLICATION_JSON)
-                        .content(createBody))
-                .andExpect(status().isCreated())
-                .andReturn();
+        assertThat(cartographyPayload.path("components").size()).isGreaterThanOrEqualTo(6);
+        assertThat(cartographyPayload.path("handlers").size()).isGreaterThanOrEqualTo(8);
+        assertThat(extractTexts(cartographyPayload.path("components"), "fxId"))
+                .contains("searchField", "searchButton", "categoryCombo", "resultTable", "infoLabel");
 
-        createResponse = createResult.getResponse().getContentAsString();
-        assertThat(createResponse).contains("sessionId");
+        int totalRules = classificationPayload.path("ruleCount").asInt()
+                + classificationPayload.path("uncertainCount").asInt();
+        assertThat(totalRules).isGreaterThanOrEqualTo(8);
+        assertThat(classificationPayload.path("excludedLifecycleMethodsCount").asInt()).isEqualTo(1);
+        assertThat(extractTexts(classificationPayload.path("dependencies"), "kind"))
+                .contains("SHARED_SERVICE");
 
-        sessionId = extractJsonField(createResponse, "sessionId");
-        assertThat(sessionId).isNotBlank();
+        assertThat(planPayload.path("compilable").asBoolean()).isTrue();
+        assertThat(planPayload.path("lots").size()).isGreaterThanOrEqualTo(4);
+        assertThat(countExtractionCandidates(planPayload.path("lots"))).isGreaterThanOrEqualTo(7);
 
-        // --- Etape 2 : lancement du pipeline ---
-        MvcResult runResult;
-        String runResponse;
+        List<String> artifactTypes = extractTexts(artifactsPayload.path("artifacts"), "type");
+        assertThat(artifactsPayload.path("artifacts").size()).isGreaterThanOrEqualTo(4);
+        assertThat(artifactTypes.stream().distinct().count()).isGreaterThanOrEqualTo(3);
+        assertThat(artifactTypes).contains("CONTROLLER_SLIM", "VIEW_MODEL", "USE_CASE");
 
-        // Verification 1 : pas de 5xx
-        runResult = mockMvc.perform(post("/api/v1/analysis/sessions/{sessionId}/run", sessionId)
-                        .contentType(APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andReturn();
-
-        // Verification 2 : finalStatus present et non nul dans le body JSON
-        runResponse = runResult.getResponse().getContentAsString();
-
-        assertThat(runResponse)
-                .as("Le body /run doit contenir le champ finalStatus")
-                .contains("finalStatus");
-
-        // Le champ finalStatus ne doit pas etre null (valeur attendue : COMPLETED ou FAILED)
-        assertThat(runResponse)
-                .as("finalStatus ne doit pas etre null dans la reponse")
-                .doesNotContain("\"finalStatus\":null")
-                .doesNotContain("\"finalStatus\": null");
+        assertThat(reportPayload.path("isActionable").asBoolean()).isTrue();
+        assertThat(reportPayload.path("artifactCount").asInt()).isGreaterThanOrEqualTo(4);
+        assertThat(reportPayload.path("markdown").asText())
+                .contains("# Restitution", "## Lots", "## Artefacts");
     }
 
-    /**
-     * Extraction minimaliste d'un champ scalaire depuis un JSON plat.
-     */
-    private static String extractJsonField(String json, String fieldName) {
-        String marker;
-        int start;
-        int end;
+    private String createSession(
+            final String sessionName,
+            final String controllerFixture,
+            final String fxmlFixture) throws Exception {
+        String requestBody = objectMapper.writeValueAsString(Map.of(
+                "sessionName", sessionName,
+                "sourceFilePaths", List.of(
+                        fixturePath(controllerFixture),
+                        fixturePath(fxmlFixture))));
+        JsonNode createPayload = postJson("/api/v1/analysis/sessions", requestBody, null);
 
-        marker = "\"" + fieldName + "\":\"";
-        start = json.indexOf(marker);
-        if (start < 0) {
-            marker = "\"" + fieldName + "\": \"";
-            start = json.indexOf(marker);
+        assertThat(createPayload.path("status").asText()).isEqualTo("CREATED");
+        return createPayload.path("sessionId").asText();
+    }
+
+    private JsonNode getJson(final String pathTemplate, final String sessionId) throws Exception {
+        MvcResult result = mockMvc.perform(get(pathTemplate, sessionId).contentType(APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andReturn();
+        return readJson(result);
+    }
+
+    private JsonNode postJson(
+            final String pathTemplate,
+            final String sessionId) throws Exception {
+        MvcResult result = mockMvc.perform(post(pathTemplate, sessionId).contentType(APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andReturn();
+        return readJson(result);
+    }
+
+    private JsonNode postJson(
+            final String pathTemplate,
+            final String requestBody,
+            final String ignoredSessionId) throws Exception {
+        MvcResult result = mockMvc.perform(post(pathTemplate)
+                        .contentType(APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isCreated())
+                .andReturn();
+        return readJson(result);
+    }
+
+    private JsonNode readJson(final MvcResult result) throws Exception {
+        return objectMapper.readTree(result.getResponse().getContentAsString());
+    }
+
+    private List<String> extractTexts(final JsonNode arrayNode, final String fieldName) {
+        List<String> values = new ArrayList<>();
+
+        for (JsonNode node : arrayNode) {
+            values.add(node.path(fieldName).asText());
         }
-        if (start < 0) {
-            return "";
+        return values;
+    }
+
+    private int countExtractionCandidates(final JsonNode lotsNode) {
+        int total = 0;
+
+        for (JsonNode lot : lotsNode) {
+            total += lot.path("extractionCandidates").size();
         }
-        start += marker.length();
-        end = json.indexOf('"', start);
-        if (end < 0) {
-            return "";
+        return total;
+    }
+
+    private static String fixturePath(final String fixtureName) {
+        try {
+            return Path.of(Objects.requireNonNull(
+                    ComplexControllerPipelineIT.class.getClassLoader().getResource("fixtures/" + fixtureName),
+                    "Fixture introuvable: " + fixtureName).toURI()).toString();
+        } catch (Exception exception) {
+            throw new IllegalStateException("Impossible de resoudre la fixture " + fixtureName, exception);
         }
-        return json.substring(start, end);
     }
 }

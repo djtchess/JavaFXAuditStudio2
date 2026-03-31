@@ -6,6 +6,7 @@ import java.time.Duration;
 import java.util.List;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,7 +26,7 @@ import ff.ss.javaFxAuditStudio.adapters.out.sanitization.DataSubstitutionSanitiz
 import ff.ss.javaFxAuditStudio.adapters.out.sanitization.IdentifierSanitizer;
 import ff.ss.javaFxAuditStudio.adapters.out.sanitization.MultiFileSanitizationAdapter;
 import ff.ss.javaFxAuditStudio.adapters.out.sanitization.OpenRewriteIdentifierSanitizer;
-import ff.ss.javaFxAuditStudio.adapters.out.sanitization.PreSanitizationAuditSanitizer;
+import ff.ss.javaFxAuditStudio.adapters.out.sanitization.PromptContextSanitizerAdapter;
 import ff.ss.javaFxAuditStudio.adapters.out.sanitization.SanitizationPipelineAdapter;
 import ff.ss.javaFxAuditStudio.adapters.out.sanitization.Sanitizer;
 import ff.ss.javaFxAuditStudio.adapters.out.sanitization.SecretSanitizer;
@@ -53,6 +54,7 @@ import ff.ss.javaFxAuditStudio.application.ports.out.LlmAuditPort;
 import ff.ss.javaFxAuditStudio.application.ports.out.MigrationPlanPersistencePort;
 import ff.ss.javaFxAuditStudio.application.ports.out.MultiFileSanitizationPort;
 import ff.ss.javaFxAuditStudio.application.ports.out.ProjectReferencePatternPort;
+import ff.ss.javaFxAuditStudio.application.ports.out.PromptContextSanitizerPort;
 import ff.ss.javaFxAuditStudio.application.ports.out.ReclassificationAuditPort;
 import ff.ss.javaFxAuditStudio.application.ports.out.SanitizationPort;
 import ff.ss.javaFxAuditStudio.application.ports.out.SourceFileReaderPort;
@@ -153,17 +155,13 @@ public class AiEnrichmentOrchestraConfiguration {
             final ClaudeCodeAiEnrichmentAdapter claudeAdapter,
             final OpenAiGpt54AiEnrichmentAdapter openAiAdapter,
             final ClaudeCodeCliAiEnrichmentAdapter cliAdapter,
-            final AiCircuitBreaker circuitBreaker) {
+            final AiCircuitBreaker circuitBreaker,
+            final MeterRegistry meterRegistry) {
         return new RoutingAiEnrichmentAdapter(
-                properties, claudeAdapter, openAiAdapter, cliAdapter, circuitBreaker);
+                properties, claudeAdapter, openAiAdapter, cliAdapter, circuitBreaker, meterRegistry);
     }
 
     // --- Beans sanitisation (JAS-018) ---
-
-    @Bean
-    public PreSanitizationAuditSanitizer preSanitizationAuditSanitizer() {
-        return new PreSanitizationAuditSanitizer();
-    }
 
     @Bean
     public OpenRewriteIdentifierSanitizer openRewriteIdentifierSanitizer() {
@@ -204,7 +202,6 @@ public class AiEnrichmentOrchestraConfiguration {
 
     @Bean
     public SanitizationPort sanitizationPort(
-            final PreSanitizationAuditSanitizer preSanitizationAuditSanitizer,
             final OpenRewriteIdentifierSanitizer openRewriteIdentifierSanitizer,
             final IdentifierSanitizer identifierSanitizer,
             final SecretSanitizer secretSanitizer,
@@ -213,23 +210,9 @@ public class AiEnrichmentOrchestraConfiguration {
             final SemgrepScanSanitizer semgrepScanSanitizer,
             final SensitiveMarkerDetector sensitiveMarkerDetector,
             final SanitizationProperties sanitizationProperties) {
-        // Ordre du pipeline de sanitisation (Action 6 + 7) :
-        //
-        // 1. PreSanitizationAuditSanitizer  — audit sans modification : comptabilise les elements
-        //                                      sensibles avant toute transformation (base de reference).
-        // 2. OpenRewriteIdentifierSanitizer — AST (le plus fiable) : renomme les identifiants metier
-        //                                      via OpenRewrite ; le source structure est traite en premier
-        //                                      pour maximiser la precision.
-        // 3. IdentifierSanitizer            — regex : filet de securite pour ce qu'OpenRewrite rate
-        //                                      (code incompilable, classpath partiel, etc.).
-        // 4. SecretSanitizer                — supprime secrets, URLs et tokens hardcodes.
-        // 5. CommentSanitizer               — supprime les commentaires potentiellement sensibles.
-        // 6. DataSubstitutionSanitizer      — remplace emails, nombres et chaines longues par des
-        //                                      donnees fictives.
-        // 7. SemgrepScanSanitizer           — validation finale (desactivable) : verifie qu'aucun
-        //                                      finding de securite ne subsiste. Toujours en queue.
+        // Ordre du pipeline : AST-rewrite (OpenRewrite) → regex-cleanup → secrets
+        // → commentaires → donnees → scan Semgrep post-sanitisation
         List<Sanitizer> pipeline = List.of(
-                preSanitizationAuditSanitizer,
                 openRewriteIdentifierSanitizer,
                 identifierSanitizer,
                 secretSanitizer,
@@ -245,6 +228,11 @@ public class AiEnrichmentOrchestraConfiguration {
             final SecretSanitizer secretSanitizer,
             final SemgrepScanSanitizer semgrepScanSanitizer) {
         return new MultiFileSanitizationAdapter(sanitizationPort, secretSanitizer, semgrepScanSanitizer);
+    }
+
+    @Bean
+    public PromptContextSanitizerPort promptContextSanitizerPort(final SanitizationPort sanitizationPort) {
+        return new PromptContextSanitizerAdapter(sanitizationPort);
     }
 
     // --- Adapter lecture source fichier (IAP-5) ---
@@ -307,12 +295,13 @@ public class AiEnrichmentOrchestraConfiguration {
             final AiEnrichmentPort aiEnrichmentPort,
             final SanitizationPort sanitizationPort,
             final SanitizationProperties sanitizationProperties,
-            final SourceFileReaderPort sourceFileReaderPort) {
+            final SourceFileReaderPort sourceFileReaderPort,
+            final PromptContextSanitizerPort promptContextSanitizerPort) {
         SanitizationPort effectivePort = sanitizationProperties.enabled() ? sanitizationPort : null;
         return new AiSpringBootGenerationService(
                 sessionPort, classificationPort, cartographyPort, reclassificationAuditPort,
                 aiArtifactPersistencePort, projectReferencePatternPort, migrationPlanPersistencePort,
-                aiEnrichmentPort, effectivePort, sourceFileReaderPort);
+                aiEnrichmentPort, effectivePort, sourceFileReaderPort, promptContextSanitizerPort);
     }
 
     @Bean
@@ -324,11 +313,12 @@ public class AiEnrichmentOrchestraConfiguration {
             final AiEnrichmentPort aiEnrichmentPort,
             final SanitizationPort sanitizationPort,
             final SanitizationProperties sanitizationProperties,
-            final SourceFileReaderPort sourceFileReaderPort) {
+            final SourceFileReaderPort sourceFileReaderPort,
+            final PromptContextSanitizerPort promptContextSanitizerPort) {
         SanitizationPort effectivePort = sanitizationProperties.enabled() ? sanitizationPort : null;
         return new RefineArtifactService(
                 sessionPort, classificationPort, cartographyPort, reclassificationAuditPort,
-                aiEnrichmentPort, effectivePort, sourceFileReaderPort);
+                aiEnrichmentPort, effectivePort, sourceFileReaderPort, promptContextSanitizerPort);
     }
 
     @Bean
@@ -342,7 +332,8 @@ public class AiEnrichmentOrchestraConfiguration {
             final AiEnrichmentPort aiEnrichmentPort,
             final SanitizationPort sanitizationPort,
             final SanitizationProperties sanitizationProperties,
-            final SourceFileReaderPort sourceFileReaderPort) {
+            final SourceFileReaderPort sourceFileReaderPort,
+            final PromptContextSanitizerPort promptContextSanitizerPort) {
         SanitizationPort effectivePort = sanitizationProperties.enabled() ? sanitizationPort : null;
         return new RefineAiArtifactService(
                 sessionPort,
@@ -353,7 +344,8 @@ public class AiEnrichmentOrchestraConfiguration {
                 projectReferencePatternPort,
                 aiEnrichmentPort,
                 effectivePort,
-                sourceFileReaderPort);
+                sourceFileReaderPort,
+                promptContextSanitizerPort);
     }
 
     @Bean
@@ -384,7 +376,8 @@ public class AiEnrichmentOrchestraConfiguration {
             final AiEnrichmentPort aiEnrichmentPort,
             final SanitizationPort sanitizationPort,
             final SanitizationProperties sanitizationProperties,
-            final SourceFileReaderPort sourceFileReaderPort) {
+            final SourceFileReaderPort sourceFileReaderPort,
+            final PromptContextSanitizerPort promptContextSanitizerPort) {
         SanitizationPort effectivePort = sanitizationProperties.enabled() ? sanitizationPort : null;
         return new VerifyAiArtifactCoherenceService(
                 sessionPort,
@@ -395,7 +388,8 @@ public class AiEnrichmentOrchestraConfiguration {
                 projectReferencePatternPort,
                 aiEnrichmentPort,
                 effectivePort,
-                sourceFileReaderPort);
+                sourceFileReaderPort,
+                promptContextSanitizerPort);
     }
 
     @Bean

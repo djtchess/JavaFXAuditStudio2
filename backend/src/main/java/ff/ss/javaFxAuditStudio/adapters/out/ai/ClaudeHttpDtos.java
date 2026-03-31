@@ -14,6 +14,7 @@ final class ClaudeHttpDtos {
     record MessagesRequest(
             String model,
             @JsonProperty("max_tokens") int maxTokens,
+            String system,
             List<Message> messages) {}
 
     record Message(String role, String content) {}

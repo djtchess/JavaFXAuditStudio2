@@ -46,12 +46,15 @@ describe('CartographyViewComponent', () => {
 
     const warningBanner = fixture.debugElement.query(By.css('.warning-banner'));
     expect(warningBanner).toBeTruthy();
+    expect(warningBanner.nativeElement.textContent).toContain('elements inconnus');
 
     const componentRows = fixture.debugElement.queryAll(By.css('tbody tr'));
     expect(componentRows.length).toBe(3);
     expect(componentRows[0].nativeElement.textContent).toContain('rootPane');
+    expect(componentRows[0].nativeElement.textContent).toContain('-');
     expect(componentRows[1].nativeElement.textContent).toContain('saveButton');
     expect(componentRows[2].nativeElement.textContent).toContain('onSave');
+    expect(componentRows[2].nativeElement.textContent).toContain('ActionEvent');
   });
 
   it('should show empty messages when no components or handlers are detected', async () => {
@@ -70,5 +73,6 @@ describe('CartographyViewComponent', () => {
     expect(emptyMessages.length).toBe(2);
     expect(emptyMessages[0].nativeElement.textContent).toContain('Aucun composant detecte');
     expect(emptyMessages[1].nativeElement.textContent).toContain('Aucun handler detecte');
+    expect(fixture.debugElement.query(By.css('th'))).toBeNull();
   });
 });

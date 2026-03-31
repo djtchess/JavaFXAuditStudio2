@@ -8,6 +8,9 @@ CREATE TABLE analysis_session (
     -- Identifiant metier de la session, genere par l'application (UUID ou autre).
     session_id VARCHAR NOT NULL,
 
+    -- Nom fonctionnel soumis par l'utilisateur pour retrouver la session.
+    session_name VARCHAR NOT NULL,
+
     -- Nom qualifie ou simple du controller JavaFX analyse dans cette session.
     controller_name VARCHAR NOT NULL,
 
@@ -17,7 +20,8 @@ CREATE TABLE analysis_session (
     source_snippet_ref VARCHAR,
 
     -- Etat courant du cycle de vie de la session.
-    -- Valeurs attendues : PENDING, RUNNING, COMPLETED, FAILED.
+    -- Valeurs attendues : CREATED, INGESTING, CARTOGRAPHING, CLASSIFYING,
+    -- PLANNING, GENERATING, REPORTING, COMPLETED, FAILED, LOCKED.
     status VARCHAR NOT NULL,
 
     -- Horodatage de creation de la session, toujours en UTC.

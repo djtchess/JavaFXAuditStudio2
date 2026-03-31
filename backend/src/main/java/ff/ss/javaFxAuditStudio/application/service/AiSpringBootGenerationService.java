@@ -16,6 +16,7 @@ import ff.ss.javaFxAuditStudio.application.ports.out.CartographyPersistencePort;
 import ff.ss.javaFxAuditStudio.application.ports.out.ClassificationPersistencePort;
 import ff.ss.javaFxAuditStudio.application.ports.out.MigrationPlanPersistencePort;
 import ff.ss.javaFxAuditStudio.application.ports.out.ProjectReferencePatternPort;
+import ff.ss.javaFxAuditStudio.application.ports.out.PromptContextSanitizerPort;
 import ff.ss.javaFxAuditStudio.application.ports.out.ReclassificationAuditPort;
 import ff.ss.javaFxAuditStudio.application.ports.out.SanitizationPort;
 import ff.ss.javaFxAuditStudio.application.ports.out.SourceFileReaderPort;
@@ -51,13 +52,14 @@ public class AiSpringBootGenerationService implements GenerateSpringBootClassesU
     private final AiEnrichmentPort aiEnrichmentPort;
     private final SanitizationPort sanitizationPort;
     private final SourceFileReaderPort sourceFileReaderPort;
+    private final PromptContextSanitizerPort promptContextSanitizerPort;
 
     public AiSpringBootGenerationService(
             final AnalysisSessionPort sessionPort,
             final ClassificationPersistencePort classificationPort,
             final AiEnrichmentPort aiEnrichmentPort,
             final SanitizationPort sanitizationPort) {
-        this(sessionPort, classificationPort, null, null, null, null, null, aiEnrichmentPort, sanitizationPort, null);
+        this(sessionPort, classificationPort, null, null, null, null, null, aiEnrichmentPort, sanitizationPort, null, null);
     }
 
     public AiSpringBootGenerationService(
@@ -66,7 +68,7 @@ public class AiSpringBootGenerationService implements GenerateSpringBootClassesU
             final AiEnrichmentPort aiEnrichmentPort,
             final SanitizationPort sanitizationPort,
             final SourceFileReaderPort sourceFileReaderPort) {
-        this(sessionPort, classificationPort, null, null, null, null, null, aiEnrichmentPort, sanitizationPort, sourceFileReaderPort);
+        this(sessionPort, classificationPort, null, null, null, null, null, aiEnrichmentPort, sanitizationPort, sourceFileReaderPort, null);
     }
 
     public AiSpringBootGenerationService(
@@ -79,17 +81,9 @@ public class AiSpringBootGenerationService implements GenerateSpringBootClassesU
             final AiEnrichmentPort aiEnrichmentPort,
             final SanitizationPort sanitizationPort,
             final SourceFileReaderPort sourceFileReaderPort) {
-        this(
-                sessionPort,
-                classificationPort,
-                cartographyPort,
-                reclassificationAuditPort,
-                aiArtifactPersistencePort,
-                projectReferencePatternPort,
-                null,
-                aiEnrichmentPort,
-                sanitizationPort,
-                sourceFileReaderPort);
+        this(sessionPort, classificationPort, cartographyPort, reclassificationAuditPort,
+                aiArtifactPersistencePort, projectReferencePatternPort, null,
+                aiEnrichmentPort, sanitizationPort, sourceFileReaderPort, null);
     }
 
     public AiSpringBootGenerationService(
@@ -103,6 +97,23 @@ public class AiSpringBootGenerationService implements GenerateSpringBootClassesU
             final AiEnrichmentPort aiEnrichmentPort,
             final SanitizationPort sanitizationPort,
             final SourceFileReaderPort sourceFileReaderPort) {
+        this(sessionPort, classificationPort, cartographyPort, reclassificationAuditPort,
+                aiArtifactPersistencePort, projectReferencePatternPort, migrationPlanPersistencePort,
+                aiEnrichmentPort, sanitizationPort, sourceFileReaderPort, null);
+    }
+
+    public AiSpringBootGenerationService(
+            final AnalysisSessionPort sessionPort,
+            final ClassificationPersistencePort classificationPort,
+            final CartographyPersistencePort cartographyPort,
+            final ReclassificationAuditPort reclassificationAuditPort,
+            final AiArtifactPersistencePort aiArtifactPersistencePort,
+            final ProjectReferencePatternPort projectReferencePatternPort,
+            final MigrationPlanPersistencePort migrationPlanPersistencePort,
+            final AiEnrichmentPort aiEnrichmentPort,
+            final SanitizationPort sanitizationPort,
+            final SourceFileReaderPort sourceFileReaderPort,
+            final PromptContextSanitizerPort promptContextSanitizerPort) {
         this.sessionPort = Objects.requireNonNull(sessionPort, "sessionPort must not be null");
         this.classificationPort = Objects.requireNonNull(classificationPort, "classificationPort must not be null");
         this.cartographyPort = cartographyPort;
@@ -113,6 +124,7 @@ public class AiSpringBootGenerationService implements GenerateSpringBootClassesU
         this.aiEnrichmentPort = Objects.requireNonNull(aiEnrichmentPort, "aiEnrichmentPort must not be null");
         this.sanitizationPort = sanitizationPort;
         this.sourceFileReaderPort = sourceFileReaderPort;
+        this.promptContextSanitizerPort = promptContextSanitizerPort;
     }
 
     @Override
@@ -154,6 +166,7 @@ public class AiSpringBootGenerationService implements GenerateSpringBootClassesU
                 TaskType.SPRING_BOOT_GENERATION,
                 PROMPT_TEMPLATE,
                 buildExtraContext(
+                        requestId,
                         session,
                         classification,
                         formattedRules,
@@ -185,6 +198,7 @@ public class AiSpringBootGenerationService implements GenerateSpringBootClassesU
     }
 
     private Map<String, Object> buildExtraContext(
+            final String requestId,
             final AnalysisSession session,
             final ClassificationResult classification,
             final String formattedRules,
@@ -199,7 +213,9 @@ public class AiSpringBootGenerationService implements GenerateSpringBootClassesU
         context.put("reclassificationFeedback",
                 LlmServiceSupport.formatReclassificationFeedback(
                         session.sessionId(), classification, reclassificationAuditPort));
-        context.put("projectReferencePatterns", LlmServiceSupport.formatProjectReferencePatterns(loadProjectReferencePatterns()));
+        context.put("projectReferencePatterns", promptContextSanitizerPort != null
+                ? promptContextSanitizerPort.sanitizeReferencePatterns(requestId, loadProjectReferencePatterns())
+                : LlmServiceSupport.formatProjectReferencePatterns(loadProjectReferencePatterns()));
         return context;
     }
 

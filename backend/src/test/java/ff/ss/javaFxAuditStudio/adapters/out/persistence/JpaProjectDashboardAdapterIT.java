@@ -54,7 +54,7 @@ class JpaProjectDashboardAdapterIT {
 
     @Test
     void computeDashboard_returnsTotalAndStatusCounts() {
-        insertSession("s1", PROJECT_ID, "IN_PROGRESS");
+        insertSession("s1", PROJECT_ID, "INGESTING");
         insertSession("s2", PROJECT_ID, "COMPLETED");
         insertSession("s3", PROJECT_ID, "COMPLETED");
 

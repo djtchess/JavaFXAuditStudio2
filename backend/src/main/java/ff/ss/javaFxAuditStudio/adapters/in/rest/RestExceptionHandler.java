@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -23,6 +24,14 @@ public class RestExceptionHandler {
     public ResponseEntity<ErrorResponse> handleIllegalArgument(final IllegalArgumentException exception) {
         String correlationId = resolveCorrelationId();
         LOG.warn("Invalid request [correlationId={}, message={}]", correlationId, exception.getMessage());
+        ErrorResponse body = new ErrorResponse(HttpStatus.BAD_REQUEST.value(), INVALID_REQUEST_MESSAGE, correlationId);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleUnreadableRequest(final HttpMessageNotReadableException exception) {
+        String correlationId = resolveCorrelationId();
+        LOG.warn("Unreadable request [correlationId={}, message={}]", correlationId, exception.getMessage());
         ErrorResponse body = new ErrorResponse(HttpStatus.BAD_REQUEST.value(), INVALID_REQUEST_MESSAGE, correlationId);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }

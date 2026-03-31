@@ -133,6 +133,19 @@ public class AiCircuitBreaker {
         return rate >= failureRateThreshold;
     }
 
+    public String currentState() {
+        String currentState;
+
+        lock.lock();
+        try {
+            transitionIfNeeded();
+            currentState = state.name();
+        } finally {
+            lock.unlock();
+        }
+        return currentState;
+    }
+
     /** Exception levee quand le circuit est en etat OPEN. */
     static class CircuitOpenException extends RuntimeException {
         CircuitOpenException(final String message) {

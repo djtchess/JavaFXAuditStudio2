@@ -144,7 +144,12 @@ public class ClaudeCodeCliAiEnrichmentAdapter {
         context.put("estimatedTokens", request.bundle().estimatedTokens());
         context.put("taskType", request.taskType().name());
         context.putAll(request.extraContext());
-        return templateLoader.render(request.promptTemplate(), context);
+        String dataPrompt = templateLoader.render(request.promptTemplate(), context);
+        return "# SYSTEM\nTu es un expert en migration JavaFX vers Spring Boot / architecture hexagonale."
+                + " Controleur : " + request.bundle().controllerRef()
+                + ". Tache : " + request.taskType().name()
+                + ". Reponds uniquement avec du JSON valide selon le format demande.\n\n"
+                + "# DATA\n[DATA START]\n" + dataPrompt + "\n[DATA END]";
     }
 
     private static String sha256Hex(final String value) {

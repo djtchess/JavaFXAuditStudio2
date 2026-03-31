@@ -53,9 +53,13 @@ public class OpenAiGpt54AiEnrichmentAdapter {
         LOG.debug("OpenAI — envoi requete pour controllerRef={}, taskType={}",
                 bundle.controllerRef(), request.taskType());
 
+        String systemPrompt = buildSystemPrompt(request);
+        List<OpenAiHttpDtos.Message> messages = new java.util.ArrayList<>();
+        messages.add(new OpenAiHttpDtos.Message("system", systemPrompt));
+        messages.add(new OpenAiHttpDtos.Message("user", prompt));
         OpenAiHttpDtos.ChatRequest body = new OpenAiHttpDtos.ChatRequest(
                 DEFAULT_MODEL,
-                List.of(new OpenAiHttpDtos.Message("user", prompt)),
+                messages,
                 properties.effectiveMaxTokens(request.taskType()));
 
         OpenAiHttpDtos.ChatResponse response = restClient.post()
@@ -114,6 +118,13 @@ public class OpenAiGpt54AiEnrichmentAdapter {
         context.put("taskType", request.taskType().name());
         context.putAll(request.extraContext());
         return templateLoader.render(request.promptTemplate(), context);
+    }
+
+    private String buildSystemPrompt(final AiEnrichmentRequest request) {
+        return "Tu es un expert en migration JavaFX vers Spring Boot / architecture hexagonale."
+                + " Controleur de reference : " + request.bundle().controllerRef()
+                + ". Tache : " + request.taskType().name()
+                + ". Reponds uniquement avec du JSON valide selon le format demande dans le prompt.";
     }
 
     private String validateAndGetApiKey() {

@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, forkJoin, map, of, switchMap } from 'rxjs';
 
 import {
+  ActuatorAiHealthResponse,
   ActuatorHealthResponse,
   ActuatorMetricResponse,
   MonitoringDashboardResponse,
@@ -36,6 +37,15 @@ const STAGE_LABELS: Record<string, string> = {
   reporting: 'Restitution',
 };
 
+const OUTCOME_LABELS: Record<string, string> = {
+  success: 'Succes',
+  degraded: 'Degrade',
+  failure: 'Echec',
+  blocked: 'Bloque',
+  circuit_open: 'Circuit ouvert',
+  not_found: 'Introuvable',
+};
+
 const STATUS_ORDER = [
   'created',
   'in_progress',
@@ -52,6 +62,7 @@ const STATUS_ORDER = [
 ];
 
 const STAGE_ORDER = ['ingest', 'cartography', 'classification', 'planning', 'generation', 'reporting'];
+const OUTCOME_ORDER = ['success', 'degraded', 'failure', 'blocked', 'circuit_open', 'not_found'];
 
 @Injectable({ providedIn: 'root' })
 export class MetricsApiService {
@@ -61,12 +72,15 @@ export class MetricsApiService {
   loadDashboard(): Observable<MonitoringDashboardResponse> {
     return forkJoin({
       health: this.http.get<ActuatorHealthResponse>(`${this.base}/health`),
+      aiHealth: this.http.get<ActuatorAiHealthResponse>(`${this.base}/ai-health`),
       sessionsMetric: this.getMetric('jas.analysis.sessions'),
       stageMetric: this.getMetric('jas.analysis.pipeline.stage.duration'),
+      pipelineMetric: this.getMetric('jas.analysis.pipeline.count'),
     }).pipe(
-      switchMap(({ health, sessionsMetric, stageMetric }) =>
+      switchMap(({ health, aiHealth, sessionsMetric, stageMetric, pipelineMetric }) =>
         forkJoin({
           health: of(health),
+          aiHealth: of(aiHealth),
           totalSessions: this.loadTotalSessions(sessionsMetric),
           sessionsByStatus: this.loadTaggedMetricValues(
             'jas.analysis.sessions',
@@ -75,6 +89,7 @@ export class MetricsApiService {
             'total'
           ),
           stageDurations: this.loadStageDurations(stageMetric),
+          pipelineOutcomes: this.loadOutcomeValues('jas.analysis.pipeline.count', pipelineMetric),
         })
       )
     );
@@ -100,8 +115,18 @@ export class MetricsApiService {
           name,
           status: component.status,
         })),
-        pipelineOutcomes: {},
-        llmOutcomes: {},
+        aiHealth: {
+          status: dashboard.aiHealth.status,
+          enabled: dashboard.aiHealth.enabled,
+          provider: dashboard.aiHealth.provider,
+          circuitBreakerState: dashboard.aiHealth.circuitBreakerState,
+          totalRequests: dashboard.aiHealth.totalRequests,
+          successRate: dashboard.aiHealth.successRate,
+          p95LatencyMs: dashboard.aiHealth.p95LatencyMs,
+          totalTokens: dashboard.aiHealth.totalTokens,
+        },
+        pipelineOutcomes: this.toMetricMap(dashboard.pipelineOutcomes),
+        llmOutcomes: dashboard.aiHealth.outcomes ?? {},
         refreshedAt: new Date().toISOString(),
       }))
     );
@@ -169,6 +194,28 @@ export class MetricsApiService {
     };
   }
 
+  private loadOutcomeValues(
+    metricName: string,
+    metric: ActuatorMetricResponse
+  ): Observable<MonitoringMetricValue[]> {
+    const outcomes = this.availableTagValues(metric, 'outcome')
+      .sort((left, right) => this.compareByKnownOrder(left, right, OUTCOME_ORDER));
+    if (outcomes.length === 0) {
+      return of([]);
+    }
+    return forkJoin(
+      outcomes.map(outcome =>
+        this.getMetric(metricName, { outcome }).pipe(
+          map(response => ({
+            key: outcome,
+            label: OUTCOME_LABELS[outcome] ?? this.formatLabel(outcome),
+            value: this.readMeasurementValue(response),
+          }))
+        )
+      )
+    );
+  }
+
   private getMetric(
     metricName: string,
     tags: Record<string, string> = {}
@@ -193,6 +240,10 @@ export class MetricsApiService {
   private findMeasurement(metric: ActuatorMetricResponse, statistic: string): number {
     const measurement = metric.measurements.find(candidate => candidate.statistic === statistic);
     return measurement?.value ?? 0;
+  }
+
+  private toMetricMap(metrics: MonitoringMetricValue[]): Record<string, number> {
+    return Object.fromEntries(metrics.map(metric => [metric.key, metric.value]));
   }
 
   private formatLabel(value: string): string {

@@ -16,6 +16,7 @@ import ff.ss.javaFxAuditStudio.application.ports.out.AnalysisSessionPort;
 import ff.ss.javaFxAuditStudio.application.ports.out.CartographyPersistencePort;
 import ff.ss.javaFxAuditStudio.application.ports.out.ClassificationPersistencePort;
 import ff.ss.javaFxAuditStudio.application.ports.out.ProjectReferencePatternPort;
+import ff.ss.javaFxAuditStudio.application.ports.out.PromptContextSanitizerPort;
 import ff.ss.javaFxAuditStudio.application.ports.out.ReclassificationAuditPort;
 import ff.ss.javaFxAuditStudio.application.ports.out.SanitizationPort;
 import ff.ss.javaFxAuditStudio.application.ports.out.SourceFileReaderPort;
@@ -47,6 +48,7 @@ public class VerifyAiArtifactCoherenceService implements VerifyAiArtifactCoheren
     private final AiEnrichmentPort aiEnrichmentPort;
     private final SanitizationPort sanitizationPort;
     private final SourceFileReaderPort sourceFileReaderPort;
+    private final PromptContextSanitizerPort promptContextSanitizerPort;
 
     public VerifyAiArtifactCoherenceService(
             final AnalysisSessionPort sessionPort,
@@ -58,6 +60,22 @@ public class VerifyAiArtifactCoherenceService implements VerifyAiArtifactCoheren
             final AiEnrichmentPort aiEnrichmentPort,
             final SanitizationPort sanitizationPort,
             final SourceFileReaderPort sourceFileReaderPort) {
+        this(sessionPort, classificationPort, cartographyPort, reclassificationAuditPort,
+                aiArtifactPersistencePort, projectReferencePatternPort, aiEnrichmentPort,
+                sanitizationPort, sourceFileReaderPort, null);
+    }
+
+    public VerifyAiArtifactCoherenceService(
+            final AnalysisSessionPort sessionPort,
+            final ClassificationPersistencePort classificationPort,
+            final CartographyPersistencePort cartographyPort,
+            final ReclassificationAuditPort reclassificationAuditPort,
+            final AiArtifactPersistencePort aiArtifactPersistencePort,
+            final ProjectReferencePatternPort projectReferencePatternPort,
+            final AiEnrichmentPort aiEnrichmentPort,
+            final SanitizationPort sanitizationPort,
+            final SourceFileReaderPort sourceFileReaderPort,
+            final PromptContextSanitizerPort promptContextSanitizerPort) {
         this.sessionPort = Objects.requireNonNull(sessionPort, "sessionPort must not be null");
         this.classificationPort = Objects.requireNonNull(classificationPort, "classificationPort must not be null");
         this.cartographyPort = cartographyPort;
@@ -69,6 +87,7 @@ public class VerifyAiArtifactCoherenceService implements VerifyAiArtifactCoheren
         this.aiEnrichmentPort = Objects.requireNonNull(aiEnrichmentPort, "aiEnrichmentPort must not be null");
         this.sanitizationPort = sanitizationPort;
         this.sourceFileReaderPort = sourceFileReaderPort;
+        this.promptContextSanitizerPort = promptContextSanitizerPort;
     }
 
     @Override
@@ -105,7 +124,7 @@ public class VerifyAiArtifactCoherenceService implements VerifyAiArtifactCoheren
                 bundle,
                 TaskType.ARTIFACT_COHERENCE,
                 PROMPT_TEMPLATE,
-                buildExtraContext(session, classification, cartography, artifacts)));
+                buildExtraContext(requestId, session, classification, cartography, artifacts)));
 
         return mapToCoherenceResult(llmResult);
     }
@@ -125,6 +144,7 @@ public class VerifyAiArtifactCoherenceService implements VerifyAiArtifactCoheren
     }
 
     private Map<String, Object> buildExtraContext(
+            final String requestId,
             final AnalysisSession session,
             final ClassificationResult classification,
             final ControllerCartography cartography,
@@ -133,7 +153,9 @@ public class VerifyAiArtifactCoherenceService implements VerifyAiArtifactCoheren
         context.put("classifiedRules", LlmServiceSupport.formatRules(classification));
         context.put("screenContext", LlmServiceSupport.formatScreenContext(session, classification, cartography));
         context.put("generatedArtifacts", LlmServiceSupport.formatGeneratedArtifacts(artifacts));
-        context.put("generatedArtifactDetails", LlmServiceSupport.formatGeneratedArtifactDetails(artifacts));
+        context.put("generatedArtifactDetails", promptContextSanitizerPort != null
+                ? promptContextSanitizerPort.sanitizeArtifactDetails(requestId, artifacts)
+                : LlmServiceSupport.formatGeneratedArtifactDetails(artifacts));
         context.put(
                 "reclassificationFeedback",
                 LlmServiceSupport.formatReclassificationFeedback(
@@ -142,7 +164,10 @@ public class VerifyAiArtifactCoherenceService implements VerifyAiArtifactCoheren
                         reclassificationAuditPort));
         context.put(
                 "projectReferencePatterns",
-                LlmServiceSupport.formatProjectReferencePatterns(loadProjectReferencePatterns(artifacts)));
+                promptContextSanitizerPort != null
+                        ? promptContextSanitizerPort.sanitizeReferencePatterns(
+                                requestId, loadProjectReferencePatterns(artifacts))
+                        : LlmServiceSupport.formatProjectReferencePatterns(loadProjectReferencePatterns(artifacts)));
         return context;
     }
 

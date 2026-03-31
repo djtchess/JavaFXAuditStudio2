@@ -8,6 +8,7 @@ import ff.ss.javaFxAuditStudio.application.ports.in.IngestSourcesUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.in.ProduceMigrationPlanUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.in.ProduceRestitutionUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.out.AnalysisSessionPort;
+import ff.ss.javaFxAuditStudio.application.ports.out.AnalysisSessionStatusHistoryPort;
 import ff.ss.javaFxAuditStudio.application.ports.out.WorkflowObservabilityPort;
 import ff.ss.javaFxAuditStudio.domain.cartography.ControllerCartography;
 import ff.ss.javaFxAuditStudio.domain.generation.GenerationResult;
@@ -16,6 +17,7 @@ import ff.ss.javaFxAuditStudio.domain.restitution.RestitutionReport;
 import ff.ss.javaFxAuditStudio.domain.rules.ClassificationResult;
 import ff.ss.javaFxAuditStudio.domain.workbench.AnalysisSession;
 import ff.ss.javaFxAuditStudio.domain.workbench.AnalysisStatus;
+import ff.ss.javaFxAuditStudio.domain.workbench.AnalysisStatusTransition;
 import ff.ss.javaFxAuditStudio.domain.workbench.OrchestratedAnalysisResult;
 
 import org.slf4j.Logger;
@@ -46,6 +48,7 @@ public final class AnalysisOrchestrationService implements AnalysisOrchestration
     private final ProduceMigrationPlanUseCase produceMigrationPlanUseCase;
     private final GenerateArtifactsUseCase generateArtifactsUseCase;
     private final ProduceRestitutionUseCase produceRestitutionUseCase;
+    private final AnalysisSessionStatusHistoryPort statusHistoryPort;
     private final WorkflowObservabilityPort observabilityPort;
 
     public AnalysisOrchestrationService(
@@ -64,6 +67,7 @@ public final class AnalysisOrchestrationService implements AnalysisOrchestration
                 produceMigrationPlanUseCase,
                 generateArtifactsUseCase,
                 produceRestitutionUseCase,
+                AnalysisSessionStatusHistoryPort.noop(),
                 WorkflowObservabilityPort.noop());
     }
 
@@ -75,6 +79,7 @@ public final class AnalysisOrchestrationService implements AnalysisOrchestration
             final ProduceMigrationPlanUseCase produceMigrationPlanUseCase,
             final GenerateArtifactsUseCase generateArtifactsUseCase,
             final ProduceRestitutionUseCase produceRestitutionUseCase,
+            final AnalysisSessionStatusHistoryPort statusHistoryPort,
             final WorkflowObservabilityPort observabilityPort) {
         this.analysisSessionPort = Objects.requireNonNull(analysisSessionPort, "analysisSessionPort must not be null");
         this.ingestSourcesUseCase = Objects.requireNonNull(ingestSourcesUseCase, "ingestSourcesUseCase must not be null");
@@ -83,6 +88,7 @@ public final class AnalysisOrchestrationService implements AnalysisOrchestration
         this.produceMigrationPlanUseCase = Objects.requireNonNull(produceMigrationPlanUseCase, "produceMigrationPlanUseCase must not be null");
         this.generateArtifactsUseCase = Objects.requireNonNull(generateArtifactsUseCase, "generateArtifactsUseCase must not be null");
         this.produceRestitutionUseCase = Objects.requireNonNull(produceRestitutionUseCase, "produceRestitutionUseCase must not be null");
+        this.statusHistoryPort = (statusHistoryPort != null) ? statusHistoryPort : AnalysisSessionStatusHistoryPort.noop();
         this.observabilityPort = (observabilityPort != null) ? observabilityPort : WorkflowObservabilityPort.noop();
     }
 
@@ -101,9 +107,9 @@ public final class AnalysisOrchestrationService implements AnalysisOrchestration
 
         AnalysisSession session = sessionOpt.get();
         String sourceRef = session.sourceSnippetRef() != null ? session.sourceSnippetRef() : session.controllerName();
-        saveStatus(session, AnalysisStatus.IN_PROGRESS);
 
         try {
+            saveStatus(session, AnalysisStatus.IN_PROGRESS);
             ingestSources(session, sourceRef);
             ControllerCartography cartography = cartography(sessionId, session);
             ClassificationResult classification = classify(sessionId, session, cartography);
@@ -225,13 +231,11 @@ public final class AnalysisOrchestrationService implements AnalysisOrchestration
     }
 
     private AnalysisSession saveStatus(final AnalysisSession session, final AnalysisStatus status) {
-        AnalysisSession updatedSession = new AnalysisSession(
-                session.sessionId(),
-                session.controllerName(),
-                session.sourceSnippetRef(),
-                status,
-                session.createdAt());
+        AnalysisSession updatedSession = session.withStatus(status);
+        Instant occurredAt = Instant.now();
+
         analysisSessionPort.save(updatedSession);
+        statusHistoryPort.save(new AnalysisStatusTransition(updatedSession.sessionId(), status, occurredAt));
         return updatedSession;
     }
 

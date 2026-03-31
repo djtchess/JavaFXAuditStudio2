@@ -7,6 +7,7 @@ import ff.ss.javaFxAuditStudio.application.ports.in.IngestSourcesUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.in.ProduceMigrationPlanUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.in.ProduceRestitutionUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.out.AnalysisSessionPort;
+import ff.ss.javaFxAuditStudio.application.ports.out.AnalysisSessionStatusHistoryPort;
 import ff.ss.javaFxAuditStudio.application.ports.out.WorkflowObservabilityPort;
 import ff.ss.javaFxAuditStudio.domain.cartography.ControllerCartography;
 import ff.ss.javaFxAuditStudio.domain.generation.GenerationResult;
@@ -62,6 +63,9 @@ class AnalysisOrchestrationServiceTest {
 
     @Mock
     private ProduceRestitutionUseCase produceRestitutionUseCase;
+
+    @Mock
+    private AnalysisSessionStatusHistoryPort statusHistoryPort;
 
     @Mock
     private WorkflowObservabilityPort workflowObservabilityPort;

@@ -39,6 +39,7 @@ public class JpaAnalysisSessionAdapter implements AnalysisSessionPort {
     private AnalysisSessionEntity toEntity(AnalysisSession session) {
         return new AnalysisSessionEntity(
                 session.sessionId(),
+                session.sessionName(),
                 session.controllerName(),
                 session.sourceSnippetRef(),
                 session.status().name(),
@@ -48,6 +49,7 @@ public class JpaAnalysisSessionAdapter implements AnalysisSessionPort {
     private AnalysisSession toDomain(AnalysisSessionEntity entity) {
         return new AnalysisSession(
                 entity.getSessionId(),
+                entity.getSessionName(),
                 entity.getControllerName(),
                 entity.getSourceSnippetRef(),
                 AnalysisStatus.valueOf(entity.getStatus()),

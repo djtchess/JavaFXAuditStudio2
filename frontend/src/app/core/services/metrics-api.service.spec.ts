@@ -37,6 +37,22 @@ describe('MetricsApiService', () => {
       },
     });
 
+    const aiHealth = httpMock.expectOne('/actuator/ai-health');
+    aiHealth.flush({
+      status: 'UP',
+      enabled: true,
+      provider: 'claude-code',
+      circuitBreakerState: 'CLOSED',
+      totalRequests: 5,
+      successRate: 80,
+      p95LatencyMs: 450,
+      totalTokens: 1280,
+      outcomes: {
+        success: 4,
+        failure: 1,
+      },
+    });
+
     const sessionsSummary = httpMock.expectOne('/actuator/metrics/jas.analysis.sessions');
     sessionsSummary.flush({
       name: 'jas.analysis.sessions',
@@ -52,6 +68,15 @@ describe('MetricsApiService', () => {
       measurements: [{ statistic: 'COUNT', value: 0 }],
       availableTags: [
         { tag: 'stage', values: ['ingest', 'cartography'] },
+      ],
+    });
+
+    const pipelineSummary = httpMock.expectOne('/actuator/metrics/jas.analysis.pipeline.count');
+    pipelineSummary.flush({
+      name: 'jas.analysis.pipeline.count',
+      measurements: [{ statistic: 'COUNT', value: 0 }],
+      availableTags: [
+        { tag: 'outcome', values: ['success', 'failure'] },
       ],
     });
 
@@ -113,6 +138,26 @@ describe('MetricsApiService', () => {
       availableTags: [],
     });
 
+    const successPipeline = httpMock.expectOne(req =>
+      req.url === '/actuator/metrics/jas.analysis.pipeline.count' &&
+      req.params.getAll('tag')?.includes('outcome:success') === true
+    );
+    successPipeline.flush({
+      name: 'jas.analysis.pipeline.count',
+      measurements: [{ statistic: 'VALUE', value: 9 }],
+      availableTags: [],
+    });
+
+    const failurePipeline = httpMock.expectOne(req =>
+      req.url === '/actuator/metrics/jas.analysis.pipeline.count' &&
+      req.params.getAll('tag')?.includes('outcome:failure') === true
+    );
+    failurePipeline.flush({
+      name: 'jas.analysis.pipeline.count',
+      measurements: [{ statistic: 'VALUE', value: 2 }],
+      availableTags: [],
+    });
+
     expect(snapshotResult).toMatchObject({
       totalSessions: 12,
       statusMetrics: [
@@ -128,8 +173,24 @@ describe('MetricsApiService', () => {
         { name: 'analysisWorkflow', status: 'UP' },
         { name: 'llmEnrichment', status: 'UP' },
       ],
-      pipelineOutcomes: {},
-      llmOutcomes: {},
+      aiHealth: {
+        status: 'UP',
+        enabled: true,
+        provider: 'claude-code',
+        circuitBreakerState: 'CLOSED',
+        totalRequests: 5,
+        successRate: 80,
+        p95LatencyMs: 450,
+        totalTokens: 1280,
+      },
+      pipelineOutcomes: {
+        success: 9,
+        failure: 2,
+      },
+      llmOutcomes: {
+        success: 4,
+        failure: 1,
+      },
     });
     expect((snapshotResult as { refreshedAt: string }).refreshedAt).toBeTruthy();
   });

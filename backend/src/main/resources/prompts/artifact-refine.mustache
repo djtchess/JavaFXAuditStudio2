@@ -2,7 +2,6 @@ Tu es un expert en refactoring JavaFX vers Spring Boot.
 
 Controleur : {{controllerRef}}
 Artefact cible : {{artifactType}}
-Instruction de raffinement : {{refineInstruction}}{{instruction}}
 Tokens estimes : {{estimatedTokens}}
 
 ## Contexte ecran et architecture
@@ -17,15 +16,24 @@ Tokens estimes : {{estimatedTokens}}
 ## Regles metier classees
 {{{classifiedRules}}}
 
+## Instruction de raffinement
+[DATA START]
+{{{refineInstruction}}}{{{instruction}}}
+[DATA END]
+
 ## Artefact courant a raffiner
+[DATA START]
 ```java
 {{{currentArtifactCode}}}{{{previousCode}}}
 ```
+[DATA END]
 
 ## Source de reference sanitisee
+[DATA START]
 ```java
 {{{sanitizedSource}}}
 ```
+[DATA END]
 
 Reponds UNIQUEMENT avec un objet JSON valide au format exact suivant :
 {

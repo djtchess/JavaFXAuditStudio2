@@ -8,6 +8,7 @@ import ff.ss.javaFxAuditStudio.application.ports.in.GenerateArtifactsUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.in.ProduceMigrationPlanUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.in.ProduceRestitutionUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.out.AnalysisSessionPort;
+import ff.ss.javaFxAuditStudio.application.ports.out.AnalysisSessionStatusHistoryPort;
 import ff.ss.javaFxAuditStudio.domain.cartography.CartographyUnknown;
 import ff.ss.javaFxAuditStudio.domain.cartography.ControllerCartography;
 import ff.ss.javaFxAuditStudio.domain.cartography.FxmlComponent;
@@ -72,6 +73,9 @@ class AnalysisControllerIT {
     private AnalysisSessionPort analysisSessionPort;
 
     @MockitoBean
+    private AnalysisSessionStatusHistoryPort statusHistoryPort;
+
+    @MockitoBean
     private AnalysisOrchestrationUseCase analysisOrchestrationUseCase;
 
     @MockitoBean
@@ -122,13 +126,31 @@ class AnalysisControllerIT {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.sessionId").isNotEmpty())
                 .andExpect(jsonPath("$.status").value("CREATED"))
-                .andExpect(jsonPath("$.sessionName").value("src/main/java/com/example/MyController.java"))
-                .andExpect(jsonPath("$.controllerRef").value("src/main/resources/fxml/MyController.fxml"))
+                .andExpect(jsonPath("$.sessionName").value("MonController"))
+                .andExpect(jsonPath("$.controllerRef").value("src/main/java/com/example/MyController.java"))
+                .andExpect(jsonPath("$.sourceSnippetRef").value("src/main/resources/fxml/MyController.fxml"))
+                .andExpect(jsonPath("$.createdAt").isNotEmpty())
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
 
         assertThat(responseBody).contains("sessionId");
+    }
+
+    @Test
+    void submitSession_returns400_whenSourceFilePathsIsEmpty() throws Exception {
+        mockMvc.perform(post("/api/v1/analysis/sessions")
+                        .contentType(APPLICATION_JSON)
+                        .content("""
+                                {
+                                    "sessionName": "Audit vide",
+                                    "sourceFilePaths": []
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").exists())
+                .andExpect(jsonPath("$.correlationId").exists());
     }
 
     @Test
@@ -152,7 +174,9 @@ class AnalysisControllerIT {
                 .andExpect(jsonPath("$.sessionId").value(sessionId))
                 .andExpect(jsonPath("$.status").value("CARTOGRAPHING"))
                 .andExpect(jsonPath("$.sessionName").value("com/example/MyController.java"))
-                .andExpect(jsonPath("$.controllerRef").value("snippets/MyController.txt"));
+                .andExpect(jsonPath("$.controllerRef").value("com/example/MyController.java"))
+                .andExpect(jsonPath("$.sourceSnippetRef").value("snippets/MyController.txt"))
+                .andExpect(jsonPath("$.createdAt").isNotEmpty());
     }
 
     @Test
@@ -187,9 +211,10 @@ class AnalysisControllerIT {
         sessionId = "session-en-cours-it";
         sessionEnCours = new AnalysisSession(
                 sessionId,
+                "Audit en cours",
                 "com/example/MyController.java",
                 null,
-                AnalysisStatus.IN_PROGRESS,
+                AnalysisStatus.INGESTING,
                 Instant.now());
 
         when(analysisSessionPort.findById(sessionId)).thenReturn(Optional.of(sessionEnCours));

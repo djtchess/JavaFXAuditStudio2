@@ -8,6 +8,7 @@ import { AnalysisDetailComponent } from './analysis-detail.component';
 import { AnalysisApiService } from '../../core/services/analysis-api.service';
 import { AiEnrichmentApiService } from '../../core/services/ai-enrichment-api.service';
 import {
+  AnalysisSessionResponse,
   ArtifactsResponse,
   CartographyResponse,
   ClassificationResponse,
@@ -86,6 +87,15 @@ const REPORT: RestitutionReportResponse = {
   markdown: '# Restitution\n\n## Synthese',
 };
 
+const SESSION: AnalysisSessionResponse = {
+  sessionId: 'session-42',
+  status: 'CREATED',
+  sessionName: 'Audit Ctrl',
+  controllerRef: 'Ctrl',
+  sourceSnippetRef: 'Ctrl.fxml',
+  createdAt: '2026-03-30T10:15:00Z',
+};
+
 const PIPELINE_RESULT: OrchestratedAnalysisResultResponse = {
   sessionId: 'session-42',
   finalStatus: 'COMPLETED',
@@ -98,6 +108,7 @@ const PIPELINE_RESULT: OrchestratedAnalysisResultResponse = {
 };
 
 type AnalysisApiSpy = {
+  getSession: ReturnType<typeof vi.fn>;
   getCartography: ReturnType<typeof vi.fn>;
   getClassification: ReturnType<typeof vi.fn>;
   getMigrationPlan: ReturnType<typeof vi.fn>;
@@ -118,6 +129,7 @@ type AiApiSpy = {
 
 function buildAnalysisApiSpy(): AnalysisApiSpy {
   return {
+    getSession: vi.fn().mockReturnValue(of(SESSION)),
     getCartography: vi.fn().mockReturnValue(of(CARTOGRAPHY)),
     getClassification: vi.fn().mockReturnValue(of(CLASSIFICATION)),
     getMigrationPlan: vi.fn().mockReturnValue(of(MIGRATION_PLAN)),
@@ -203,6 +215,8 @@ describe('AnalysisDetailComponent', () => {
     const fixture = TestBed.createComponent(AnalysisDetailComponent);
     fixture.detectChanges();
 
+    expect(fixture.nativeElement.textContent).toContain('Audit Ctrl');
+
     const runButtons = fixture.debugElement.queryAll(By.css('.run-btn'));
     runButtons[0].nativeElement.click();
     fixture.detectChanges();
@@ -234,10 +248,13 @@ describe('AnalysisDetailComponent', () => {
     const fixture = TestBed.createComponent(AnalysisDetailComponent);
     fixture.detectChanges();
 
+    expect(analysisApiSpy.getSession).toHaveBeenCalledWith('session-42');
+
     const pipelineButton = fixture.debugElement.query(By.css('.pipeline-btn')).nativeElement as HTMLButtonElement;
     pipelineButton.click();
     fixture.detectChanges();
 
+    expect(analysisApiSpy.runFullPipeline).toHaveBeenCalledWith('session-42');
     expect(pipelineButton.textContent).toContain('Pipeline en cours');
     expect(fixture.debugElement.query(By.css('.pipeline-progress'))).toBeTruthy();
 
@@ -245,11 +262,49 @@ describe('AnalysisDetailComponent', () => {
     pipelineResult$.complete();
     fixture.detectChanges();
 
+    expect(fixture.nativeElement.textContent).toContain('Statut COMPLETED');
+    expect(fixture.nativeElement.textContent).toContain('Audit Ctrl');
+    expect(fixture.nativeElement.textContent).toContain('Ctrl.fxml');
     expect(pipelineButton.textContent).toContain('Executer le pipeline complet');
     expect(fixture.debugElement.query(By.css('jas-cartography-view'))).toBeTruthy();
     expect(fixture.debugElement.query(By.css('jas-migration-plan-view'))).toBeTruthy();
     expect(fixture.debugElement.query(By.css('jas-artifacts-view'))).toBeTruthy();
     expect(fixture.debugElement.query(By.css('jas-report-view'))).toBeTruthy();
     expect(fixture.debugElement.query(By.css('.pipeline-error'))).toBeNull();
+  });
+
+  it('should render session metadata and show the fallback pipeline error message', async () => {
+    const analysisApiSpy = buildAnalysisApiSpy();
+    const aiApiSpy = buildAiApiSpy();
+    analysisApiSpy.runFullPipeline.mockReturnValue(throwError(() => ({})));
+
+    await TestBed.configureTestingModule({
+      imports: [AnalysisDetailComponent],
+      providers: [
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: { paramMap: convertToParamMap({ sessionId: 'session-42' }) },
+          },
+        },
+        { provide: AnalysisApiService, useValue: analysisApiSpy },
+        { provide: AiEnrichmentApiService, useValue: aiApiSpy },
+      ],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(AnalysisDetailComponent);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Audit Ctrl');
+    expect(fixture.nativeElement.textContent).toContain('Ctrl.fxml');
+    expect(fixture.nativeElement.textContent).toContain('Statut CREATED');
+
+    const pipelineButton = fixture.debugElement.query(By.css('.pipeline-btn')).nativeElement as HTMLButtonElement;
+    pipelineButton.click();
+    fixture.detectChanges();
+
+    const errorLine = fixture.debugElement.query(By.css('.pipeline-error'));
+    expect(errorLine.nativeElement.textContent).toContain('Erreur lors de l\'execution du pipeline complet.');
+    expect(pipelineButton.textContent).toContain('Executer le pipeline complet');
   });
 });

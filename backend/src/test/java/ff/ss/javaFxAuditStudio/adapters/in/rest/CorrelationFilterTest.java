@@ -72,6 +72,7 @@ class CorrelationFilterTest {
         filter.doFilter(request, response, chain);
 
         assertThat(MDC.get("correlationId")).isNull();
+        assertThat(MDC.get("sessionId")).isNull();
     }
 
     @Test
@@ -92,5 +93,17 @@ class CorrelationFilterTest {
         assertThat(correlationId).hasSize(36);
         assertThat(correlationId).matches(
                 "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}");
+    }
+
+    @Test
+    void doFilter_pushesSessionIdIntoMdc_whenSessionPathMatches() throws Exception {
+        MockHttpServletRequest request;
+        MockHttpServletResponse response;
+
+        request = new MockHttpServletRequest("GET", "/api/v1/analysis/sessions/session-123/run");
+        response = new MockHttpServletResponse();
+
+        filter.doFilter(request, response, (req, res) ->
+                assertThat(MDC.get("sessionId")).isEqualTo("session-123"));
     }
 }

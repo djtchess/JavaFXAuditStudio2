@@ -23,6 +23,7 @@ import ff.ss.javaFxAuditStudio.application.ports.out.SourceFileReaderPort;
 import ff.ss.javaFxAuditStudio.domain.ai.AiCodeGenerationResult;
 import ff.ss.javaFxAuditStudio.domain.ai.AiEnrichmentRequest;
 import ff.ss.javaFxAuditStudio.domain.ai.AiEnrichmentResult;
+import ff.ss.javaFxAuditStudio.domain.ai.LlmProvider;
 import ff.ss.javaFxAuditStudio.domain.ai.SanitizedBundle;
 import ff.ss.javaFxAuditStudio.domain.ai.TaskType;
 import ff.ss.javaFxAuditStudio.domain.cartography.ControllerCartography;
@@ -129,6 +130,11 @@ public class AiSpringBootGenerationService implements GenerateSpringBootClassesU
 
     @Override
     public AiCodeGenerationResult generate(final String sessionId) {
+        return generate(sessionId, null);
+    }
+
+    @Override
+    public AiCodeGenerationResult generate(final String sessionId, final LlmProvider provider) {
         Objects.requireNonNull(sessionId, "sessionId must not be null");
 
         AnalysisSession session = sessionPort.findById(sessionId)
@@ -160,6 +166,13 @@ public class AiSpringBootGenerationService implements GenerateSpringBootClassesU
         }
 
         String ruleSourceSnippets = LlmServiceSupport.formatRuleSourceSnippets(bundle.sanitizedSource(), classification);
+        if (promptContextSanitizerPort != null) {
+            ruleSourceSnippets = promptContextSanitizerPort.sanitizeCodeFragment(
+                    requestId,
+                    TaskType.SPRING_BOOT_GENERATION,
+                    ruleSourceSnippets,
+                    "ruleSourceSnippets");
+        }
         AiEnrichmentRequest request = new AiEnrichmentRequest(
                 requestId,
                 bundle,
@@ -174,7 +187,7 @@ public class AiSpringBootGenerationService implements GenerateSpringBootClassesU
                         migrationPlan,
                         ruleSourceSnippets));
 
-        AiEnrichmentResult llmResult = aiEnrichmentPort.enrich(request);
+        AiEnrichmentResult llmResult = aiEnrichmentPort.enrich(request, provider);
 
         return mapToGenerationResult(sessionId, llmResult, ruleSourceSnippets);
     }
@@ -214,7 +227,8 @@ public class AiSpringBootGenerationService implements GenerateSpringBootClassesU
                 LlmServiceSupport.formatReclassificationFeedback(
                         session.sessionId(), classification, reclassificationAuditPort));
         context.put("projectReferencePatterns", promptContextSanitizerPort != null
-                ? promptContextSanitizerPort.sanitizeReferencePatterns(requestId, loadProjectReferencePatterns())
+                ? promptContextSanitizerPort.sanitizeReferencePatterns(
+                        requestId, TaskType.SPRING_BOOT_GENERATION, loadProjectReferencePatterns())
                 : LlmServiceSupport.formatProjectReferencePatterns(loadProjectReferencePatterns()));
         return context;
     }

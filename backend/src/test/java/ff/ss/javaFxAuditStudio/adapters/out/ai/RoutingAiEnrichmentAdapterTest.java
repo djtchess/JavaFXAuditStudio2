@@ -31,6 +31,9 @@ class RoutingAiEnrichmentAdapterTest {
     @Mock
     private ClaudeCodeCliAiEnrichmentAdapter cliAdapter;
 
+    @Mock
+    private OpenAiCodexCliAiEnrichmentAdapter openAiCodexCliAdapter;
+
     @Test
     void should_truncate_degradation_reason_with_configured_limit() {
         AiEnrichmentProperties properties = new AiEnrichmentProperties(
@@ -44,12 +47,14 @@ class RoutingAiEnrichmentAdapterTest {
                 null,
                 null,
                 null,
-                12);
+                12,
+                null);
         RoutingAiEnrichmentAdapter adapter = new RoutingAiEnrichmentAdapter(
                 properties,
                 claudeAdapter,
                 openAiAdapter,
                 cliAdapter,
+                openAiCodexCliAdapter,
                 new AiCircuitBreaker(5, 50, Duration.ofSeconds(1)),
                 new SimpleMeterRegistry());
         AiEnrichmentRequest request = new AiEnrichmentRequest(
@@ -82,13 +87,15 @@ class RoutingAiEnrichmentAdapterTest {
                 null,
                 null,
                 null,
-                12);
+                12,
+                null);
         SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
         RoutingAiEnrichmentAdapter adapter = new RoutingAiEnrichmentAdapter(
                 properties,
                 claudeAdapter,
                 openAiAdapter,
                 cliAdapter,
+                openAiCodexCliAdapter,
                 new AiCircuitBreaker(5, 50, Duration.ofSeconds(1)),
                 meterRegistry);
         AiEnrichmentRequest request = new AiEnrichmentRequest(
@@ -127,5 +134,51 @@ class RoutingAiEnrichmentAdapterTest {
                 .tag("taskType", "naming")
                 .summary()
                 .totalAmount()).isEqualTo(128.0d);
+    }
+
+    @Test
+    void should_route_openai_codex_cli_requests_to_codex_adapter() {
+        AiEnrichmentProperties properties = new AiEnrichmentProperties(
+                true,
+                "openai-codex-cli",
+                10_000L,
+                null,
+                null,
+                false,
+                "codex",
+                "gpt-5.3-codex",
+                null,
+                null,
+                null,
+                null,
+                null);
+        RoutingAiEnrichmentAdapter adapter = new RoutingAiEnrichmentAdapter(
+                properties,
+                claudeAdapter,
+                openAiAdapter,
+                cliAdapter,
+                openAiCodexCliAdapter,
+                new AiCircuitBreaker(5, 50, Duration.ofSeconds(1)),
+                new SimpleMeterRegistry());
+        AiEnrichmentRequest request = new AiEnrichmentRequest(
+                "req-3",
+                new SanitizedBundle("bundle-3", "MyController", "class C {}", 16, "1.0", null),
+                TaskType.NAMING,
+                "enrichment-naming",
+                Map.of());
+        AiEnrichmentResult response = new AiEnrichmentResult(
+                "req-3",
+                false,
+                "",
+                Map.of("handler", "suggestion"),
+                0,
+                LlmProvider.OPENAI_CODEX_CLI);
+
+        when(openAiCodexCliAdapter.call(request)).thenReturn(response);
+
+        AiEnrichmentResult result = adapter.enrich(request);
+
+        assertThat(result.provider()).isEqualTo(LlmProvider.OPENAI_CODEX_CLI);
+        assertThat(result.degraded()).isFalse();
     }
 }

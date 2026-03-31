@@ -20,6 +20,7 @@ import ff.ss.javaFxAuditStudio.application.ports.out.SourceFileReaderPort;
 import ff.ss.javaFxAuditStudio.domain.ai.AiEnrichmentRequest;
 import ff.ss.javaFxAuditStudio.domain.ai.AiEnrichmentResult;
 import ff.ss.javaFxAuditStudio.domain.ai.ArtifactCoherenceResult;
+import ff.ss.javaFxAuditStudio.domain.ai.LlmProvider;
 import ff.ss.javaFxAuditStudio.domain.ai.SanitizedBundle;
 import ff.ss.javaFxAuditStudio.domain.ai.TaskType;
 import ff.ss.javaFxAuditStudio.domain.cartography.ControllerCartography;
@@ -75,6 +76,11 @@ public class VerifyArtifactCoherenceService implements VerifyArtifactCoherenceUs
 
     @Override
     public ArtifactCoherenceResult verify(final String sessionId) {
+        return verify(sessionId, null);
+    }
+
+    @Override
+    public ArtifactCoherenceResult verify(final String sessionId, final LlmProvider provider) {
         Objects.requireNonNull(sessionId, "sessionId must not be null");
 
         AnalysisSession session = sessionPort.findById(sessionId)
@@ -113,7 +119,7 @@ public class VerifyArtifactCoherenceService implements VerifyArtifactCoherenceUs
                 PROMPT_TEMPLATE,
                 buildExtraContext(session, classification, generationResult, cartography));
 
-        AiEnrichmentResult result = aiEnrichmentPort.enrich(enrichmentRequest);
+        AiEnrichmentResult result = aiEnrichmentPort.enrich(enrichmentRequest, provider);
         return mapToCoherenceResult(result);
     }
 

@@ -13,7 +13,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 public record AiEnrichmentStatusResponse(
         @Schema(description = "Vrai si le service d'enrichissement IA est active")
         boolean enabled,
-        @Schema(description = "Fournisseur IA configure (ex: claude-code, openai-gpt54, none)")
+        @Schema(description = "Fournisseur IA configure (ex: claude-code, openai-gpt54, claude-code-cli, openai-codex-cli, none)")
         String provider,
         @Schema(description = "Vrai si un credential valide est present (la valeur n'est jamais exposee)")
         boolean credentialPresent,

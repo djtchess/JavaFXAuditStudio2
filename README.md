@@ -98,7 +98,7 @@ Variables principales utilisees par le backend:
 - `OPENAI_API_KEY`
 
 Pour un demarrage Docker local, les valeurs par defaut `DB_PASSWORD=changeme` et `AI_ENRICHMENT_ENABLED=false` sont suffisantes.
-Si tu veux activer l'IA dans Docker, utilise un provider API (`openai-gpt54` ou `claude-code`) avec la cle correspondante. Le provider CLI local n'est pas embarque dans l'image backend.
+Si tu veux activer l'IA dans Docker, utilise un provider API (`openai-gpt54` ou `claude-code`) avec la cle correspondante. Les providers CLI locaux (`claude-code-cli`, `openai-codex-cli`) ne sont pas embarques dans l'image backend.
 
 ## Exploitation locale
 

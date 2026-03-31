@@ -15,7 +15,8 @@ final class ClaudeHttpDtos {
             String model,
             @JsonProperty("max_tokens") int maxTokens,
             String system,
-            List<Message> messages) {}
+            List<Message> messages,
+            @JsonProperty("temperature") double temperature) {}
 
     record Message(String role, String content) {}
 

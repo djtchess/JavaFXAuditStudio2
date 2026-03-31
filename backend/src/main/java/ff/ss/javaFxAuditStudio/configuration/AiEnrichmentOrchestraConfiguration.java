@@ -16,6 +16,7 @@ import org.springframework.web.client.RestClient;
 import ff.ss.javaFxAuditStudio.adapters.out.ai.AiCircuitBreaker;
 import ff.ss.javaFxAuditStudio.adapters.out.ai.ClaudeCodeAiEnrichmentAdapter;
 import ff.ss.javaFxAuditStudio.adapters.out.ai.ClaudeCodeCliAiEnrichmentAdapter;
+import ff.ss.javaFxAuditStudio.adapters.out.ai.OpenAiCodexCliAiEnrichmentAdapter;
 import ff.ss.javaFxAuditStudio.adapters.out.ai.OpenAiGpt54AiEnrichmentAdapter;
 import ff.ss.javaFxAuditStudio.adapters.out.ai.PayloadHasher;
 import ff.ss.javaFxAuditStudio.adapters.out.ai.PromptTemplateLoader;
@@ -146,7 +147,20 @@ public class AiEnrichmentOrchestraConfiguration {
             final PromptTemplateLoader promptTemplateLoader,
             final ObjectMapper aiObjectMapper) {
         return new ClaudeCodeCliAiEnrichmentAdapter(
-                properties, promptTemplateLoader, aiObjectMapper, properties.effectiveCliCommand());
+                properties, promptTemplateLoader, aiObjectMapper, properties.cliCommand());
+    }
+
+    @Bean
+    public OpenAiCodexCliAiEnrichmentAdapter openAiCodexCliAiEnrichmentAdapter(
+            final AiEnrichmentProperties properties,
+            final PromptTemplateLoader promptTemplateLoader,
+            final ObjectMapper aiObjectMapper) {
+        return new OpenAiCodexCliAiEnrichmentAdapter(
+                properties,
+                promptTemplateLoader,
+                aiObjectMapper,
+                properties.cliCommand(),
+                properties.cliModel());
     }
 
     @Bean
@@ -155,10 +169,17 @@ public class AiEnrichmentOrchestraConfiguration {
             final ClaudeCodeAiEnrichmentAdapter claudeAdapter,
             final OpenAiGpt54AiEnrichmentAdapter openAiAdapter,
             final ClaudeCodeCliAiEnrichmentAdapter cliAdapter,
+            final OpenAiCodexCliAiEnrichmentAdapter openAiCodexCliAdapter,
             final AiCircuitBreaker circuitBreaker,
             final MeterRegistry meterRegistry) {
         return new RoutingAiEnrichmentAdapter(
-                properties, claudeAdapter, openAiAdapter, cliAdapter, circuitBreaker, meterRegistry);
+                properties,
+                claudeAdapter,
+                openAiAdapter,
+                cliAdapter,
+                openAiCodexCliAdapter,
+                circuitBreaker,
+                meterRegistry);
     }
 
     // --- Beans sanitisation (JAS-018) ---
@@ -231,8 +252,10 @@ public class AiEnrichmentOrchestraConfiguration {
     }
 
     @Bean
-    public PromptContextSanitizerPort promptContextSanitizerPort(final SanitizationPort sanitizationPort) {
-        return new PromptContextSanitizerAdapter(sanitizationPort);
+    public PromptContextSanitizerPort promptContextSanitizerPort(
+            final SanitizationPort sanitizationPort,
+            final AiEnrichmentProperties aiEnrichmentProperties) {
+        return new PromptContextSanitizerAdapter(sanitizationPort, aiEnrichmentProperties);
     }
 
     // --- Adapter lecture source fichier (IAP-5) ---

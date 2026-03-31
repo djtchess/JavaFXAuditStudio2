@@ -21,6 +21,7 @@ import ff.ss.javaFxAuditStudio.domain.ai.AiCodeGenerationResult;
 import ff.ss.javaFxAuditStudio.domain.ai.AiEnrichmentRequest;
 import ff.ss.javaFxAuditStudio.domain.ai.AiEnrichmentResult;
 import ff.ss.javaFxAuditStudio.domain.ai.ArtifactRefineRequest;
+import ff.ss.javaFxAuditStudio.domain.ai.LlmProvider;
 import ff.ss.javaFxAuditStudio.domain.ai.SanitizedBundle;
 import ff.ss.javaFxAuditStudio.domain.ai.TaskType;
 import ff.ss.javaFxAuditStudio.domain.cartography.ControllerCartography;
@@ -86,6 +87,14 @@ public class RefineArtifactService implements RefineArtifactUseCase {
 
     @Override
     public AiCodeGenerationResult refine(final String sessionId, final ArtifactRefineRequest request) {
+        return refine(sessionId, request, null);
+    }
+
+    @Override
+    public AiCodeGenerationResult refine(
+            final String sessionId,
+            final ArtifactRefineRequest request,
+            final LlmProvider provider) {
         Objects.requireNonNull(sessionId, "sessionId must not be null");
         Objects.requireNonNull(request, "request must not be null");
 
@@ -119,7 +128,7 @@ public class RefineArtifactService implements RefineArtifactUseCase {
                 PROMPT_TEMPLATE,
                 buildExtraContext(requestId, session, classification, request, cartography));
 
-        AiEnrichmentResult result = aiEnrichmentPort.enrich(enrichmentRequest);
+        AiEnrichmentResult result = aiEnrichmentPort.enrich(enrichmentRequest, provider);
         return mapToGenerationResult(result);
     }
 
@@ -143,10 +152,12 @@ public class RefineArtifactService implements RefineArtifactUseCase {
         Map<String, Object> context = new java.util.HashMap<>();
         context.put("artifactType", request.artifactType().name());
         context.put("instruction", promptContextSanitizerPort != null
-                ? promptContextSanitizerPort.sanitizeInstruction(request.instruction(), 2000)
+                ? promptContextSanitizerPort.sanitizeInstruction(
+                        requestId, TaskType.SPRING_BOOT_GENERATION, request.instruction(), 2000)
                 : request.instruction());
         context.put("previousCode", promptContextSanitizerPort != null
-                ? promptContextSanitizerPort.sanitizeCodeFragment(requestId, request.previousCode(), "previousCode")
+                ? promptContextSanitizerPort.sanitizeCodeFragment(
+                        requestId, TaskType.SPRING_BOOT_GENERATION, request.previousCode(), "previousCode")
                 : request.previousCode());
         context.put("classifiedRules", LlmServiceSupport.formatRules(classification));
         context.put("screenContext", LlmServiceSupport.formatScreenContext(session, classification, cartography));

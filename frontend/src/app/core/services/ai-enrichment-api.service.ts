@@ -9,6 +9,7 @@ import {
   AiArtifactRefineRequest,
   AiGenerationStreamEvent,
   AiEnrichmentResponse,
+  AiEnrichmentProvider,
   AiEnrichmentStatusResponse,
   ArtifactReviewResponse,
   LlmAuditEntryResponse,
@@ -23,11 +24,20 @@ import {
 export class AiEnrichmentApiService {
   private readonly http = inject(HttpClient);
 
-  enrich(sessionId: string, taskType = 'NAMING'): Observable<AiEnrichmentResponse> {
+  enrich(
+    sessionId: string,
+    taskType = 'NAMING',
+    provider?: AiEnrichmentProvider,
+  ): Observable<AiEnrichmentResponse> {
+    const params: Record<string, string> = { taskType };
+    const providerParams = this.buildProviderQueryParams(provider);
+    if (providerParams) {
+      Object.assign(params, providerParams);
+    }
     return this.http.post<AiEnrichmentResponse>(
       `/api/v1/analyses/${encodeURIComponent(sessionId)}/enrich`,
       null,
-      { params: { taskType } }
+      { params }
     );
   }
 
@@ -41,28 +51,33 @@ export class AiEnrichmentApiService {
     return this.http.get<AiEnrichmentStatusResponse>('/api/v1/ai-enrichment/status');
   }
 
-  review(sessionId: string): Observable<ArtifactReviewResponse> {
+  review(sessionId: string, provider?: AiEnrichmentProvider): Observable<ArtifactReviewResponse> {
     return this.http.post<ArtifactReviewResponse>(
       `/api/v1/analyses/${encodeURIComponent(sessionId)}/review`,
-      null
+      null,
+      { params: this.buildProviderQueryParams(provider) }
     );
   }
 
-  generate(sessionId: string): Observable<AiCodeGenerationResponse> {
+  generate(sessionId: string, provider?: AiEnrichmentProvider): Observable<AiCodeGenerationResponse> {
     return this.http.post<AiCodeGenerationResponse>(
       `/api/v1/analyses/${encodeURIComponent(sessionId)}/generate/ai`,
-      null
+      null,
+      { params: this.buildProviderQueryParams(provider) }
     );
   }
 
-  generateStream(sessionId: string): Observable<AiGenerationStreamEvent> {
+  generateStream(
+    sessionId: string,
+    provider?: AiEnrichmentProvider,
+  ): Observable<AiGenerationStreamEvent> {
     return new Observable<AiGenerationStreamEvent>(subscriber => {
       if (typeof EventSource === 'undefined') {
-        const fallbackSubscription = this.syntheticGenerateStream(sessionId).subscribe(subscriber);
+        const fallbackSubscription = this.syntheticGenerateStream(sessionId, provider).subscribe(subscriber);
         return () => fallbackSubscription.unsubscribe();
       }
 
-      const streamUrl = `/api/v1/analyses/${encodeURIComponent(sessionId)}/generate/ai/stream`;
+      const streamUrl = this.buildStreamUrl(sessionId, provider);
       const eventSource = new EventSource(streamUrl);
       let receivedMessage = false;
       let fallbackSubscription: Subscription | null = null;
@@ -86,7 +101,7 @@ export class AiEnrichmentApiService {
           return;
         }
 
-        fallbackSubscription = this.syntheticGenerateStream(sessionId).subscribe({
+        fallbackSubscription = this.syntheticGenerateStream(sessionId, provider).subscribe({
           next: value => subscriber.next(value),
           error: err => subscriber.error(err),
           complete: () => subscriber.complete(),
@@ -100,10 +115,15 @@ export class AiEnrichmentApiService {
     });
   }
 
-  refineArtifact(sessionId: string, request: AiArtifactRefineRequest): Observable<AiCodeGenerationResponse> {
+  refineArtifact(
+    sessionId: string,
+    request: AiArtifactRefineRequest,
+    provider?: AiEnrichmentProvider,
+  ): Observable<AiCodeGenerationResponse> {
     return this.http.post<AiCodeGenerationResponse>(
       `/api/v1/analyses/${encodeURIComponent(sessionId)}/generate/ai/refine`,
       request,
+      { params: this.buildProviderQueryParams(provider) }
     );
   }
 
@@ -141,13 +161,16 @@ export class AiEnrichmentApiService {
     );
   }
 
-  private syntheticGenerateStream(sessionId: string): Observable<AiGenerationStreamEvent> {
+  private syntheticGenerateStream(
+    sessionId: string,
+    provider?: AiEnrichmentProvider,
+  ): Observable<AiGenerationStreamEvent> {
     return new Observable<AiGenerationStreamEvent>(subscriber => {
       const emitProgress = (event: AiGenerationStreamEvent): void => {
         subscriber.next(event);
       };
 
-      const subscription = this.generate(sessionId).subscribe({
+      const subscription = this.generate(sessionId, provider).subscribe({
         next: result => {
           emitProgress({
             stage: 'sanitizing',
@@ -234,5 +257,22 @@ export class AiEnrichmentApiService {
         progress: 50,
       };
     }
+  }
+
+  private buildProviderQueryParams(provider?: AiEnrichmentProvider): Record<string, string> | undefined {
+    if (!provider) {
+      return undefined;
+    }
+
+    return { provider };
+  }
+
+  private buildStreamUrl(sessionId: string, provider?: AiEnrichmentProvider): string {
+    const baseUrl = `/api/v1/analyses/${encodeURIComponent(sessionId)}/generate/ai/stream`;
+    if (!provider) {
+      return baseUrl;
+    }
+
+    return `${baseUrl}?provider=${encodeURIComponent(provider)}`;
   }
 }

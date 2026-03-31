@@ -29,6 +29,7 @@ public class ClaudeCodeAiEnrichmentAdapter {
     private static final String API_URL = "https://api.anthropic.com/v1/messages";
     private static final String ANTHROPIC_VERSION = "2023-06-01";
     private static final String DEFAULT_MODEL = "claude-sonnet-4-6";
+    private static final double DEFAULT_TEMPERATURE = 0.0d;
     private final AiEnrichmentProperties properties;
     private final PromptTemplateLoader templateLoader;
     private final RestClient restClient;
@@ -60,7 +61,8 @@ public class ClaudeCodeAiEnrichmentAdapter {
                 DEFAULT_MODEL,
                 properties.effectiveMaxTokens(request.taskType()),
                 systemPrompt,
-                List.of(new ClaudeHttpDtos.Message("user", prompt)));
+                List.of(new ClaudeHttpDtos.Message("user", prompt)),
+                DEFAULT_TEMPERATURE);
 
         ClaudeHttpDtos.MessagesResponse response = restClient.post()
                 .uri(API_URL)
@@ -79,7 +81,7 @@ public class ClaudeCodeAiEnrichmentAdapter {
             final SanitizedBundle bundle,
             final ClaudeHttpDtos.MessagesResponse response) {
         if (response == null || response.content() == null || response.content().isEmpty()) {
-            return AiEnrichmentResult.degraded(request.requestId(), "Reponse Claude vide");
+            return AiEnrichmentResult.degraded(request.requestId(), "Reponse Claude vide", PROVIDER);
         }
         String text = response.content().stream()
                 .filter(b -> "text".equals(b.type()))
@@ -105,6 +107,15 @@ public class ClaudeCodeAiEnrichmentAdapter {
                 limitedResponse.text(),
                 bundle.controllerRef(),
                 request.requestId());
+        if (suggestions.isEmpty()) {
+            LOG.warn("Claude - reponse non structuree ou vide [requestId={}, controllerRef={}]",
+                    request.requestId(),
+                    bundle.controllerRef());
+            return AiEnrichmentResult.degraded(
+                    request.requestId(),
+                    "Reponse Claude non structuree ou vide",
+                    PROVIDER);
+        }
         int tokens = response.usage() != null
                 ? response.usage().inputTokens() + response.usage().outputTokens()
                 : bundle.estimatedTokens();
@@ -117,24 +128,18 @@ public class ClaudeCodeAiEnrichmentAdapter {
     }
 
     private String renderPrompt(final AiEnrichmentRequest request) {
-        Map<String, Object> context = new java.util.HashMap<>();
-        context.put("controllerRef", request.bundle().controllerRef());
-        context.put("sanitizedSource", request.bundle().sanitizedSource());
-        context.put("estimatedTokens", request.bundle().estimatedTokens());
-        context.put("taskType", request.taskType().name());
-        context.putAll(request.extraContext());
+        Map<String, Object> context = PromptContextBudgetSupport.budgetContext(properties, request);
         return templateLoader.render(request.promptTemplate(), context);
     }
 
     private String buildSystemPrompt(final AiEnrichmentRequest request) {
-        return "Tu es un expert en migration JavaFX vers Spring Boot / architecture hexagonale."
-                + " Controleur de reference : " + request.bundle().controllerRef()
-                + ". Tache : " + request.taskType().name()
-                + ". Reponds uniquement avec du JSON valide selon le format demande dans le prompt utilisateur.";
+        return StructuredOutputContract.strictSystemPrompt(
+                request.bundle().controllerRef(),
+                request.taskType());
     }
 
     private String validateAndGetApiKey() {
-        String apiKey = properties.activeApiKey();
+        String apiKey = properties.apiKeyFor(PROVIDER);
         if (apiKey == null || apiKey.isBlank()) {
             throw new IllegalStateException(
                     "Credential Claude Code absent — configurer CLAUDE_API_KEY");

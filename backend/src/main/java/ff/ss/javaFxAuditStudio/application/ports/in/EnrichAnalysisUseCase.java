@@ -1,6 +1,7 @@
 package ff.ss.javaFxAuditStudio.application.ports.in;
 
 import ff.ss.javaFxAuditStudio.domain.ai.AiEnrichmentResult;
+import ff.ss.javaFxAuditStudio.domain.ai.LlmProvider;
 import ff.ss.javaFxAuditStudio.domain.ai.TaskType;
 
 /**
@@ -19,5 +20,9 @@ public interface EnrichAnalysisUseCase {
      * @return résultat nominal ou dégradé, jamais null
      * @throws IllegalArgumentException si la session est introuvable
      */
-    AiEnrichmentResult enrich(String sessionId, TaskType taskType);
+    default AiEnrichmentResult enrich(final String sessionId, final TaskType taskType) {
+        return enrich(sessionId, taskType, null);
+    }
+
+    AiEnrichmentResult enrich(String sessionId, TaskType taskType, LlmProvider provider);
 }

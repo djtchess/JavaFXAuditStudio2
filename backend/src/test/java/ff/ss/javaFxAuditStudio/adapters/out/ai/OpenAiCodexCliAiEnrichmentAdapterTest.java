@@ -27,7 +27,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class ClaudeCodeCliAiEnrichmentAdapterTest {
+class OpenAiCodexCliAiEnrichmentAdapterTest {
 
     @TempDir
     Path tempDir;
@@ -42,7 +42,7 @@ class ClaudeCodeCliAiEnrichmentAdapterTest {
     void setUp() {
         templateLoader = new PromptTemplateLoader();
         objectMapper = new ObjectMapper();
-        logger = (Logger) LoggerFactory.getLogger(ClaudeCodeCliAiEnrichmentAdapter.class);
+        logger = (Logger) LoggerFactory.getLogger(OpenAiCodexCliAiEnrichmentAdapter.class);
         originalLevel = logger.getLevel();
         logger.setLevel(Level.DEBUG);
         appender = new ListAppender<>();
@@ -60,12 +60,13 @@ class ClaudeCodeCliAiEnrichmentAdapterTest {
     private static AiEnrichmentProperties properties() {
         return new AiEnrichmentProperties(
                 true,
-                "claude-code-cli",
+                "openai-codex-cli",
                 5_000L,
                 null,
                 null,
                 false,
                 null,
+                "gpt-5.3-codex",
                 null,
                 null,
                 null,
@@ -99,18 +100,69 @@ class ClaudeCodeCliAiEnrichmentAdapterTest {
     }
 
     private static String successScript() {
-        if (System.getProperty("os.name", "").toLowerCase().contains("win")) {
+        if (isWindows()) {
             return "@echo off\r\n"
-                    + "echo {\"suggestions\":{\"MyController\":\"SafeValue\"}}\r\n"
+                    + "setlocal EnableDelayedExpansion\r\n"
+                    + "set \"OUT=\"\r\n"
+                    + ":loop\r\n"
+                    + "if \"%~1\"==\"\" goto end\r\n"
+                    + "if \"%~1\"==\"--output-last-message\" (\r\n"
+                    + "  set \"OUT=%~2\"\r\n"
+                    + "  shift\r\n"
+                    + ")\r\n"
+                    + "shift\r\n"
+                    + "goto loop\r\n"
+                    + ":end\r\n"
+                    + "> \"%OUT%\" echo {\"suggestions\":{\"MyController\":\"SafeValue\"}}\r\n"
                     + "exit /b 0\r\n";
         }
         return "#!/bin/sh\n"
-                + "printf '%s\\n' '{\"suggestions\":{\"MyController\":\"SafeValue\"}}'\n"
+                + "OUT=\"\"\n"
+                + "while [ \"$#\" -gt 0 ]; do\n"
+                + "  if [ \"$1\" = \"--output-last-message\" ]; then\n"
+                + "    OUT=\"$2\"\n"
+                + "    shift 2\n"
+                + "  else\n"
+                + "    shift\n"
+                + "  fi\n"
+                + "done\n"
+                + "printf '%s\\n' '{\"suggestions\":{\"MyController\":\"SafeValue\"}}' > \"$OUT\"\n"
+                + "exit 0\n";
+    }
+
+    private static String invalidJsonScript() {
+        if (isWindows()) {
+            return "@echo off\r\n"
+                    + "setlocal EnableDelayedExpansion\r\n"
+                    + "set \"OUT=\"\r\n"
+                    + ":loop\r\n"
+                    + "if \"%~1\"==\"\" goto end\r\n"
+                    + "if \"%~1\"==\"--output-last-message\" (\r\n"
+                    + "  set \"OUT=%~2\"\r\n"
+                    + "  shift\r\n"
+                    + ")\r\n"
+                    + "shift\r\n"
+                    + "goto loop\r\n"
+                    + ":end\r\n"
+                    + "> \"%OUT%\" echo SavePatientUseCase\r\n"
+                    + "exit /b 0\r\n";
+        }
+        return "#!/bin/sh\n"
+                + "OUT=\"\"\n"
+                + "while [ \"$#\" -gt 0 ]; do\n"
+                + "  if [ \"$1\" = \"--output-last-message\" ]; then\n"
+                + "    OUT=\"$2\"\n"
+                + "    shift 2\n"
+                + "  else\n"
+                + "    shift\n"
+                + "  fi\n"
+                + "done\n"
+                + "printf '%s\\n' 'SavePatientUseCase' > \"$OUT\"\n"
                 + "exit 0\n";
     }
 
     private static String failureScript() {
-        if (System.getProperty("os.name", "").toLowerCase().contains("win")) {
+        if (isWindows()) {
             return "@echo off\r\n"
                     + "echo SECRET_OUTPUT_TOKEN\r\n"
                     + "exit /b 17\r\n";
@@ -120,37 +172,39 @@ class ClaudeCodeCliAiEnrichmentAdapterTest {
                 + "exit 17\n";
     }
 
-    private ClaudeCodeCliAiEnrichmentAdapter newAdapter(final String cliCommand) {
-        return new ClaudeCodeCliAiEnrichmentAdapter(
+    private OpenAiCodexCliAiEnrichmentAdapter newAdapter(final String cliCommand) {
+        return new OpenAiCodexCliAiEnrichmentAdapter(
                 properties(),
                 templateLoader,
                 objectMapper,
-                cliCommand);
+                cliCommand,
+                "gpt-5.3-codex");
     }
 
     @Test
     void should_not_log_raw_prompt_or_sanitized_source_on_success() throws IOException {
         String secretSource = "@FXML void onSave() { rawSensitiveSecret(); }";
-        String cliCommand = createCliScript("claude-success.cmd", successScript());
+        String cliCommand = createCliScript("codex-success.cmd", successScript());
 
         AiEnrichmentResult result = newAdapter(cliCommand).call(
                 requestFor(secretSource, "enrichment-default"));
 
         assertThat(result.degraded()).isFalse();
-        assertThat(result.provider()).isEqualTo(LlmProvider.CLAUDE_CODE_CLI);
+        assertThat(result.provider()).isEqualTo(LlmProvider.OPENAI_CODEX_CLI);
         assertThat(result.suggestions()).containsEntry("MyController", "SafeValue");
 
         List<String> messages = appender.list.stream()
                 .map(ILoggingEvent::getFormattedMessage)
                 .toList();
-        assertThat(messages).anyMatch(m -> m.contains("promptLength=") && m.contains("promptHash="));
-        assertThat(messages).noneMatch(m -> m.contains(secretSource));
-        assertThat(messages).noneMatch(m -> m.contains("@FXML void onSave()"));
+        assertThat(messages).anyMatch(message ->
+                message.contains("promptLength=") && message.contains("promptHash="));
+        assertThat(messages).noneMatch(message -> message.contains(secretSource));
+        assertThat(messages).noneMatch(message -> message.contains("@FXML void onSave()"));
     }
 
     @Test
     void should_not_log_raw_process_output_on_failure() throws IOException {
-        String cliCommand = createCliScript("claude-failure.cmd", failureScript());
+        String cliCommand = createCliScript("codex-failure.cmd", failureScript());
 
         AiEnrichmentResult result = newAdapter(cliCommand).call(
                 requestFor("public class MyController {}", "enrichment-default"));
@@ -162,29 +216,27 @@ class ClaudeCodeCliAiEnrichmentAdapterTest {
         List<String> messages = appender.list.stream()
                 .map(ILoggingEvent::getFormattedMessage)
                 .toList();
-        assertThat(messages).anyMatch(m -> m.contains("echec")
-                && m.contains("exitCode=17")
-                && m.contains("outputLength=")
-                && m.contains("outputHash="));
-        assertThat(messages).noneMatch(m -> m.contains("SECRET_OUTPUT_TOKEN"));
+        assertThat(messages).anyMatch(message -> message.contains("echec")
+                && message.contains("exitCode=17")
+                && message.contains("outputLength=")
+                && message.contains("outputHash="));
+        assertThat(messages).noneMatch(message -> message.contains("SECRET_OUTPUT_TOKEN"));
     }
 
     @Test
     void should_degrade_when_cli_output_is_not_valid_json() throws IOException {
-        String cliCommand = createCliScript("claude-invalid.cmd", System.getProperty("os.name", "").toLowerCase().contains("win")
-                ? "@echo off\r\n"
-                + "echo SavePatientUseCase\r\n"
-                + "exit /b 0\r\n"
-                : "#!/bin/sh\n"
-                + "printf '%s\\n' 'SavePatientUseCase'\n"
-                + "exit 0\n");
+        String cliCommand = createCliScript("codex-invalid.cmd", invalidJsonScript());
 
         AiEnrichmentResult result = newAdapter(cliCommand).call(
                 requestFor("public class MyController {}", "enrichment-default"));
 
         assertThat(result.degraded()).isTrue();
-        assertThat(result.provider()).isEqualTo(LlmProvider.CLAUDE_CODE_CLI);
+        assertThat(result.provider()).isEqualTo(LlmProvider.OPENAI_CODEX_CLI);
         assertThat(result.degradationReason()).contains("non structuree");
         assertThat(result.suggestions()).isEmpty();
+    }
+
+    private static boolean isWindows() {
+        return System.getProperty("os.name", "").toLowerCase().contains("win");
     }
 }

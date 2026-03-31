@@ -48,7 +48,7 @@ public class ClaudeCodeCliAiEnrichmentAdapter {
         this.properties = Objects.requireNonNull(properties);
         this.templateLoader = Objects.requireNonNull(templateLoader);
         this.responseParser = new LlmResponseParser(objectMapper);
-        this.cliCommand = (cliCommand != null && !cliCommand.isBlank()) ? cliCommand : "claude";
+        this.cliCommand = (cliCommand != null && !cliCommand.isBlank()) ? cliCommand : properties.effectiveCliCommand(LlmProvider.CLAUDE_CODE_CLI);
     }
 
     public AiEnrichmentResult call(final AiEnrichmentRequest request) {
@@ -117,6 +117,16 @@ public class ClaudeCodeCliAiEnrichmentAdapter {
 
             Map<String, String> suggestions = responseParser.parse(
                     output.strip(), bundle.controllerRef(), request.requestId());
+            if (suggestions.isEmpty()) {
+                LOG.warn("Claude CLI - reponse non structuree requestId={}, controllerRef={}, taskType={}, outputLength={}, outputHash={}",
+                        request.requestId(),
+                        bundle.controllerRef(),
+                        request.taskType(),
+                        output.length(),
+                        sha256Hex(output));
+                return AiEnrichmentResult.degraded(
+                        request.requestId(), "Claude CLI reponse non structuree", PROVIDER);
+            }
 
             LOG.info("Claude CLI - enrichissement nominal requestId={}, controllerRef={}, taskType={}",
                     request.requestId(), bundle.controllerRef(), request.taskType());
@@ -138,17 +148,11 @@ public class ClaudeCodeCliAiEnrichmentAdapter {
     }
 
     private String renderPrompt(final AiEnrichmentRequest request) {
-        Map<String, Object> context = new java.util.HashMap<>();
-        context.put("controllerRef", request.bundle().controllerRef());
-        context.put("sanitizedSource", request.bundle().sanitizedSource());
-        context.put("estimatedTokens", request.bundle().estimatedTokens());
-        context.put("taskType", request.taskType().name());
-        context.putAll(request.extraContext());
+        Map<String, Object> context = PromptContextBudgetSupport.budgetContext(properties, request);
         String dataPrompt = templateLoader.render(request.promptTemplate(), context);
-        return "# SYSTEM\nTu es un expert en migration JavaFX vers Spring Boot / architecture hexagonale."
-                + " Controleur : " + request.bundle().controllerRef()
-                + ". Tache : " + request.taskType().name()
-                + ". Reponds uniquement avec du JSON valide selon le format demande.\n\n"
+        return "# SYSTEM\n" + StructuredOutputContract.strictSystemPrompt(
+                request.bundle().controllerRef(),
+                request.taskType()) + "\n\n"
                 + "# DATA\n[DATA START]\n" + dataPrompt + "\n[DATA END]";
     }
 

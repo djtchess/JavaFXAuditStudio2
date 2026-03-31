@@ -20,8 +20,9 @@ import ff.ss.javaFxAuditStudio.domain.ai.LlmProvider;
 /**
  * Adaptateur de routage vers le fournisseur IA configure (IAP-2).
  *
- * <p>Delegue vers {@link ClaudeCodeAiEnrichmentAdapter}, {@link OpenAiGpt54AiEnrichmentAdapter}
- * ou {@link ClaudeCodeCliAiEnrichmentAdapter} selon la valeur de {@code ai.enrichment.provider}.
+ * <p>Delegue vers {@link ClaudeCodeAiEnrichmentAdapter}, {@link OpenAiGpt54AiEnrichmentAdapter},
+ * {@link ClaudeCodeCliAiEnrichmentAdapter} ou {@link OpenAiCodexCliAiEnrichmentAdapter}
+ * selon la valeur de {@code ai.enrichment.provider}.
  * Le switch sur {@link LlmProvider} remplace les comparaisons de String.
  *
  * <p>Assemble via {@code AiEnrichmentOrchestraConfiguration} - pas de {@code @Component}.
@@ -41,6 +42,7 @@ public class RoutingAiEnrichmentAdapter implements AiEnrichmentPort {
     private final ClaudeCodeAiEnrichmentAdapter claudeAdapter;
     private final OpenAiGpt54AiEnrichmentAdapter openAiAdapter;
     private final ClaudeCodeCliAiEnrichmentAdapter cliAdapter;
+    private final OpenAiCodexCliAiEnrichmentAdapter openAiCodexCliAdapter;
     private final AiCircuitBreaker circuitBreaker;
     private final MeterRegistry meterRegistry;
 
@@ -49,18 +51,29 @@ public class RoutingAiEnrichmentAdapter implements AiEnrichmentPort {
             final ClaudeCodeAiEnrichmentAdapter claudeAdapter,
             final OpenAiGpt54AiEnrichmentAdapter openAiAdapter,
             final ClaudeCodeCliAiEnrichmentAdapter cliAdapter,
+            final OpenAiCodexCliAiEnrichmentAdapter openAiCodexCliAdapter,
             final AiCircuitBreaker circuitBreaker,
             final MeterRegistry meterRegistry) {
         this.properties = Objects.requireNonNull(properties, "properties must not be null");
         this.claudeAdapter = Objects.requireNonNull(claudeAdapter, "claudeAdapter must not be null");
         this.openAiAdapter = Objects.requireNonNull(openAiAdapter, "openAiAdapter must not be null");
         this.cliAdapter = Objects.requireNonNull(cliAdapter, "cliAdapter must not be null");
+        this.openAiCodexCliAdapter = Objects.requireNonNull(
+                openAiCodexCliAdapter,
+                "openAiCodexCliAdapter must not be null");
         this.circuitBreaker = Objects.requireNonNull(circuitBreaker, "circuitBreaker must not be null");
         this.meterRegistry = Objects.requireNonNull(meterRegistry, "meterRegistry must not be null");
     }
 
     @Override
     public AiEnrichmentResult enrich(final AiEnrichmentRequest request) {
+        return enrich(request, null);
+    }
+
+    @Override
+    public AiEnrichmentResult enrich(
+            final AiEnrichmentRequest request,
+            final LlmProvider providerOverride) {
         Objects.requireNonNull(request, "request must not be null");
 
         if (!properties.enabled()) {
@@ -69,11 +82,13 @@ public class RoutingAiEnrichmentAdapter implements AiEnrichmentPort {
 
         LOG.debug("Enrichissement - tokens estimes : {}", request.bundle().estimatedTokens());
 
-        return callWithCircuitBreaker(request);
+        return callWithCircuitBreaker(request, providerOverride);
     }
 
-    private AiEnrichmentResult callWithCircuitBreaker(final AiEnrichmentRequest request) {
-        LlmProvider provider = properties.providerEnum();
+    private AiEnrichmentResult callWithCircuitBreaker(
+            final AiEnrichmentRequest request,
+            final LlmProvider providerOverride) {
+        LlmProvider provider = resolveProvider(providerOverride);
         AiEnrichmentProperties.Retry retryConfig = properties.effectiveRetry();
         LlmRetryPolicy retryPolicy = new LlmRetryPolicy(
                 retryConfig.effectiveMaxRetries(),
@@ -129,7 +144,12 @@ public class RoutingAiEnrichmentAdapter implements AiEnrichmentPort {
         return switch (provider) {
             case CLAUDE_CODE -> claudeAdapter.call(request);
             case CLAUDE_CODE_CLI -> cliAdapter.call(request);
-            default -> openAiAdapter.call(request);
+            case OPENAI_GPT54 -> openAiAdapter.call(request);
+            case OPENAI_CODEX_CLI -> openAiCodexCliAdapter.call(request);
+            case NONE -> AiEnrichmentResult.degraded(
+                    request.requestId(),
+                    "Provider IA non supporte",
+                    LlmProvider.NONE);
         };
     }
 
@@ -214,5 +234,12 @@ public class RoutingAiEnrichmentAdapter implements AiEnrichmentPort {
             normalized = value.trim().toLowerCase();
         }
         return normalized;
+    }
+
+    private LlmProvider resolveProvider(final LlmProvider providerOverride) {
+        if (providerOverride != null && providerOverride != LlmProvider.NONE) {
+            return providerOverride;
+        }
+        return properties.providerEnum();
     }
 }

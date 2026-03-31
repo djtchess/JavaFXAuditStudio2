@@ -66,6 +66,7 @@ class ClaudeCodeAiEnrichmentAdapterTest {
                 null,
                 null,
                 null,
+                null,
                 null);
     }
 
@@ -82,6 +83,7 @@ class ClaudeCodeAiEnrichmentAdapterTest {
                 null,
                 null,
                 maxTokensByTask,
+                null,
                 null,
                 null);
     }
@@ -100,6 +102,7 @@ class ClaudeCodeAiEnrichmentAdapterTest {
                 null,
                 null,
                 maxResponseSizeBytes,
+                null,
                 null);
     }
 
@@ -147,10 +150,19 @@ class ClaudeCodeAiEnrichmentAdapterTest {
         assertThat(result.suggestions().get("MyController")).isEqualTo("SavePatientUseCase");
         assertThat(result.provider()).isEqualTo(LlmProvider.CLAUDE_CODE);
         assertThat(result.tokensUsed()).isEqualTo(150);
+
+        org.mockito.ArgumentCaptor<ClaudeHttpDtos.MessagesRequest> captor =
+                org.mockito.ArgumentCaptor.forClass(ClaudeHttpDtos.MessagesRequest.class);
+        org.mockito.Mockito.verify(requestBodyUriSpec).body(captor.capture());
+        assertThat(captor.getValue().system())
+                .contains("Reponds uniquement avec un objet JSON valide");
+        assertThat(captor.getValue().temperature()).isEqualTo(0.0d);
+        assertThat(captor.getValue().messages()).hasSize(1);
+        assertThat(captor.getValue().messages().get(0).role()).isEqualTo("user");
     }
 
     @Test
-    void should_return_raw_text_as_suggestion_when_response_is_not_json() {
+    void should_return_degraded_when_response_is_not_json() {
         // Reponse en texte brut (sans JSON)
         ClaudeHttpDtos.MessagesResponse response = new ClaudeHttpDtos.MessagesResponse(
                 List.of(new ClaudeHttpDtos.ContentBlock("text", "DeleteUserUseCase")),
@@ -165,8 +177,10 @@ class ClaudeCodeAiEnrichmentAdapterTest {
 
         AiEnrichmentResult result = adapter.call(buildRequest());
 
-        assertThat(result.degraded()).isFalse();
-        assertThat(result.suggestions()).containsEntry("MyController", "DeleteUserUseCase");
+        assertThat(result.degraded()).isTrue();
+        assertThat(result.provider()).isEqualTo(LlmProvider.CLAUDE_CODE);
+        assertThat(result.degradationReason()).contains("non structuree");
+        assertThat(result.suggestions()).isEmpty();
     }
 
     @Test

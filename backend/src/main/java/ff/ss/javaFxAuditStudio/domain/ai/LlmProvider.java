@@ -23,6 +23,9 @@ public enum LlmProvider {
     /** Claude Code CLI local (ProcessBuilder). */
     CLAUDE_CODE_CLI("claude-code-cli"),
 
+    /** OpenAI Codex CLI local (abonnement ChatGPT/Codex). */
+    OPENAI_CODEX_CLI("openai-codex-cli"),
+
     /** Fournisseur absent ou mode dégradé. */
     NONE("none");
 

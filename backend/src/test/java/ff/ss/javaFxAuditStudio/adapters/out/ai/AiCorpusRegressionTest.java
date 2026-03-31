@@ -51,24 +51,25 @@ class AiCorpusRegressionTest {
 
     private ClaudeCodeAiEnrichmentAdapter claudeAdapter;
     private ObjectMapper objectMapper;
+    private String expectedControllerRef;
 
     @BeforeEach
     void setUp() {
         AiEnrichmentProperties.Credentials claudeCreds =
                 new AiEnrichmentProperties.Credentials(STUB_API_KEY);
         AiEnrichmentProperties properties = new AiEnrichmentProperties(
-                true, PROVIDER_CLAUDE, 10_000L, claudeCreds, null, false, null, null, null, null, null);
+                true, PROVIDER_CLAUDE, 10_000L, claudeCreds, null, false, null, null, null, null, null, null);
         PromptTemplateLoader templateLoader = new PromptTemplateLoader();
         objectMapper = new ObjectMapper();
 
-        // Texte brut : LlmResponseParser le mappe sous controllerRef (fallback)
-        ClaudeHttpDtos.MessagesResponse stubResponse = new ClaudeHttpDtos.MessagesResponse(
-                List.of(new ClaudeHttpDtos.ContentBlock("text", "StubUseCase")),
-                new ClaudeHttpDtos.Usage(100, 50));
-
         when(restClient.post()).thenReturn(requestBodyUriSpec);
         when(requestBodyUriSpec.retrieve()).thenReturn(responseSpec);
-        when(responseSpec.body(ClaudeHttpDtos.MessagesResponse.class)).thenReturn(stubResponse);
+        when(responseSpec.body(ClaudeHttpDtos.MessagesResponse.class)).thenAnswer(invocation ->
+                new ClaudeHttpDtos.MessagesResponse(
+                        List.of(new ClaudeHttpDtos.ContentBlock(
+                                "text",
+                                "{\"suggestions\":{\"" + expectedControllerRef + "\":\"StubUseCase\"}}")),
+                        new ClaudeHttpDtos.Usage(100, 50)));
 
         claudeAdapter = new ClaudeCodeAiEnrichmentAdapter(properties, templateLoader, restClient, objectMapper);
     }
@@ -120,6 +121,7 @@ class AiCorpusRegressionTest {
         String sanitizedSource = handler.get("sanitizedSource").asText();
         String taskType = handler.get("taskType").asText();
         String promptTemplate = resolveTemplate(taskType);
+        expectedControllerRef = controllerRef;
 
         SanitizedBundle bundle = new SanitizedBundle(
                 UUID.randomUUID().toString(),

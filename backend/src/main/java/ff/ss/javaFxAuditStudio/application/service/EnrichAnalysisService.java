@@ -20,6 +20,7 @@ import ff.ss.javaFxAuditStudio.configuration.LlmAuditProperties;
 import ff.ss.javaFxAuditStudio.domain.ai.AiEnrichmentRequest;
 import ff.ss.javaFxAuditStudio.domain.ai.AiEnrichmentResult;
 import ff.ss.javaFxAuditStudio.domain.ai.LlmAuditEntry;
+import ff.ss.javaFxAuditStudio.domain.ai.LlmProvider;
 import ff.ss.javaFxAuditStudio.domain.ai.SanitizedBundle;
 import ff.ss.javaFxAuditStudio.domain.ai.TaskType;
 import ff.ss.javaFxAuditStudio.domain.sanitization.SanitizationRefusedException;
@@ -92,6 +93,14 @@ public class EnrichAnalysisService implements EnrichAnalysisUseCase {
 
     @Override
     public AiEnrichmentResult enrich(final String sessionId, final TaskType taskType) {
+        return enrich(sessionId, taskType, null);
+    }
+
+    @Override
+    public AiEnrichmentResult enrich(
+            final String sessionId,
+            final TaskType taskType,
+            final LlmProvider provider) {
         Objects.requireNonNull(sessionId, "sessionId must not be null");
         Objects.requireNonNull(taskType, "taskType must not be null");
         Instant startedAt = Instant.now();
@@ -143,7 +152,7 @@ public class EnrichAnalysisService implements EnrichAnalysisUseCase {
         Instant llmCallStartedAt = Instant.now();
         AiEnrichmentResult result;
         try {
-            result = enrichmentPort.enrich(request);
+            result = enrichmentPort.enrich(request, provider);
         } catch (RuntimeException ex) {
             observabilityPort.recordLlmEnrichment(
                     "unknown",

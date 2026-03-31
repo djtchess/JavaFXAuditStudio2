@@ -1,6 +1,7 @@
 package ff.ss.javaFxAuditStudio.application.ports.in;
 
 import ff.ss.javaFxAuditStudio.domain.ai.AiCodeGenerationResult;
+import ff.ss.javaFxAuditStudio.domain.ai.LlmProvider;
 
 /**
  * Port entrant pour la génération IA des classes cibles Spring Boot (JAS-031).
@@ -27,5 +28,9 @@ public interface GenerateSpringBootClassesUseCase {
      *         ou un résultat dégradé si la génération a échoué
      * @throws IllegalArgumentException si la session est introuvable
      */
-    AiCodeGenerationResult generate(String sessionId);
+    default AiCodeGenerationResult generate(final String sessionId) {
+        return generate(sessionId, null);
+    }
+
+    AiCodeGenerationResult generate(String sessionId, LlmProvider provider);
 }

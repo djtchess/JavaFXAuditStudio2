@@ -20,6 +20,7 @@ import {
   AiGeneratedArtifactCollectionResponse,
   AiGeneratedArtifactResponse,
   AiEnrichmentResponse,
+  AiEnrichmentProvider,
   AiEnrichmentStatusResponse,
   ArtifactReviewResponse,
   ArtifactsResponse,
@@ -28,6 +29,20 @@ import {
   SanitizedSourcePreviewResponse,
 } from '../../../core/models/analysis.model';
 import { AiGenerationDiffComponent } from './ai-generation-diff.component';
+
+type ProviderChoice = {
+  value: AiEnrichmentProvider;
+  label: string;
+};
+
+const PROVIDER_CHOICES: ProviderChoice[] = [
+  { value: 'claude-code', label: 'Claude API' },
+  { value: 'openai-gpt54', label: 'OpenAI API' },
+  { value: 'claude-code-cli', label: 'Claude CLI' },
+  { value: 'openai-codex-cli', label: 'OpenAI Codex CLI' },
+];
+
+const DEFAULT_PROVIDER: AiEnrichmentProvider = 'claude-code';
 
 /**
  * Vue "Analyse IA" - enrichissement LLM avec confirmation avant 1er envoi et audit trail.
@@ -49,6 +64,84 @@ import { AiGenerationDiffComponent } from './ai-generation-diff.component';
       font-size: 0.9rem;
       margin-bottom: 1rem;
       color: var(--surface-ink);
+    }
+
+    .provider-panel {
+      display: grid;
+      gap: 0.65rem;
+      padding: 0.85rem 1rem;
+      border-radius: 14px;
+      border: 1px solid var(--surface-line);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.45)),
+        var(--surface-chip);
+      margin-bottom: 1rem;
+      box-shadow: 0 12px 24px rgba(18, 35, 56, 0.06);
+    }
+
+    .provider-panel.disabled {
+      opacity: 0.82;
+    }
+
+    .provider-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--surface-ink-soft);
+    }
+
+    .provider-panel-label {
+      display: grid;
+      gap: 0.35rem;
+      font-size: 0.88rem;
+      color: var(--surface-ink);
+    }
+
+    .provider-panel-label span {
+      font-weight: 700;
+    }
+
+    .provider-select {
+      width: 100%;
+      max-width: 360px;
+      border-radius: 12px;
+      border: 1px solid var(--surface-line);
+      background: var(--surface-raised);
+      color: var(--surface-ink);
+      padding: 0.7rem 0.8rem;
+      font: inherit;
+      font-size: 0.88rem;
+      appearance: none;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    }
+
+    .provider-select:focus {
+      outline: 2px solid rgba(101, 223, 255, 0.24);
+      outline-offset: 1px;
+    }
+
+    .provider-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+      font-size: 0.82rem;
+      color: var(--surface-ink-soft);
+    }
+
+    .provider-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.18rem 0.55rem;
+      border-radius: 999px;
+      background: rgba(61, 134, 198, 0.08);
+      color: #3d86c6;
+      font-weight: 700;
     }
 
     .status-dot {
@@ -833,11 +926,36 @@ import { AiGenerationDiffComponent } from './ai-generation-diff.component';
         <span class="status-dot" [class.active]="isEnabled()"></span>
         Enrichissement IA : {{ isEnabled() ? 'Active' : 'Desactive' }}
         @if (isEnabled()) {
-          - {{ status()!.provider }}
+          - backend {{ backendProviderLabel() }}
           @if (!status()!.credentialPresent) {
             <span class="credential-missing">Credential absent</span>
           }
         }
+      </div>
+      <div class="provider-panel" [class.disabled]="!isEnabled()">
+        <div class="provider-panel-header">
+          <span>Choix du LLM</span>
+          <span>Backend courant : {{ backendProviderLabel() }}</span>
+        </div>
+        <label class="provider-panel-label">
+          <span>Provider utilise pour les prochaines actions</span>
+          <select
+            class="provider-select"
+            [value]="selectedProvider()"
+            (change)="onProviderSelectionChange($event)"
+            [disabled]="!isEnabled()"
+          >
+            @for (option of providerChoices; track option.value) {
+              <option [value]="option.value">{{ option.label }}</option>
+            }
+          </select>
+        </label>
+        <div class="provider-meta">
+          <span class="provider-pill">Action : {{ selectedProviderLabel() }}</span>
+          @if (selectedProvider() !== backendProvider()) {
+            <span>Different du backend courant</span>
+          }
+        </div>
       </div>
     }
 
@@ -1288,7 +1406,8 @@ import { AiGenerationDiffComponent } from './ai-generation-diff.component';
         <div class="confirm-card">
           <h3>Confirmer l'envoi au fournisseur IA</h3>
           <p>Le code source sera sanitise avant envoi. Aucune donnee sensible ne transpirera.</p>
-          <p>Fournisseur : <strong>{{ status()?.provider }}</strong></p>
+          <p>Backend courant : <strong>{{ backendProviderLabel() }}</strong></p>
+          <p>Action cible : <strong>{{ selectedProviderLabel() }}</strong></p>
           <div class="confirm-actions">
             <button class="btn-cancel" (click)="cancelEnrich()">Annuler</button>
             <button class="btn-confirm" (click)="confirmAndEnrich()">Confirmer l'envoi</button>
@@ -1311,8 +1430,16 @@ export class AiEnrichmentViewComponent implements OnInit {
   protected readonly lastResult = signal<AiEnrichmentResponse | null>(null);
   protected readonly error = signal<string | null>(null);
   protected readonly showConfirmModal = signal(false);
+  protected readonly providerChoices = PROVIDER_CHOICES;
+  protected readonly selectedProvider = signal<AiEnrichmentProvider>(DEFAULT_PROVIDER);
+  protected readonly providerSelectionLocked = signal(false);
 
   protected readonly isEnabled = computed(() => this.status()?.enabled ?? false);
+  protected readonly backendProvider = computed(
+    () => this.status()?.provider as AiEnrichmentProvider | 'none' | undefined
+  );
+  protected readonly backendProviderLabel = computed(() => this.providerLabel(this.backendProvider()));
+  protected readonly selectedProviderLabel = computed(() => this.providerLabel(this.selectedProvider()));
   protected readonly hasAuditEntries = computed(() => this.auditLog().length > 0);
   protected readonly suggestionEntries = computed(() =>
     Object.entries(this.lastResult()?.suggestions ?? {}).map(([key, value]) => ({ key, value }))
@@ -1393,7 +1520,10 @@ export class AiEnrichmentViewComponent implements OnInit {
 
   ngOnInit(): void {
     this.aiApi.getStatus().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: s => this.status.set(s),
+      next: s => {
+        this.status.set(s);
+        this.syncSelectedProviderWithStatus(s.provider);
+      },
       error: () => this.status.set(null),
     });
 
@@ -1524,6 +1654,16 @@ export class AiEnrichmentViewComponent implements OnInit {
       });
   }
 
+  protected onProviderSelectionChange(event: Event): void {
+    const target = event.target as HTMLSelectElement | null;
+    const nextProvider = this.normalizeProviderSelection(target?.value);
+
+    if (nextProvider) {
+      this.selectedProvider.set(nextProvider);
+      this.providerSelectionLocked.set(true);
+    }
+  }
+
   protected requestEnrich(): void {
     if (!this.isEnabled() || this.isLoading()) {
       return;
@@ -1542,6 +1682,14 @@ export class AiEnrichmentViewComponent implements OnInit {
 
   protected cancelEnrich(): void {
     this.showConfirmModal.set(false);
+  }
+
+  private syncSelectedProviderWithStatus(provider: string | undefined): void {
+    if (this.providerSelectionLocked()) {
+      return;
+    }
+
+    this.selectedProvider.set(this.normalizeProviderSelection(provider) ?? DEFAULT_PROVIDER);
   }
 
   private clearGenerationState(): void {
@@ -1570,7 +1718,7 @@ export class AiEnrichmentViewComponent implements OnInit {
     this.isLoading.set(true);
     this.error.set(null);
 
-    this.aiApi.enrich(this.sessionId()).subscribe({
+    this.aiApi.enrich(this.sessionId(), 'NAMING', this.selectedProvider()).subscribe({
       next: result => {
         this.isLoading.set(false);
         this.lastResult.set(result);
@@ -1587,7 +1735,7 @@ export class AiEnrichmentViewComponent implements OnInit {
     if (!this.isEnabled() || this.isReviewLoading()) return;
     this.isReviewLoading.set(true);
     this.reviewError.set(null);
-    this.aiApi.review(this.sessionId()).subscribe({
+    this.aiApi.review(this.sessionId(), this.selectedProvider()).subscribe({
       next: result => {
         this.isReviewLoading.set(false);
         this.reviewResult.set(result);
@@ -1607,7 +1755,7 @@ export class AiEnrichmentViewComponent implements OnInit {
     this.isGenerateLoading.set(true);
     this.clearGenerationState();
 
-    this.aiApi.generateStream(this.sessionId()).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.aiApi.generateStream(this.sessionId(), this.selectedProvider()).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: event => this.handleGenerationEvent(event),
       error: err => {
         this.isGenerateLoading.set(false);
@@ -1657,7 +1805,7 @@ export class AiEnrichmentViewComponent implements OnInit {
       previousCode,
     };
 
-    this.aiApi.refineArtifact(this.sessionId(), request).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.aiApi.refineArtifact(this.sessionId(), request, this.selectedProvider()).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: result => {
         this.applyGeneratedClasses(result.generatedClasses);
         this.setGeneratedFeedback(artifactKey, `Artefact raffine avec ${result.provider}`);
@@ -1782,7 +1930,7 @@ export class AiEnrichmentViewComponent implements OnInit {
         degradationReason: event.error ?? '',
         generatedClasses: event.generatedClasses ?? {},
         tokensUsed: event.tokensUsed ?? 0,
-        provider: event.provider ?? this.status()?.provider ?? 'unknown',
+        provider: event.provider ?? this.selectedProvider() ?? this.status()?.provider ?? 'unknown',
       });
       this.streamingGeneratedClasses.set(event.generatedClasses ?? this.streamingGeneratedClasses());
       this.isGenerateLoading.set(false);
@@ -1863,6 +2011,36 @@ export class AiEnrichmentViewComponent implements OnInit {
       ...current,
       [artifactKey]: isLoading,
     }));
+  }
+
+  private normalizeProviderSelection(value: string | undefined | null): AiEnrichmentProvider | null {
+    if (
+      value === 'claude-code'
+      || value === 'openai-gpt54'
+      || value === 'claude-code-cli'
+      || value === 'openai-codex-cli'
+    ) {
+      return value;
+    }
+
+    return null;
+  }
+
+  private providerLabel(value: string | undefined | null): string {
+    switch (value) {
+      case 'claude-code':
+        return 'Claude API';
+      case 'openai-gpt54':
+        return 'OpenAI API';
+      case 'claude-code-cli':
+        return 'Claude CLI';
+      case 'openai-codex-cli':
+        return 'OpenAI Codex CLI';
+      case 'none':
+        return 'Aucun provider';
+      default:
+        return 'Provider inconnu';
+    }
   }
 
   private normalizeArtifactKey(value: string): string {

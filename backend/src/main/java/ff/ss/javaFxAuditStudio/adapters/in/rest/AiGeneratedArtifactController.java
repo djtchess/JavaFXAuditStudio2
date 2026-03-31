@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import ff.ss.javaFxAuditStudio.adapters.in.rest.dto.AiArtifactCoherenceResponse;
@@ -30,6 +31,7 @@ import ff.ss.javaFxAuditStudio.domain.ai.AiArtifactZipExport;
 import ff.ss.javaFxAuditStudio.domain.ai.AiCodeGenerationResult;
 import ff.ss.javaFxAuditStudio.domain.ai.AiGeneratedArtifact;
 import ff.ss.javaFxAuditStudio.domain.ai.AiArtifactImplementationInspector;
+import ff.ss.javaFxAuditStudio.domain.ai.LlmProvider;
 import ff.ss.javaFxAuditStudio.domain.generation.ArtifactType;
 
 @RestController
@@ -89,25 +91,32 @@ public class AiGeneratedArtifactController {
     @PostMapping("/{sessionId}/artifacts/ai/refine")
     public ResponseEntity<AiCodeGenerationResponse> refine(
             @PathVariable final String sessionId,
-            @RequestBody final AiArtifactRefineRequest request) {
-        return refineInternal(sessionId, request);
+            @RequestBody final AiArtifactRefineRequest request,
+            @RequestParam(required = false) final String provider) {
+        return refineInternal(sessionId, request, provider);
     }
 
     @PostMapping("/{sessionId}/generate/ai/refine")
     public ResponseEntity<AiCodeGenerationResponse> refineAlias(
             @PathVariable final String sessionId,
-            @RequestBody final AiArtifactRefineRequest request) {
-        return refineInternal(sessionId, request);
+            @RequestBody final AiArtifactRefineRequest request,
+            @RequestParam(required = false) final String provider) {
+        return refineInternal(sessionId, request, provider);
     }
 
     private ResponseEntity<AiCodeGenerationResponse> refineInternal(
             final String sessionId,
-            final AiArtifactRefineRequest request) {
+            final AiArtifactRefineRequest request,
+            final String provider) {
         try {
             AiArtifactRefinementCommand command = toCommand(request);
-            AiCodeGenerationResult result = refineAiArtifactUseCase.refine(
-                    sessionId,
-                    command);
+            LlmProvider parsedProvider = parseProvider(provider);
+            if (provider != null && !provider.isBlank() && parsedProvider == null) {
+                return ResponseEntity.badRequest().build();
+            }
+            AiCodeGenerationResult result = (parsedProvider == null)
+                    ? refineAiArtifactUseCase.refine(sessionId, command)
+                    : refineAiArtifactUseCase.refine(sessionId, command, parsedProvider);
             return ResponseEntity.ok(toGenerationResponse(result));
         } catch (IllegalStateException exception) {
             return ResponseEntity.badRequest().build();
@@ -118,9 +127,16 @@ public class AiGeneratedArtifactController {
 
     @PostMapping("/{sessionId}/artifacts/ai/coherence")
     public ResponseEntity<AiArtifactCoherenceResponse> verifyCoherence(
-            @PathVariable final String sessionId) {
+            @PathVariable final String sessionId,
+            @RequestParam(required = false) final String provider) {
         try {
-            AiArtifactCoherenceResult result = verifyAiArtifactCoherenceUseCase.verify(sessionId);
+            LlmProvider parsedProvider = parseProvider(provider);
+            if (provider != null && !provider.isBlank() && parsedProvider == null) {
+                return ResponseEntity.badRequest().build();
+            }
+            AiArtifactCoherenceResult result = (parsedProvider == null)
+                    ? verifyAiArtifactCoherenceUseCase.verify(sessionId)
+                    : verifyAiArtifactCoherenceUseCase.verify(sessionId, parsedProvider);
             return ResponseEntity.ok(toCoherenceResponse(result));
         } catch (IllegalArgumentException exception) {
             return ResponseEntity.notFound().build();
@@ -225,5 +241,19 @@ public class AiGeneratedArtifactController {
         } catch (RuntimeException exception) {
             throw new IllegalStateException("invalid artifact type", exception);
         }
+    }
+
+    private LlmProvider parseProvider(final String provider) {
+        if (provider == null || provider.isBlank()) {
+            return null;
+        }
+        LlmProvider parsed = LlmProvider.fromString(provider);
+        if (parsed == LlmProvider.NONE && !"none".equalsIgnoreCase(provider.trim())) {
+            return null;
+        }
+        if (parsed == LlmProvider.NONE) {
+            return null;
+        }
+        return parsed;
     }
 }

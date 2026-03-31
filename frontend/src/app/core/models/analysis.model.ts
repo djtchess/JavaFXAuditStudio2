@@ -252,11 +252,17 @@ export interface ReclassificationAuditEntryResponse {
 
 // --- LLM Audit (JAS-029) ---
 
+export type AiEnrichmentProvider =
+  | 'claude-code'
+  | 'openai-gpt54'
+  | 'claude-code-cli'
+  | 'openai-codex-cli';
+
 export interface LlmAuditEntryResponse {
   auditId: string;
   sessionId: string;
   timestamp: string;          // ISO-8601
-  provider: string;           // "claude-code" | "openai-gpt54" | "none"
+  provider: string;           // "claude-code" | "openai-gpt54" | "claude-code-cli" | "openai-codex-cli" | "none"
   taskType: string;
   sanitizationVersion: string;
   payloadHash: string;        // SHA-256, jamais la source

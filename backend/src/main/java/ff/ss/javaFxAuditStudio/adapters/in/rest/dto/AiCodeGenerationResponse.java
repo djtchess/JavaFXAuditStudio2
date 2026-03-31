@@ -1,31 +1,32 @@
 package ff.ss.javaFxAuditStudio.adapters.in.rest.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.util.Map;
 
 /**
- * DTO de réponse pour la génération IA des classes cibles Spring Boot (JAS-031).
+ * DTO de reponse pour la generation IA des classes cibles Spring Boot (JAS-031).
  *
- * @param requestId          UUID de corrélation
- * @param degraded           Vrai si le mode dégradé est actif
- * @param degradationReason  Raison du mode dégradé, chaîne vide si nominal
- * @param generatedClasses   Clé = type d'artefact (USE_CASE, VIEW_MODEL, POLICY, GATEWAY),
- *                           valeur = code Java complet généré par le LLM
- * @param tokensUsed         Tokens consommés (0 en mode dégradé)
- * @param provider           Fournisseur IA utilisé : "claude-code" | "openai-gpt54" | "none"
+ * @param requestId         UUID de correlation
+ * @param degraded          Vrai si le mode degrade est actif
+ * @param degradationReason Raison du mode degrade, chaine vide si nominal
+ * @param generatedClasses  Cle = type d'artefact (USE_CASE, VIEW_MODEL, POLICY, GATEWAY),
+ *                          valeur = code Java complet genere par le LLM
+ * @param tokensUsed        Tokens consommes (0 en mode degrade)
+ * @param provider          Fournisseur IA utilise : "claude-code" | "openai-gpt54" | "claude-code-cli" | "openai-codex-cli" | "none"
  */
-@Schema(description = "Résultat de la génération IA des classes Spring Boot cibles")
+@Schema(description = "Resultat de la generation IA des classes Spring Boot cibles")
 public record AiCodeGenerationResponse(
-        @Schema(description = "UUID de corrélation de la requête de génération")
+        @Schema(description = "UUID de correlation de la requete de generation")
         String requestId,
-        @Schema(description = "Vrai si le mode dégradé est actif (pas de génération disponible)")
+        @Schema(description = "Vrai si le mode degrade est actif (pas de generation disponible)")
         boolean degraded,
-        @Schema(description = "Raison du mode dégradé, chaîne vide si mode nominal")
+        @Schema(description = "Raison du mode degrade, chaine vide si mode nominal")
         String degradationReason,
-        @Schema(description = "Classes générées : clé = type d'artefact (USE_CASE, VIEW_MODEL, POLICY, GATEWAY), valeur = code Java complet")
+        @Schema(description = "Classes generees : cle = type d'artefact (USE_CASE, VIEW_MODEL, POLICY, GATEWAY), valeur = code Java complet")
         Map<String, String> generatedClasses,
-        @Schema(description = "Tokens consommés lors de l'appel IA (0 en mode dégradé)")
+        @Schema(description = "Tokens consommes lors de l'appel IA (0 en mode degrade)")
         int tokensUsed,
-        @Schema(description = "Fournisseur IA utilisé : claude-code, openai-gpt54 ou none")
+        @Schema(description = "Fournisseur IA utilise : claude-code, openai-gpt54, claude-code-cli, openai-codex-cli ou none")
         String provider) {
 }

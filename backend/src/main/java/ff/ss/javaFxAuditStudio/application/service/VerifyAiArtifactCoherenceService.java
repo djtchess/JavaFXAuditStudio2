@@ -24,6 +24,7 @@ import ff.ss.javaFxAuditStudio.domain.ai.AiArtifactCoherenceResult;
 import ff.ss.javaFxAuditStudio.domain.ai.AiEnrichmentRequest;
 import ff.ss.javaFxAuditStudio.domain.ai.AiEnrichmentResult;
 import ff.ss.javaFxAuditStudio.domain.ai.AiGeneratedArtifact;
+import ff.ss.javaFxAuditStudio.domain.ai.LlmProvider;
 import ff.ss.javaFxAuditStudio.domain.ai.SanitizedBundle;
 import ff.ss.javaFxAuditStudio.domain.ai.TaskType;
 import ff.ss.javaFxAuditStudio.domain.cartography.ControllerCartography;
@@ -92,6 +93,11 @@ public class VerifyAiArtifactCoherenceService implements VerifyAiArtifactCoheren
 
     @Override
     public AiArtifactCoherenceResult verify(final String sessionId) {
+        return verify(sessionId, null);
+    }
+
+    @Override
+    public AiArtifactCoherenceResult verify(final String sessionId, final LlmProvider provider) {
         Objects.requireNonNull(sessionId, "sessionId must not be null");
 
         AnalysisSession session = sessionPort.findById(sessionId)
@@ -124,7 +130,7 @@ public class VerifyAiArtifactCoherenceService implements VerifyAiArtifactCoheren
                 bundle,
                 TaskType.ARTIFACT_COHERENCE,
                 PROMPT_TEMPLATE,
-                buildExtraContext(requestId, session, classification, cartography, artifacts)));
+                buildExtraContext(requestId, session, classification, cartography, artifacts)), provider);
 
         return mapToCoherenceResult(llmResult);
     }
@@ -154,7 +160,8 @@ public class VerifyAiArtifactCoherenceService implements VerifyAiArtifactCoheren
         context.put("screenContext", LlmServiceSupport.formatScreenContext(session, classification, cartography));
         context.put("generatedArtifacts", LlmServiceSupport.formatGeneratedArtifacts(artifacts));
         context.put("generatedArtifactDetails", promptContextSanitizerPort != null
-                ? promptContextSanitizerPort.sanitizeArtifactDetails(requestId, artifacts)
+                ? promptContextSanitizerPort.sanitizeArtifactDetails(
+                        requestId, TaskType.ARTIFACT_COHERENCE, artifacts)
                 : LlmServiceSupport.formatGeneratedArtifactDetails(artifacts));
         context.put(
                 "reclassificationFeedback",
@@ -166,7 +173,7 @@ public class VerifyAiArtifactCoherenceService implements VerifyAiArtifactCoheren
                 "projectReferencePatterns",
                 promptContextSanitizerPort != null
                         ? promptContextSanitizerPort.sanitizeReferencePatterns(
-                                requestId, loadProjectReferencePatterns(artifacts))
+                                requestId, TaskType.ARTIFACT_COHERENCE, loadProjectReferencePatterns(artifacts))
                         : LlmServiceSupport.formatProjectReferencePatterns(loadProjectReferencePatterns(artifacts)));
         return context;
     }

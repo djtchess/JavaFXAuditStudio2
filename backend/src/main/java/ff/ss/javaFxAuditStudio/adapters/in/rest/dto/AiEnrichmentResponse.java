@@ -11,7 +11,7 @@ import java.util.Map;
  * @param degradationReason Raison du mode degrade, vide si nominal
  * @param suggestions       Cle = handlerName, valeur = suggestion
  * @param tokensUsed        Tokens consommes (0 en mode degrade)
- * @param provider          "claude-code" | "openai-gpt54" | "none"
+ * @param provider          "claude-code" | "openai-gpt54" | "claude-code-cli" | "openai-codex-cli" | "none"
  */
 @Schema(description = "Resultat de l'enrichissement IA")
 public record AiEnrichmentResponse(
@@ -25,6 +25,6 @@ public record AiEnrichmentResponse(
         Map<String, String> suggestions,
         @Schema(description = "Tokens consommes lors de l'appel IA (0 en mode degrade)")
         int tokensUsed,
-        @Schema(description = "Fournisseur IA utilise : claude-code, openai-gpt54 ou none")
+        @Schema(description = "Fournisseur IA utilise : claude-code, openai-gpt54, claude-code-cli, openai-codex-cli ou none")
         String provider) {
 }

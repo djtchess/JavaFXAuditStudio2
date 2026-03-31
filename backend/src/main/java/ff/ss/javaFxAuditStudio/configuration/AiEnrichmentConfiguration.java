@@ -36,7 +36,7 @@ public class AiEnrichmentConfiguration {
         }
         validateProvider();
         validateCredential();
-        LOG.info("Enrichissement IA active — fournisseur : {}, timeout : {}ms",
+        LOG.info("Enrichissement IA active - fournisseur : {}, timeout : {}ms",
                 properties.provider(), properties.effectiveTimeoutMs());
         LOG.debug("Credential present pour {} (valeur masquee)", properties.provider());
     }
@@ -45,22 +45,23 @@ public class AiEnrichmentConfiguration {
         String provider = properties.provider();
         if (provider == null || provider.isBlank() || !properties.isSupportedProvider()) {
             throw new IllegalStateException(
-                "ai.enrichment.provider doit etre 'claude-code', 'openai-gpt54' ou 'claude-code-cli' — valeur recue : "
-                + (provider == null ? "null" : "'" + provider + "'"));
+                    "ai.enrichment.provider doit etre 'claude-code', 'openai-gpt54', "
+                            + "'claude-code-cli' ou 'openai-codex-cli' - valeur recue : "
+                            + (provider == null ? "null" : "'" + provider + "'"));
         }
     }
 
     private void validateCredential() {
         if (!properties.isCredentialRequired()) {
-            LOG.info("Fournisseur CLI — aucun credential API requis (authentification CLI locale)");
+            LOG.info("Fournisseur CLI - aucun credential API requis (authentification CLI locale)");
             return;
         }
         String apiKey = properties.activeApiKey();
         if (apiKey == null || apiKey.isBlank()) {
             throw new IllegalStateException(
-                "Credential manquant pour le fournisseur " + properties.provider()
-                + " : configurer la variable d'environnement appropriee "
-                + "(CLAUDE_API_KEY ou OPENAI_API_KEY)");
+                    "Credential manquant pour le fournisseur " + properties.provider()
+                            + " : configurer la variable d'environnement appropriee "
+                            + "(CLAUDE_API_KEY ou OPENAI_API_KEY)");
         }
     }
 }

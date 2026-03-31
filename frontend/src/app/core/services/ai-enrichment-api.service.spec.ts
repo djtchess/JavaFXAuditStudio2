@@ -146,32 +146,32 @@ describe('AiEnrichmentApiService', () => {
   });
 
   it('should POST the enrich endpoint with the task type query param', () => {
-    service.enrich('session-1', 'NAMING').subscribe(result => {
+    service.enrich('session-1', 'NAMING', 'openai-codex-cli').subscribe(result => {
       expect(result).toEqual(ENRICH_RESPONSE);
     });
 
-    const req = httpMock.expectOne('/api/v1/analyses/session-1/enrich?taskType=NAMING');
+    const req = httpMock.expectOne('/api/v1/analyses/session-1/enrich?taskType=NAMING&provider=openai-codex-cli');
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toBeNull();
     req.flush(ENRICH_RESPONSE);
   });
 
   it('should POST the review endpoint', () => {
-    service.review('session-1').subscribe(result => {
+    service.review('session-1', 'claude-code-cli').subscribe(result => {
       expect(result).toEqual(REVIEW_RESPONSE);
     });
 
-    const req = httpMock.expectOne('/api/v1/analyses/session-1/review');
+    const req = httpMock.expectOne('/api/v1/analyses/session-1/review?provider=claude-code-cli');
     expect(req.request.method).toBe('POST');
     req.flush(REVIEW_RESPONSE);
   });
 
   it('should POST the generate endpoint', () => {
-    service.generate('session-1').subscribe(result => {
+    service.generate('session-1', 'openai-gpt54').subscribe(result => {
       expect(result).toEqual(GENERATE_RESPONSE);
     });
 
-    const req = httpMock.expectOne('/api/v1/analyses/session-1/generate/ai');
+    const req = httpMock.expectOne('/api/v1/analyses/session-1/generate/ai?provider=openai-gpt54');
     expect(req.request.method).toBe('POST');
     req.flush(GENERATE_RESPONSE);
   });
@@ -180,11 +180,11 @@ describe('AiEnrichmentApiService', () => {
     vi.stubGlobal('EventSource', undefined);
     const events: AiGenerationStreamEvent[] = [];
 
-    service.generateStream('session-1').subscribe(event => {
+    service.generateStream('session-1', 'openai-codex-cli').subscribe(event => {
       events.push(event);
     });
 
-    const req = httpMock.expectOne('/api/v1/analyses/session-1/generate/ai');
+    const req = httpMock.expectOne('/api/v1/analyses/session-1/generate/ai?provider=openai-codex-cli');
     expect(req.request.method).toBe('POST');
     req.flush(GENERATE_RESPONSE);
 
@@ -200,11 +200,11 @@ describe('AiEnrichmentApiService', () => {
       previousCode: 'class MainControllerUseCase {}',
     };
 
-    service.refineArtifact('session-1', request).subscribe(result => {
+    service.refineArtifact('session-1', request, 'claude-code-cli').subscribe(result => {
       expect(result).toEqual(GENERATE_RESPONSE);
     });
 
-    const req = httpMock.expectOne('/api/v1/analyses/session-1/generate/ai/refine');
+    const req = httpMock.expectOne('/api/v1/analyses/session-1/generate/ai/refine?provider=claude-code-cli');
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual(request);
     req.flush(GENERATE_RESPONSE);

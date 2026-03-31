@@ -146,6 +146,7 @@ function buildApiSpy(
   getPersistedArtifactVersions: ReturnType<typeof vi.fn>;
   verifyPersistedArtifactCoherence: ReturnType<typeof vi.fn>;
   enrich: ReturnType<typeof vi.fn>;
+  review: ReturnType<typeof vi.fn>;
   generateStream: ReturnType<typeof vi.fn>;
   refineArtifact: ReturnType<typeof vi.fn>;
   exportGeneratedZip: ReturnType<typeof vi.fn>;
@@ -157,6 +158,16 @@ function buildApiSpy(
     getPersistedArtifactVersions: vi.fn().mockReturnValue(of(MOCK_PERSISTED_ARTIFACTS)),
     verifyPersistedArtifactCoherence: vi.fn().mockReturnValue(of(MOCK_PERSISTED_COHERENCE)),
     enrich: vi.fn().mockReturnValue(of(MOCK_ENRICH_RESPONSE)),
+    review: vi.fn().mockReturnValue(of({
+      requestId: 'req-review',
+      degraded: false,
+      degradationReason: '',
+      migrationScore: 84,
+      artifactReviews: {},
+      uncertainReclassifications: {},
+      globalSuggestions: [],
+      provider: 'claude-code',
+    })),
     generateStream: vi.fn().mockReturnValue(from(MOCK_GENERATION_STREAM)),
     refineArtifact: vi.fn().mockReturnValue(of({
       requestId: 'req-refine',
@@ -184,6 +195,7 @@ async function createFixture(
     getPersistedArtifactVersions: ReturnType<typeof vi.fn>;
     verifyPersistedArtifactCoherence: ReturnType<typeof vi.fn>;
     enrich: ReturnType<typeof vi.fn>;
+    review: ReturnType<typeof vi.fn>;
     generateStream: ReturnType<typeof vi.fn>;
     refineArtifact: ReturnType<typeof vi.fn>;
     exportGeneratedZip: ReturnType<typeof vi.fn>;
@@ -242,7 +254,25 @@ describe('AiEnrichmentViewComponent', () => {
     const modal = fixture.debugElement.query(By.css('.confirm-overlay'));
     expect(modal).toBeNull();
 
-    expect(apiSpy.enrich).toHaveBeenCalledWith('session-abc');
+    expect(apiSpy.enrich).toHaveBeenCalledWith('session-abc', 'NAMING', 'claude-code');
+  });
+
+  it('should let the user choose a provider and propagate it to the review action', async () => {
+    const { fixture, apiSpy } = await createFixture(MOCK_STATUS_ENABLED, [MOCK_AUDIT_ENTRY]);
+
+    const select = fixture.debugElement.query(By.css('.provider-select')).nativeElement as HTMLSelectElement;
+    select.value = 'openai-codex-cli';
+    select.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Action : OpenAI Codex CLI');
+    expect(fixture.nativeElement.textContent).toContain('Different du backend courant');
+
+    const reviewBtn = fixture.debugElement.query(By.css('.review-btn')).nativeElement as HTMLButtonElement;
+    reviewBtn.click();
+    fixture.detectChanges();
+
+    expect(apiSpy.review).toHaveBeenCalledWith('session-abc', 'openai-codex-cli');
   });
 
   it('should display audit table when entries are present', async () => {
@@ -295,7 +325,7 @@ describe('AiEnrichmentViewComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.debugElement.query(By.css('.status-loading'))).toBeTruthy();
-    expect(apiSpy.generateStream).toHaveBeenCalledWith('session-abc');
+    expect(apiSpy.generateStream).toHaveBeenCalledWith('session-abc', 'claude-code');
 
     firstStream.next({
       stage: 'streaming',
@@ -391,7 +421,15 @@ describe('AiEnrichmentViewComponent', () => {
     applyRefineBtn.click();
     fixture.detectChanges();
 
-    expect(apiSpy.refineArtifact).toHaveBeenCalled();
+    expect(apiSpy.refineArtifact).toHaveBeenCalledWith(
+      'session-abc',
+      {
+        artifactType: 'MyControllerUseCase',
+        instruction: 'Ajoute une methode de validation',
+        previousCode: 'class MyControllerUseCase {\n  void runTwice() {}\n}',
+      },
+      'claude-code',
+    );
     expect(fixture.nativeElement.textContent).toContain('raffine');
     expect(fixture.nativeElement.textContent).toContain('runRefined');
 
@@ -490,7 +528,7 @@ describe('AiEnrichmentViewComponent', () => {
 
     const modal = fixture.debugElement.query(By.css('.confirm-overlay'));
     expect(modal).toBeNull();
-    expect(apiSpy.enrich).toHaveBeenCalledWith('session-abc');
+    expect(apiSpy.enrich).toHaveBeenCalledWith('session-abc', 'NAMING', 'claude-code');
   });
 
   it('should close confirm modal without calling enrich when cancelEnrich is called', async () => {

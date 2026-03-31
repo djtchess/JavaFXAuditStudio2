@@ -25,6 +25,7 @@ class AiEnrichmentConfigurationTest {
                 null,
                 null,
                 null,
+                null,
                 null);
         return new AiEnrichmentConfiguration(props);
     }
@@ -48,12 +49,19 @@ class AiEnrichmentConfigurationTest {
     }
 
     @Test
+    void should_not_throw_when_enabled_with_openai_codex_cli_without_credentials() {
+        var config = buildConfig(true, "openai-codex-cli", null, null);
+        assertThatCode(config::validateConfiguration).doesNotThrowAnyException();
+    }
+
+    @Test
     void should_throw_when_enabled_with_unknown_provider() {
         var config = buildConfig(true, "gpt-99", "some-key", null);
         assertThatThrownBy(config::validateConfiguration)
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("claude-code")
-                .hasMessageContaining("openai-gpt54");
+                .hasMessageContaining("openai-gpt54")
+                .hasMessageContaining("openai-codex-cli");
     }
 
     @Test

@@ -23,6 +23,7 @@ import ff.ss.javaFxAuditStudio.domain.ai.AiArtifactRefinementCommand;
 import ff.ss.javaFxAuditStudio.domain.ai.AiCodeGenerationResult;
 import ff.ss.javaFxAuditStudio.domain.ai.AiEnrichmentRequest;
 import ff.ss.javaFxAuditStudio.domain.ai.AiEnrichmentResult;
+import ff.ss.javaFxAuditStudio.domain.ai.LlmProvider;
 import ff.ss.javaFxAuditStudio.domain.ai.SanitizedBundle;
 import ff.ss.javaFxAuditStudio.domain.ai.TaskType;
 import ff.ss.javaFxAuditStudio.domain.cartography.ControllerCartography;
@@ -91,6 +92,14 @@ public class RefineAiArtifactService implements RefineAiArtifactUseCase {
 
     @Override
     public AiCodeGenerationResult refine(final String sessionId, final AiArtifactRefinementCommand command) {
+        return refine(sessionId, command, null);
+    }
+
+    @Override
+    public AiCodeGenerationResult refine(
+            final String sessionId,
+            final AiArtifactRefinementCommand command,
+            final LlmProvider provider) {
         Objects.requireNonNull(sessionId, "sessionId must not be null");
         Objects.requireNonNull(command, "command must not be null");
 
@@ -129,7 +138,7 @@ public class RefineAiArtifactService implements RefineAiArtifactUseCase {
                 bundle,
                 TaskType.ARTIFACT_REFINEMENT,
                 PROMPT_TEMPLATE,
-                buildExtraContext(requestId, session, classification, cartography, command, previousCode)));
+                buildExtraContext(requestId, session, classification, cartography, command, previousCode)), provider);
 
         return mapToRefinementResult(sessionId, command, llmResult);
     }
@@ -162,10 +171,12 @@ public class RefineAiArtifactService implements RefineAiArtifactUseCase {
         Map<String, Object> context = new HashMap<>();
         context.put("artifactType", command.artifactType());
         context.put("refineInstruction", promptContextSanitizerPort != null
-                ? promptContextSanitizerPort.sanitizeInstruction(command.instruction(), 2000)
+                ? promptContextSanitizerPort.sanitizeInstruction(
+                        requestId, TaskType.ARTIFACT_REFINEMENT, command.instruction(), 2000)
                 : command.instruction());
         context.put("currentArtifactCode", promptContextSanitizerPort != null
-                ? promptContextSanitizerPort.sanitizeCodeFragment(requestId, previousCode, "currentArtifactCode")
+                ? promptContextSanitizerPort.sanitizeCodeFragment(
+                        requestId, TaskType.ARTIFACT_REFINEMENT, previousCode, "currentArtifactCode")
                 : previousCode);
         context.put("classifiedRules", LlmServiceSupport.formatRules(classification));
         context.put("screenContext", LlmServiceSupport.formatScreenContext(session, classification, cartography));
@@ -179,7 +190,7 @@ public class RefineAiArtifactService implements RefineAiArtifactUseCase {
                 "projectReferencePatterns",
                 promptContextSanitizerPort != null
                         ? promptContextSanitizerPort.sanitizeReferencePatterns(
-                                requestId, loadProjectReferencePatterns(command.artifactType()))
+                                requestId, TaskType.ARTIFACT_REFINEMENT, loadProjectReferencePatterns(command.artifactType()))
                         : LlmServiceSupport.formatProjectReferencePatterns(
                                 loadProjectReferencePatterns(command.artifactType())));
         return context;

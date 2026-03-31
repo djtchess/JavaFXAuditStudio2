@@ -27,6 +27,7 @@ public class OpenAiGpt54AiEnrichmentAdapter {
     private static final LlmProvider PROVIDER = LlmProvider.OPENAI_GPT54;
     private static final String API_URL = "https://api.openai.com/v1/chat/completions";
     private static final String DEFAULT_MODEL = "gpt-4o";
+    private static final double DEFAULT_TEMPERATURE = 0.0d;
     private final AiEnrichmentProperties properties;
     private final PromptTemplateLoader templateLoader;
     private final RestClient restClient;
@@ -60,7 +61,9 @@ public class OpenAiGpt54AiEnrichmentAdapter {
         OpenAiHttpDtos.ChatRequest body = new OpenAiHttpDtos.ChatRequest(
                 DEFAULT_MODEL,
                 messages,
-                properties.effectiveMaxTokens(request.taskType()));
+                properties.effectiveMaxTokens(request.taskType()),
+                DEFAULT_TEMPERATURE,
+                StructuredOutputContract.openAiResponseFormat());
 
         OpenAiHttpDtos.ChatResponse response = restClient.post()
                 .uri(API_URL)
@@ -78,7 +81,7 @@ public class OpenAiGpt54AiEnrichmentAdapter {
             final SanitizedBundle bundle,
             final OpenAiHttpDtos.ChatResponse response) {
         if (response == null || response.choices() == null || response.choices().isEmpty()) {
-            return AiEnrichmentResult.degraded(request.requestId(), "Reponse OpenAI vide");
+            return AiEnrichmentResult.degraded(request.requestId(), "Reponse OpenAI vide", PROVIDER);
         }
         String text = response.choices().get(0).message().content();
         LlmResponseSizeLimiter.LimitedResponse limitedResponse = LlmResponseSizeLimiter.limit(
@@ -99,6 +102,15 @@ public class OpenAiGpt54AiEnrichmentAdapter {
                 limitedResponse.text(),
                 bundle.controllerRef(),
                 request.requestId());
+        if (suggestions.isEmpty()) {
+            LOG.warn("OpenAI - reponse non structuree ou vide [requestId={}, controllerRef={}]",
+                    request.requestId(),
+                    bundle.controllerRef());
+            return AiEnrichmentResult.degraded(
+                    request.requestId(),
+                    "Reponse OpenAI non structuree ou vide",
+                    PROVIDER);
+        }
         int tokens = response.usage() != null
                 ? response.usage().totalTokens()
                 : bundle.estimatedTokens();
@@ -111,24 +123,18 @@ public class OpenAiGpt54AiEnrichmentAdapter {
     }
 
     private String renderPrompt(final AiEnrichmentRequest request) {
-        Map<String, Object> context = new java.util.HashMap<>();
-        context.put("controllerRef", request.bundle().controllerRef());
-        context.put("sanitizedSource", request.bundle().sanitizedSource());
-        context.put("estimatedTokens", request.bundle().estimatedTokens());
-        context.put("taskType", request.taskType().name());
-        context.putAll(request.extraContext());
+        Map<String, Object> context = PromptContextBudgetSupport.budgetContext(properties, request);
         return templateLoader.render(request.promptTemplate(), context);
     }
 
     private String buildSystemPrompt(final AiEnrichmentRequest request) {
-        return "Tu es un expert en migration JavaFX vers Spring Boot / architecture hexagonale."
-                + " Controleur de reference : " + request.bundle().controllerRef()
-                + ". Tache : " + request.taskType().name()
-                + ". Reponds uniquement avec du JSON valide selon le format demande dans le prompt.";
+        return StructuredOutputContract.strictSystemPrompt(
+                request.bundle().controllerRef(),
+                request.taskType());
     }
 
     private String validateAndGetApiKey() {
-        String apiKey = properties.activeApiKey();
+        String apiKey = properties.apiKeyFor(PROVIDER);
         if (apiKey == null || apiKey.isBlank()) {
             throw new IllegalStateException(
                     "Credential OpenAI absent — configurer OPENAI_API_KEY");

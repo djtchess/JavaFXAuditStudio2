@@ -1,6 +1,7 @@
 package ff.ss.javaFxAuditStudio.application.ports.in;
 
 import ff.ss.javaFxAuditStudio.domain.ai.ArtifactCoherenceResult;
+import ff.ss.javaFxAuditStudio.domain.ai.LlmProvider;
 
 /**
  * Port entrant pour la verification de coherence entre les artefacts generes.
@@ -13,5 +14,9 @@ public interface VerifyArtifactCoherenceUseCase {
      * @param sessionId identifiant de la session
      * @return resultat de coherence, possiblement degrade
      */
-    ArtifactCoherenceResult verify(String sessionId);
+    default ArtifactCoherenceResult verify(final String sessionId) {
+        return verify(sessionId, null);
+    }
+
+    ArtifactCoherenceResult verify(String sessionId, LlmProvider provider);
 }

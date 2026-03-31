@@ -31,6 +31,16 @@ class LlmEnrichmentHealthIndicatorTest {
         assertThat(indicator.health().getDetails()).containsEntry("mode", "missing-credential");
     }
 
+    @Test
+    void health_isUp_whenOpenAiCodexCliDoesNotNeedCredential() {
+        LlmEnrichmentHealthIndicator indicator =
+                new LlmEnrichmentHealthIndicator(properties(true, "openai-codex-cli", ""));
+
+        assertThat(indicator.health().getStatus()).isEqualTo(Status.UP);
+        assertThat(indicator.health().getDetails()).containsEntry("credentialRequired", false);
+        assertThat(indicator.health().getDetails()).containsEntry("credentialPresent", true);
+    }
+
     private static AiEnrichmentProperties properties(
             final boolean enabled,
             final String provider,
@@ -46,6 +56,7 @@ class LlmEnrichmentHealthIndicatorTest {
                 new Retry(2, 500L, 2.0),
                 Map.of(TaskType.NAMING, 1024),
                 524_288,
-                200);
+                200,
+                null);
     }
 }

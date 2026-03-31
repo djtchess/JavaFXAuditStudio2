@@ -18,6 +18,7 @@ class LlmProviderTest {
         "openai-gpt54, OPENAI_GPT54",
         "OPENAI-GPT54, OPENAI_GPT54",
         "claude-code-cli, CLAUDE_CODE_CLI",
+        "openai-codex-cli, OPENAI_CODEX_CLI",
         "none, NONE"
     })
     void fromString_should_resolve_provider(final String input, final String expected) {
@@ -44,6 +45,7 @@ class LlmProviderTest {
         assertThat(LlmProvider.CLAUDE_CODE.value()).isEqualTo("claude-code");
         assertThat(LlmProvider.OPENAI_GPT54.value()).isEqualTo("openai-gpt54");
         assertThat(LlmProvider.CLAUDE_CODE_CLI.value()).isEqualTo("claude-code-cli");
+        assertThat(LlmProvider.OPENAI_CODEX_CLI.value()).isEqualTo("openai-codex-cli");
         assertThat(LlmProvider.NONE.value()).isEqualTo("none");
     }
 }

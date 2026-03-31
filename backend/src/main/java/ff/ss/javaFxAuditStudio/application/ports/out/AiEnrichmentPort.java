@@ -2,6 +2,7 @@ package ff.ss.javaFxAuditStudio.application.ports.out;
 
 import ff.ss.javaFxAuditStudio.domain.ai.AiEnrichmentRequest;
 import ff.ss.javaFxAuditStudio.domain.ai.AiEnrichmentResult;
+import ff.ss.javaFxAuditStudio.domain.ai.LlmProvider;
 
 /**
  * Port sortant d'enrichissement IA.
@@ -18,4 +19,15 @@ public interface AiEnrichmentPort {
      * @return resultat nominal ou degrade, jamais null
      */
     AiEnrichmentResult enrich(AiEnrichmentRequest request);
+
+    /**
+     * Enrichit le bundle sanitise selon la tache demandee avec un provider cible optionnel.
+     *
+     * @param request requete prealablement validee avec bundle sanitise
+     * @param provider provider LLM cible, ou null pour conserver le provider configure
+     * @return resultat nominal ou degrade, jamais null
+     */
+    default AiEnrichmentResult enrich(final AiEnrichmentRequest request, final LlmProvider provider) {
+        return enrich(request);
+    }
 }

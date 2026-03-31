@@ -61,6 +61,7 @@ class OpenAiGpt54AiEnrichmentAdapterTest {
                 null,
                 null,
                 null,
+                null,
                 null);
     }
 
@@ -77,6 +78,7 @@ class OpenAiGpt54AiEnrichmentAdapterTest {
                 null,
                 null,
                 maxTokensByTask,
+                null,
                 null,
                 null);
     }
@@ -95,6 +97,7 @@ class OpenAiGpt54AiEnrichmentAdapterTest {
                 null,
                 null,
                 maxResponseSizeBytes,
+                null,
                 null);
     }
 
@@ -139,6 +142,18 @@ class OpenAiGpt54AiEnrichmentAdapterTest {
         assertThat(result.suggestions()).containsEntry("MyController", "SavePatientUseCase");
         assertThat(result.provider()).isEqualTo(LlmProvider.OPENAI_GPT54);
         assertThat(result.tokensUsed()).isEqualTo(150);
+
+        org.mockito.ArgumentCaptor<OpenAiHttpDtos.ChatRequest> captor =
+                org.mockito.ArgumentCaptor.forClass(OpenAiHttpDtos.ChatRequest.class);
+        verify(requestBodyUriSpec).body(captor.capture());
+        assertThat(captor.getValue().messages()).hasSize(2);
+        assertThat(captor.getValue().messages().get(0).role()).isEqualTo("system");
+        assertThat(captor.getValue().messages().get(0).content())
+                .contains("Reponds uniquement avec un objet JSON valide");
+        assertThat(captor.getValue().temperature()).isEqualTo(0.0d);
+        assertThat(captor.getValue().responseFormat()).isNotNull();
+        assertThat(captor.getValue().responseFormat().type()).isEqualTo("json_schema");
+        assertThat(captor.getValue().responseFormat().jsonSchema().strict()).isTrue();
     }
 
     @Test
@@ -167,6 +182,28 @@ class OpenAiGpt54AiEnrichmentAdapterTest {
         AiEnrichmentResult result = adapter.call(buildRequest(TaskType.NAMING, "enrichment-naming"));
 
         assertThat(result.degraded()).isTrue();
+    }
+
+    @Test
+    void should_return_degraded_when_response_is_not_valid_json() {
+        OpenAiHttpDtos.ChatResponse response = new OpenAiHttpDtos.ChatResponse(
+                List.of(new OpenAiHttpDtos.Choice(
+                        new OpenAiHttpDtos.Message("assistant", "SavePatientUseCase"))),
+                new OpenAiHttpDtos.Usage(120));
+        stubRestClientChain(response);
+
+        OpenAiGpt54AiEnrichmentAdapter adapter = new OpenAiGpt54AiEnrichmentAdapter(
+                propertiesWithKey("sk-openai-key"),
+                templateLoader,
+                restClient,
+                objectMapper);
+
+        AiEnrichmentResult result = adapter.call(buildRequest(TaskType.NAMING, "enrichment-naming"));
+
+        assertThat(result.degraded()).isTrue();
+        assertThat(result.provider()).isEqualTo(LlmProvider.OPENAI_GPT54);
+        assertThat(result.degradationReason()).contains("non structuree");
+        assertThat(result.suggestions()).isEmpty();
     }
 
     @Test

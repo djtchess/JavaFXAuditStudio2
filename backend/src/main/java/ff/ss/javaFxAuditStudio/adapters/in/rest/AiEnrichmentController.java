@@ -2,6 +2,11 @@ package ff.ss.javaFxAuditStudio.adapters.in.rest;
 
 import java.util.Objects;
 
+import ff.ss.javaFxAuditStudio.adapters.in.rest.dto.AiEnrichmentResponse;
+import ff.ss.javaFxAuditStudio.application.ports.in.EnrichAnalysisUseCase;
+import ff.ss.javaFxAuditStudio.domain.ai.AiEnrichmentResult;
+import ff.ss.javaFxAuditStudio.domain.ai.LlmProvider;
+import ff.ss.javaFxAuditStudio.domain.ai.TaskType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -16,24 +21,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import ff.ss.javaFxAuditStudio.adapters.in.rest.dto.AiEnrichmentResponse;
-import ff.ss.javaFxAuditStudio.application.ports.in.EnrichAnalysisUseCase;
-import ff.ss.javaFxAuditStudio.domain.ai.AiEnrichmentResult;
-import ff.ss.javaFxAuditStudio.domain.ai.TaskType;
-
 /**
  * Controller REST pour l'enrichissement IA d'une session d'analyse (JAS-017).
- *
- * <p>Expose :
- * <ul>
- *   <li>{@code POST /api/v1/analyses/{sessionId}/enrich?taskType=NAMING}</li>
- * </ul>
- *
- * <p>Codes de retour :
- * <ul>
- *   <li>200 OK — enrichissement nominal ou degrade (le champ {@code degraded} le distingue)</li>
- *   <li>404 Not Found — session introuvable</li>
- * </ul>
  */
 @Tag(name = "Enrichissement IA")
 @RestController
@@ -49,14 +38,9 @@ public class AiEnrichmentController {
         this.enrichAnalysisUseCase = Objects.requireNonNull(enrichAnalysisUseCase);
     }
 
-    /**
-     * Enrichit la session d'analyse avec le fournisseur IA configure.
-     *
-     * @param sessionId identifiant de la session
-     * @param taskType  type de tache : NAMING | DESCRIPTION | CLASSIFICATION_HINT (defaut : NAMING)
-     * @return 200 avec le resultat (nominal ou degrade), 404 si session introuvable
-     */
-    @Operation(summary = "Enrichissement IA", description = "Soumet les regles de la session a un LLM (Claude ou OpenAI) pour obtenir des suggestions de nommage. Retourne un resultat degrade si le LLM est indisponible.")
+    @Operation(
+            summary = "Enrichissement IA",
+            description = "Soumet les regles de la session a un LLM pour obtenir des suggestions de nommage.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Enrichissement effectue (peut etre degrade)"),
         @ApiResponse(responseCode = "404", description = "Session introuvable")
@@ -66,9 +50,11 @@ public class AiEnrichmentController {
             @Parameter(name = "sessionId", description = "Identifiant de la session", required = true)
             @PathVariable final String sessionId,
             @Parameter(name = "taskType", description = "Type de tache IA (NAMING, DESCRIPTION)", required = false)
-            @RequestParam(defaultValue = DEFAULT_TASK_TYPE) final String taskType) {
+            @RequestParam(defaultValue = DEFAULT_TASK_TYPE) final String taskType,
+            @Parameter(name = "provider", description = "Fournisseur LLM cible (optionnel)", required = false)
+            @RequestParam(required = false) final String provider) {
 
-        LOG.debug("Enrichissement demande — session={}, taskType={}", sessionId, taskType);
+        LOG.debug("Enrichissement demande - session={}, taskType={}, provider={}", sessionId, taskType, provider);
 
         TaskType parsedTaskType;
         try {
@@ -78,13 +64,34 @@ public class AiEnrichmentController {
             return ResponseEntity.badRequest().build();
         }
 
+        LlmProvider parsedProvider = parseProvider(provider);
+        if (provider != null && !provider.isBlank() && parsedProvider == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
         try {
-            AiEnrichmentResult result = enrichAnalysisUseCase.enrich(sessionId, parsedTaskType);
+            AiEnrichmentResult result = (parsedProvider == null)
+                    ? enrichAnalysisUseCase.enrich(sessionId, parsedTaskType)
+                    : enrichAnalysisUseCase.enrich(sessionId, parsedTaskType, parsedProvider);
             return ResponseEntity.ok(toResponse(result));
         } catch (IllegalArgumentException ex) {
             LOG.debug("Session introuvable pour enrichissement : {}", sessionId);
             return ResponseEntity.notFound().build();
         }
+    }
+
+    private LlmProvider parseProvider(final String provider) {
+        if (provider == null || provider.isBlank()) {
+            return null;
+        }
+        LlmProvider parsed = LlmProvider.fromString(provider);
+        if (parsed == LlmProvider.NONE && !"none".equalsIgnoreCase(provider.trim())) {
+            return null;
+        }
+        if (parsed == LlmProvider.NONE) {
+            return null;
+        }
+        return parsed;
     }
 
     private AiEnrichmentResponse toResponse(final AiEnrichmentResult result) {

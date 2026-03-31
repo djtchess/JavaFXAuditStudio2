@@ -20,6 +20,7 @@ import ff.ss.javaFxAuditStudio.application.ports.out.SourceFileReaderPort;
 import ff.ss.javaFxAuditStudio.domain.ai.AiEnrichmentRequest;
 import ff.ss.javaFxAuditStudio.domain.ai.AiEnrichmentResult;
 import ff.ss.javaFxAuditStudio.domain.ai.ArtifactReviewResult;
+import ff.ss.javaFxAuditStudio.domain.ai.LlmProvider;
 import ff.ss.javaFxAuditStudio.domain.ai.SanitizedBundle;
 import ff.ss.javaFxAuditStudio.domain.ai.TaskType;
 import ff.ss.javaFxAuditStudio.domain.cartography.ControllerCartography;
@@ -76,6 +77,11 @@ public class ReviewArtifactsService implements ReviewArtifactsUseCase {
 
     @Override
     public ArtifactReviewResult review(final String sessionId) {
+        return review(sessionId, null);
+    }
+
+    @Override
+    public ArtifactReviewResult review(final String sessionId, final LlmProvider provider) {
         Objects.requireNonNull(sessionId, "sessionId must not be null");
 
         AnalysisSession session = sessionPort.findById(sessionId)
@@ -112,7 +118,7 @@ public class ReviewArtifactsService implements ReviewArtifactsUseCase {
                 PROMPT_TEMPLATE,
                 buildExtraContext(session, classification, formattedRules, cartography));
 
-        AiEnrichmentResult result = aiEnrichmentPort.enrich(request);
+        AiEnrichmentResult result = aiEnrichmentPort.enrich(request, provider);
         return mapToReview(result);
     }
 

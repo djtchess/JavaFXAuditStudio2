@@ -11,6 +11,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import ff.ss.javaFxAuditStudio.adapters.in.rest.dto.AiCodeGenerationResponse;
+import ff.ss.javaFxAuditStudio.application.ports.in.GenerateSpringBootClassesUseCase;
+import ff.ss.javaFxAuditStudio.domain.ai.AiCodeGenerationResult;
+import ff.ss.javaFxAuditStudio.domain.ai.LlmProvider;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -23,15 +27,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import ff.ss.javaFxAuditStudio.adapters.in.rest.dto.AiCodeGenerationResponse;
-import ff.ss.javaFxAuditStudio.application.ports.in.GenerateSpringBootClassesUseCase;
-import ff.ss.javaFxAuditStudio.domain.ai.AiCodeGenerationResult;
-
 /**
- * Controller REST pour la génération IA des classes cibles Spring Boot.
+ * Controller REST pour la generation IA des classes cibles Spring Boot.
  */
 @Tag(name = "Generation IA Spring Boot")
 @RestController
@@ -55,9 +56,18 @@ public class AiSpringBootGenerationController {
     @PostMapping("/{sessionId}/generate/ai")
     public ResponseEntity<AiCodeGenerationResponse> generate(
             @Parameter(name = "sessionId", required = true)
-            @PathVariable final String sessionId) {
+            @PathVariable final String sessionId,
+            @Parameter(description = "Fournisseur LLM cible (optionnel)", required = false)
+            @RequestParam(required = false) final String provider) {
+        LlmProvider parsedProvider = parseProvider(provider);
+        if (provider != null && !provider.isBlank() && parsedProvider == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
         try {
-            AiCodeGenerationResult result = generateUseCase.generate(sessionId);
+            AiCodeGenerationResult result = (parsedProvider == null)
+                    ? generateUseCase.generate(sessionId)
+                    : generateUseCase.generate(sessionId, parsedProvider);
             return ResponseEntity.ok(toResponse(result));
         } catch (IllegalArgumentException exception) {
             LOG.debug("Session introuvable pour generation IA : {}", sessionId);
@@ -66,13 +76,23 @@ public class AiSpringBootGenerationController {
     }
 
     @GetMapping(path = "/{sessionId}/generate/ai/stream", produces = "text/event-stream")
-    public SseEmitter streamGenerate(@PathVariable final String sessionId) {
+    public SseEmitter streamGenerate(
+            @PathVariable final String sessionId,
+            @RequestParam(required = false) final String provider) {
         SseEmitter emitter = new SseEmitter(0L);
-        CompletableFuture.runAsync(() -> runStreamingGeneration(sessionId, emitter));
+        LlmProvider parsedProvider = parseProvider(provider);
+        if (provider != null && !provider.isBlank() && parsedProvider == null) {
+            completeWithError(emitter, "Provider LLM invalide");
+            return emitter;
+        }
+        CompletableFuture.runAsync(() -> runStreamingGeneration(sessionId, parsedProvider, emitter));
         return emitter;
     }
 
-    private void runStreamingGeneration(final String sessionId, final SseEmitter emitter) {
+    private void runStreamingGeneration(
+            final String sessionId,
+            final LlmProvider provider,
+            final SseEmitter emitter) {
         ScheduledExecutorService progressScheduler = Executors.newSingleThreadScheduledExecutor();
         try {
             emit(emitter, payload("sanitizing", "Preparation et sanitisation du contexte IA", 15, null));
@@ -88,12 +108,14 @@ public class AiSpringBootGenerationController {
                                 current, null, null, null, null, null, null, null, null));
                         emitter.send(SseEmitter.event().data(pulse));
                     } catch (Exception ignored) {
-                        // emitter already closed or serialization error — stop silently
+                        // emitter already closed or serialization error - stop silently
                     }
                 }
             }, 5, 5, TimeUnit.SECONDS);
 
-            AiCodeGenerationResult result = generateUseCase.generate(sessionId);
+            AiCodeGenerationResult result = (provider == null)
+                    ? generateUseCase.generate(sessionId)
+                    : generateUseCase.generate(sessionId, provider);
             progressTask.cancel(false);
 
             emit(emitter, payload("parsing_response", "Analyse de la reponse IA", 70, result));
@@ -186,6 +208,20 @@ public class AiSpringBootGenerationController {
                 result.generatedClasses(),
                 result.tokensUsed(),
                 result.provider().value());
+    }
+
+    private LlmProvider parseProvider(final String provider) {
+        if (provider == null || provider.isBlank()) {
+            return null;
+        }
+        LlmProvider parsed = LlmProvider.fromString(provider);
+        if (parsed == LlmProvider.NONE && !"none".equalsIgnoreCase(provider.trim())) {
+            return null;
+        }
+        if (parsed == LlmProvider.NONE) {
+            return null;
+        }
+        return parsed;
     }
 
     private record GenerationStreamPayload(

@@ -2,12 +2,13 @@ services:
   postgres:
     image: postgres:15
     container_name: javafx_audit_db
+    restart: unless-stopped
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_DB: javafx_audit
-      POSTGRES_USER: javafx_audit
-      POSTGRES_PASSWORD: changeme
+      POSTGRES_DB: ${POSTGRES_DB:-javafx_audit}
+      POSTGRES_USER: ${POSTGRES_USER:-javafx_audit}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -22,15 +23,24 @@ services:
       dockerfile: Dockerfile
     image: javafx-audit-studio-backend:latest
     container_name: javafx_audit_backend
+    restart: unless-stopped
     ports:
       - "8080:8080"
     environment:
-      DB_URL: jdbc:postgresql://postgres:5432/javafx_audit
-      DB_USER: javafx_audit
-      DB_PASSWORD: ${DB_PASSWORD}
+      DB_URL: ${DB_URL:-jdbc:postgresql://postgres:5432/javafx_audit}
+      DB_USER: ${DB_USER:-javafx_audit}
+      DB_PASSWORD: ${DB_PASSWORD:-changeme}
       FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:4200}
+      AI_ENRICHMENT_ENABLED: ${AI_ENRICHMENT_ENABLED:-false}
+      AI_ENRICHMENT_PROVIDER: ${AI_ENRICHMENT_PROVIDER:-openai-gpt54}
       CLAUDE_API_KEY: ${CLAUDE_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:8080/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 45s
     depends_on:
       postgres:
         condition: service_healthy
@@ -41,11 +51,14 @@ services:
       dockerfile: Dockerfile
     image: javafx-audit-studio-frontend:latest
     container_name: javafx_audit_frontend
+    restart: unless-stopped
     ports:
       - "4200:80"
+    environment:
+      NGINX_ENTRYPOINT_QUIET_LOGS: "1"
     depends_on:
       backend:
-        condition: service_started
+        condition: service_healthy
 
 volumes:
   postgres_data:

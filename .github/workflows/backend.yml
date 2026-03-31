@@ -1,0 +1,92 @@
+name: Backend CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  backend-tests:
+    name: Backend tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Make Maven wrapper executable
+        run: chmod +x mvnw
+
+      - name: Run backend suite
+        run: ./mvnw -B test
+
+      - name: Upload JaCoCo report
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-jacoco-report
+          path: backend/target/site/jacoco
+          if-no-files-found: error
+
+      - name: Compute coverage summary
+        id: coverage
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import xml.etree.ElementTree as ET
+          root = ET.parse("target/site/jacoco/jacoco.xml").getroot()
+          line = root.find("./counter[@type='LINE']")
+          branch = root.find("./counter[@type='BRANCH']")
+          def pct(counter):
+              missed = int(counter.attrib["missed"])
+              covered = int(counter.attrib["covered"])
+              total = missed + covered
+              return "0.00" if total == 0 else f"{(covered * 100.0) / total:.2f}"
+          print(f"line={pct(line)}")
+          print(f"branch={pct(branch)}")
+          PY
+
+      - name: Publish coverage comment
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const marker = '<!-- jas-backend-coverage -->';
+            const body = `${marker}
+            ### Backend coverage
+            - Line coverage: ${{ steps.coverage.outputs.line }}%
+            - Branch coverage: ${{ steps.coverage.outputs.branch }}%`;
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find(comment => comment.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }

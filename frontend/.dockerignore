@@ -1,9 +1,7 @@
 node_modules
 dist
+coverage
 .angular
 .git
-.idea
-.claude
-coverage
-*.log
-*.spec.ts
+.gitignore
+README.md

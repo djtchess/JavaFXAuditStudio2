@@ -106,4 +106,16 @@ class CorrelationFilterTest {
         filter.doFilter(request, response, (req, res) ->
                 assertThat(MDC.get("sessionId")).isEqualTo("session-123"));
     }
+
+    @Test
+    void doFilter_pushesSessionIdIntoMdc_whenLegacyPluralPathMatches() throws Exception {
+        MockHttpServletRequest request;
+        MockHttpServletResponse response;
+
+        request = new MockHttpServletRequest("GET", "/api/v1/analyses/session-legacy/review");
+        response = new MockHttpServletResponse();
+
+        filter.doFilter(request, response, (req, res) ->
+                assertThat(MDC.get("sessionId")).isEqualTo("session-legacy"));
+    }
 }

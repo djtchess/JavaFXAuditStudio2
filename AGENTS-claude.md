@@ -1,4 +1,4 @@
-# Configuration Multi-Agent Claude Code
+﻿# Configuration Multi-Agent Claude Code
 
 ## Objet
 
@@ -10,7 +10,7 @@ Il complete les sources de verite existantes et sert de reference commune aux so
 
 - Au 16 mars 2026, Claude Code supporte les sous-agents projet via des fichiers Markdown avec frontmatter YAML places dans `/.claude/agents/`.
 - Ce depot utilise donc `/.claude/agents/*.md` pour les definitions executables par Claude Code.
-- `AGENTS-CLAUDE.md` reste un document de gouvernance partage. Il ne remplace pas `AGENTS.md`.
+- `AGENTS-claude.md` reste un document de gouvernance partage. Il ne remplace pas `AGENTS.md`.
 - Si l'equipe souhaite plus tard un chargement automatique de cette gouvernance comme memoire projet Claude Code, elle pourra ajouter un `CLAUDE.md` qui reference ce fichier. Ce n'est pas fait ici pour respecter la demande initiale.
 
 ## Source de verite
@@ -19,7 +19,7 @@ La source de verite pour les sous-agents Claude Code est composee de :
 
 - `guide_generique_refactoring_controller_javafx_spring.md`
 - `AGENTS.md`
-- `AGENTS-CLAUDE.md`
+- `AGENTS-claude.md`
 - `agents/contracts.md`
 - `agents/orchestration.md`
 - `agents/model-selection.md`
@@ -191,3 +191,4 @@ Ce mapping remplace la logique historique `GPT-5.4` / `GPT-5.3-codex` sans chang
 - "Utilise `backend-hexagonal` pour implementer ce cas d'usage en respectant le contrat API."
 - "Utilise `javafx-orchestrator` pour analyser cet ecran JavaFX et preparer une restitution consolidee."
 - "Utilise `revue-code` pour relire ce lot sous l'angle risques, regressions et tests manquants."
+

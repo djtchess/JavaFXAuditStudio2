@@ -4,7 +4,7 @@ import { catchError, throwError } from 'rxjs';
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
   return next(req).pipe(
     catchError((error) => {
-      const correlationId = error.headers?.get('X-Correlation-Id') ?? 'unknown';
+      const correlationId = error.headers?.get('X-Correlation-Id') ?? req.headers.get('X-Correlation-Id') ?? 'unknown';
       const normalizedError = normalizeHttpError(error, req.url);
       console.error(
         `[HTTP Error] ${error.status} ${error.statusText} | Correlation-Id: ${correlationId} | URL: ${error.url ?? req.url}`

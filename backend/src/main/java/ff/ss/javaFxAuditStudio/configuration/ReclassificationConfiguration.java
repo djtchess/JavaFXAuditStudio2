@@ -1,10 +1,12 @@
 package ff.ss.javaFxAuditStudio.configuration;
 
 import ff.ss.javaFxAuditStudio.application.ports.in.GenerateArtifactsUseCase;
+import ff.ss.javaFxAuditStudio.application.ports.in.GetReclassificationHistoryUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.in.ReclassifyRuleUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.out.AnalysisSessionPort;
 import ff.ss.javaFxAuditStudio.application.ports.out.ClassificationPersistencePort;
 import ff.ss.javaFxAuditStudio.application.ports.out.ReclassificationAuditPort;
+import ff.ss.javaFxAuditStudio.application.service.GetReclassificationHistoryService;
 import ff.ss.javaFxAuditStudio.application.service.ReclassifyRuleService;
 
 import org.springframework.context.annotation.Bean;
@@ -28,5 +30,11 @@ public class ReclassificationConfiguration {
                 classificationPersistencePort,
                 reclassificationAuditPort,
                 generateArtifactsUseCase);
+    }
+
+    @Bean
+    public GetReclassificationHistoryUseCase getReclassificationHistoryUseCase(
+            final ReclassificationAuditPort reclassificationAuditPort) {
+        return new GetReclassificationHistoryService(reclassificationAuditPort);
     }
 }

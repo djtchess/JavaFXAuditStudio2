@@ -3,6 +3,7 @@ import { of } from 'rxjs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { MonitoringDashboardComponent } from './monitoring-dashboard.component';
+import { FrontendMonitoringService } from '../../core/services/frontend-monitoring.service';
 import { MetricsApiService } from '../../core/services/metrics-api.service';
 
 function createMetricsServiceSpy() {
@@ -54,10 +55,26 @@ describe('MonitoringDashboardComponent', () => {
     vi.useFakeTimers();
 
     const metricsSpy = createMetricsServiceSpy();
+    const frontendMonitoring = new FrontendMonitoringService();
+    frontendMonitoring.requestStarted();
+    frontendMonitoring.recordCompletedRequest({
+      method: 'GET',
+      url: '/api/v1/analysis/sessions/demo',
+      status: 503,
+      durationMs: 210,
+      correlationId: 'corr-front-503',
+      succeeded: false,
+      message: 'Backend Spring Boot indisponible',
+      completedAt: '2026-03-27T07:01:00Z',
+    });
+    frontendMonitoring.requestFinished();
 
     TestBed.configureTestingModule({
       imports: [MonitoringDashboardComponent],
-      providers: [{ provide: MetricsApiService, useValue: metricsSpy }],
+      providers: [
+        { provide: MetricsApiService, useValue: metricsSpy },
+        { provide: FrontendMonitoringService, useValue: frontendMonitoring },
+      ],
     });
 
     const fixture: ComponentFixture<MonitoringDashboardComponent> = TestBed.createComponent(
@@ -70,6 +87,10 @@ describe('MonitoringDashboardComponent', () => {
     expect(metricsSpy.loadMonitoringSnapshot).toHaveBeenCalledTimes(1);
     expect(fixture.nativeElement.textContent).toContain('Sessions totales');
     expect(fixture.nativeElement.textContent).toContain('10');
+    expect(fixture.nativeElement.textContent).toContain('Observabilite frontend');
+    expect(fixture.nativeElement.textContent).toContain('Requetes completees');
+    expect(fixture.nativeElement.textContent).toContain('corr-front-503');
+    expect(fixture.nativeElement.textContent).toContain('Backend Spring Boot indisponible');
     expect(fixture.nativeElement.textContent).toContain('Creees');
     expect(fixture.nativeElement.textContent).toContain('150 ms');
     expect(fixture.nativeElement.textContent).toContain("Sante IA");

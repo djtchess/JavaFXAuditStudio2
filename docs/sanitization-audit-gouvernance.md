@@ -1,12 +1,14 @@
 # Audit Sanitization et Gouvernance
 
-Date de reference : 2026-03-27
+Date de reference : 2026-04-01
 
 ## Objet
 
-Ce document formalise la trace attendue par `P2-03` pour conserver `QW-1` comme
-livre. Il synthesise l'architecture de sanitisation actuellement en place,
-les decisions de gouvernance associees et les points restant sous surveillance.
+Ce document formalise la trace attendue pour conserver les sujets historiques
+`QW-*` auditables et pour fermer proprement `JAS-ACT-006` sur le volet
+gouvernance/transparence. Il synthesise l'architecture de sanitisation
+actuellement en place, les decisions de gouvernance associees et les points
+restant sous surveillance.
 
 ## Perimetre audite
 
@@ -49,7 +51,7 @@ gracieux sans casser les autres traitements.
 - La `denylist` Semgrep est configurable par proprietes pour ajouter des termes
   internes sensibles sans modifier le code source.
 
-## Etat du lot sprint 6
+## Etat du lot documentaire
 
 Les points suivants sont consideres stabilises pour la cloture documentaire :
 
@@ -70,12 +72,17 @@ Les points suivants sont consideres stabilises pour la cloture documentaire :
 
 ## Trace observable a conserver
 
-- backlog de reference : `jira/backlog-sanitisation-audit.md`
+- backlog de reference : `jira/backlog-restant-a-faire.md`
+- rapports de transparence rejoues :
+  - `TransparenceOpenAI/rapport-transparence-openai-2026-03-22.md`
+  - `TransparenceClaude/rapport-transparence-claude-2026-03-22.md`
 - configuration runtime : `backend/src/main/resources/application.properties`
 - regles de scan : `backend/src/main/resources/semgrep/sanitization-rules.yaml`
 - tests de non-regression : `backend/src/test/java/ff/ss/javaFxAuditStudio/adapters/out/sanitization/`
 
 Cette note sert de point d'entree unique pour les revues `gouvernance`,
-`documentation-technique` et `transparence-openai` lorsqu'il faut prouver ce qui
+`documentation-technique`, `transparence-openai` et `transparence-claude` lorsqu'il faut prouver ce qui
 est sanitise, ou le controle est applique, et quelle evidence technique permet
-de le verifier.
+de le verifier. Elle doit rester coherente avec les rapports de transparence rejoues dans `TransparenceOpenAI/` et `TransparenceClaude/`.
+
+

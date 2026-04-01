@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, inject, signal 
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { finalize, interval, startWith } from 'rxjs';
 
+import { FrontendMonitoringService } from '../../core/services/frontend-monitoring.service';
 import { MetricsApiService } from '../../core/services/metrics-api.service';
 import { MonitoringSnapshot } from '../../core/models/monitoring.model';
 
@@ -301,6 +302,56 @@ import { MonitoringSnapshot } from '../../core/models/monitoring.model';
         </section>
       }
 
+      <section class="section">
+        <h2 class="section-title">Observabilite frontend</h2>
+        <div class="summary-grid">
+          <article class="card">
+            <p class="card-label">Requetes en vol</p>
+            <p class="card-value">{{ frontendSummary().inflightRequests }}</p>
+            <p class="card-subtitle">Requetes HTTP actuellement ouvertes</p>
+          </article>
+          <article class="card">
+            <p class="card-label">Requetes completees</p>
+            <p class="card-value">{{ frontendSummary().totalCompletedRequests }}</p>
+            <p class="card-subtitle">Depuis le chargement de la session frontend</p>
+          </article>
+          <article class="card">
+            <p class="card-label">Echecs</p>
+            <p class="card-value">{{ frontendSummary().failedRequests }}</p>
+            <p class="card-subtitle">Requetes en erreur cote navigateur</p>
+          </article>
+          <article class="card">
+            <p class="card-label">Succes</p>
+            <p class="card-value">{{ frontendSummary().successRate | number:'1.0-1' }} %</p>
+            <p class="card-subtitle">Taux de succes frontend observe</p>
+          </article>
+          <article class="card">
+            <p class="card-label">Latence moyenne</p>
+            <p class="card-value">{{ frontendSummary().averageDurationMs | number:'1.0-0' }} ms</p>
+            <p class="card-subtitle">Duree moyenne des appels HTTP</p>
+          </article>
+        </div>
+
+        @if (recentFrontendFailures().length > 0) {
+          <div class="status-list">
+            @for (failure of recentFrontendFailures(); track failure.completedAt + failure.url + failure.correlationId) {
+              <article class="status-row">
+                <div class="status-name">{{ failure.method }} {{ failure.url }}</div>
+                <div class="status-count">{{ failure.status }}</div>
+                <div class="status-hint">
+                  correlationId = {{ failure.correlationId }} | {{ failure.durationMs }} ms | {{ failure.completedAt | date:'HH:mm:ss' }}
+                </div>
+                @if (failure.message) {
+                  <div class="status-hint">{{ failure.message }}</div>
+                }
+              </article>
+            }
+          </div>
+        } @else {
+          <div class="empty-state">Aucun echec frontend recent n'a ete observe.</div>
+        }
+      </section>
+
       @if (snapshot(); as data) {
         <section class="section">
           <h2 class="section-title">Volume global</h2>
@@ -441,6 +492,7 @@ import { MonitoringSnapshot } from '../../core/models/monitoring.model';
 })
 export class MonitoringDashboardComponent implements OnInit {
   private readonly metricsApi = inject(MetricsApiService);
+  private readonly frontendMonitoring = inject(FrontendMonitoringService);
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly snapshot = signal<MonitoringSnapshot | null>(null);
@@ -448,6 +500,8 @@ export class MonitoringDashboardComponent implements OnInit {
   protected readonly refreshing = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly lastRefreshed = signal<Date | null>(null);
+  protected readonly frontendSummary = this.frontendMonitoring.summary;
+  protected readonly recentFrontendFailures = this.frontendMonitoring.recentFailures;
   protected readonly outcomeLabels: Record<string, string> = {
     success: 'Succes',
     degraded: 'Degrade',

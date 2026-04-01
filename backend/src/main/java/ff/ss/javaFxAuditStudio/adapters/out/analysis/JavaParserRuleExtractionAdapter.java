@@ -18,6 +18,7 @@ import com.github.javaparser.ParseProblemException;
 import com.github.javaparser.Problem;
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.AssignExpr;
@@ -25,6 +26,7 @@ import com.github.javaparser.ast.expr.BinaryExpr;
 import com.github.javaparser.ast.expr.BooleanLiteralExpr;
 import com.github.javaparser.ast.expr.ConditionalExpr;
 import com.github.javaparser.ast.expr.FieldAccessExpr;
+import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.ObjectCreationExpr;
 import com.github.javaparser.ast.stmt.CatchClause;
@@ -545,6 +547,8 @@ public final class JavaParserRuleExtractionAdapter implements RuleExtractionPort
             final String controllerRef) {
         LinkedHashSet<ControllerDependency> dependencies = new LinkedHashSet<>();
         String currentController = shortControllerRef(controllerRef);
+        cu.findFirst(ClassOrInterfaceDeclaration.class).ifPresent(type ->
+                addInheritanceDependency(type, currentController, dependencies));
         List<FieldDeclaration> fields = cu.findAll(FieldDeclaration.class);
         for (FieldDeclaration field : fields) {
             String typeName = field.getCommonType().asString();
@@ -573,7 +577,74 @@ public final class JavaParserRuleExtractionAdapter implements RuleExtractionPort
                         "new:" + typeName));
             }
         }
+        addDynamicUiDependencies(cu, dependencies);
         return List.copyOf(dependencies);
+    }
+
+    private void addInheritanceDependency(
+            final ClassOrInterfaceDeclaration type,
+            final String currentController,
+            final LinkedHashSet<ControllerDependency> dependencies) {
+        type.getExtendedTypes().forEach(extendedType -> {
+            String parentType = extendedType.getNameAsString();
+            if (!parentType.equals(currentController) && !"Object".equals(parentType)) {
+                dependencies.add(new ControllerDependency(
+                        DependencyKind.INHERITANCE,
+                        parentType,
+                        "extends:" + parentType));
+            }
+        });
+    }
+
+    private void addDynamicUiDependencies(
+            final CompilationUnit cu,
+            final LinkedHashSet<ControllerDependency> dependencies) {
+        List<MethodCallExpr> calls = cu.findAll(MethodCallExpr.class);
+        for (MethodCallExpr call : calls) {
+            addDynamicUiDependency(call, dependencies);
+        }
+    }
+
+    private void addDynamicUiDependency(
+            final MethodCallExpr call,
+            final LinkedHashSet<ControllerDependency> dependencies) {
+        String methodName = call.getNameAsString();
+        String scope = call.getScope().map(Object::toString).orElse("");
+        String fullCall = call.toString();
+        String target = normalizeDynamicTarget(scope);
+        if (target.isBlank()) {
+            return;
+        }
+        if (methodName.equals("bind") && fullCall.contains(".managedProperty().bind(")
+                && fullCall.contains(".visibleProperty()")) {
+            dependencies.add(new ControllerDependency(
+                    DependencyKind.DYNAMIC_UI_VISIBILITY,
+                    target,
+                    "managed-visible-binding"));
+        } else if (methodName.equals("bind")) {
+            dependencies.add(new ControllerDependency(
+                    DependencyKind.DYNAMIC_UI_BINDING,
+                    target,
+                    "bind"));
+        } else if (methodName.equals("addListener")) {
+            dependencies.add(new ControllerDependency(
+                    DependencyKind.DYNAMIC_UI_LISTENER,
+                    target,
+                    "addListener"));
+        } else if (methodName.startsWith("setOn")) {
+            dependencies.add(new ControllerDependency(
+                    DependencyKind.DYNAMIC_UI_EVENT_HANDLER,
+                    target,
+                    methodName));
+        }
+    }
+
+    private String normalizeDynamicTarget(final String rawTarget) {
+        String target = rawTarget == null ? "" : rawTarget.trim();
+        if (target.endsWith(".managedProperty()")) {
+            target = target.substring(0, target.length() - ".managedProperty()".length());
+        }
+        return target;
     }
 
     private boolean isSharedServiceType(final String typeName) {

@@ -23,6 +23,7 @@ import {
 @Injectable({ providedIn: 'root' })
 export class AiEnrichmentApiService {
   private readonly http = inject(HttpClient);
+  private readonly sessionBase = '/api/v1/analysis/sessions';
 
   enrich(
     sessionId: string,
@@ -35,7 +36,7 @@ export class AiEnrichmentApiService {
       Object.assign(params, providerParams);
     }
     return this.http.post<AiEnrichmentResponse>(
-      `/api/v1/analyses/${encodeURIComponent(sessionId)}/enrich`,
+      `${this.sessionBase}/${encodeURIComponent(sessionId)}/enrich`,
       null,
       { params }
     );
@@ -43,7 +44,7 @@ export class AiEnrichmentApiService {
 
   getAuditLog(sessionId: string): Observable<LlmAuditEntryResponse[]> {
     return this.http.get<LlmAuditEntryResponse[]>(
-      `/api/v1/analysis/sessions/${encodeURIComponent(sessionId)}/llm-audit`
+      `${this.sessionBase}/${encodeURIComponent(sessionId)}/llm-audit`
     );
   }
 
@@ -53,7 +54,7 @@ export class AiEnrichmentApiService {
 
   review(sessionId: string, provider?: AiEnrichmentProvider): Observable<ArtifactReviewResponse> {
     return this.http.post<ArtifactReviewResponse>(
-      `/api/v1/analyses/${encodeURIComponent(sessionId)}/review`,
+      `${this.sessionBase}/${encodeURIComponent(sessionId)}/review`,
       null,
       { params: this.buildProviderQueryParams(provider) }
     );
@@ -61,7 +62,7 @@ export class AiEnrichmentApiService {
 
   generate(sessionId: string, provider?: AiEnrichmentProvider): Observable<AiCodeGenerationResponse> {
     return this.http.post<AiCodeGenerationResponse>(
-      `/api/v1/analyses/${encodeURIComponent(sessionId)}/generate/ai`,
+      `${this.sessionBase}/${encodeURIComponent(sessionId)}/generate/ai`,
       null,
       { params: this.buildProviderQueryParams(provider) }
     );
@@ -121,7 +122,7 @@ export class AiEnrichmentApiService {
     provider?: AiEnrichmentProvider,
   ): Observable<AiCodeGenerationResponse> {
     return this.http.post<AiCodeGenerationResponse>(
-      `/api/v1/analyses/${encodeURIComponent(sessionId)}/generate/ai/refine`,
+      `${this.sessionBase}/${encodeURIComponent(sessionId)}/generate/ai/refine`,
       request,
       { params: this.buildProviderQueryParams(provider) }
     );
@@ -129,26 +130,26 @@ export class AiEnrichmentApiService {
 
   getPersistedArtifacts(sessionId: string): Observable<AiGeneratedArtifactCollectionResponse> {
     return this.http.get<AiGeneratedArtifactCollectionResponse>(
-      `/api/v1/analyses/${encodeURIComponent(sessionId)}/artifacts/ai`,
+      `${this.sessionBase}/${encodeURIComponent(sessionId)}/artifacts/ai`,
     );
   }
 
   getPersistedArtifactVersions(sessionId: string, artifactType: string): Observable<AiGeneratedArtifactCollectionResponse> {
     return this.http.get<AiGeneratedArtifactCollectionResponse>(
-      `/api/v1/analyses/${encodeURIComponent(sessionId)}/artifacts/ai/${encodeURIComponent(artifactType)}/versions`,
+      `${this.sessionBase}/${encodeURIComponent(sessionId)}/artifacts/ai/${encodeURIComponent(artifactType)}/versions`,
     );
   }
 
   verifyPersistedArtifactCoherence(sessionId: string): Observable<AiArtifactCoherenceResponse> {
     return this.http.post<AiArtifactCoherenceResponse>(
-      `/api/v1/analyses/${encodeURIComponent(sessionId)}/artifacts/ai/coherence`,
+      `${this.sessionBase}/${encodeURIComponent(sessionId)}/artifacts/ai/coherence`,
       null,
     );
   }
 
   exportGeneratedZip(sessionId: string): Observable<Blob> {
     return this.http.post(
-      `/api/v1/analyses/${encodeURIComponent(sessionId)}/generate/ai/export/zip`,
+      `${this.sessionBase}/${encodeURIComponent(sessionId)}/generate/ai/export/zip`,
       null,
       { responseType: 'blob' },
     );
@@ -156,7 +157,7 @@ export class AiEnrichmentApiService {
 
   previewSanitized(sessionId: string): Observable<SanitizedSourcePreviewResponse> {
     return this.http.post<SanitizedSourcePreviewResponse>(
-      `/api/v1/analyses/${encodeURIComponent(sessionId)}/preview-sanitized`,
+      `${this.sessionBase}/${encodeURIComponent(sessionId)}/preview-sanitized`,
       null
     );
   }
@@ -268,7 +269,7 @@ export class AiEnrichmentApiService {
   }
 
   private buildStreamUrl(sessionId: string, provider?: AiEnrichmentProvider): string {
-    const baseUrl = `/api/v1/analyses/${encodeURIComponent(sessionId)}/generate/ai/stream`;
+    const baseUrl = `${this.sessionBase}/${encodeURIComponent(sessionId)}/generate/ai/stream`;
     if (!provider) {
       return baseUrl;
     }

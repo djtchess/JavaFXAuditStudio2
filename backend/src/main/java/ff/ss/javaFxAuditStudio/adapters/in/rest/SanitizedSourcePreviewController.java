@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
  */
 @Tag(name = "Sanitisation", description = "Previsualisation du code source desensibilise avant envoi au LLM")
 @RestController
-@RequestMapping("/api/v1/analyses")
+@RequestMapping(path = {"/api/v1/analysis/sessions", "/api/v1/analyses"})
 public class SanitizedSourcePreviewController {
 
     private static final Logger LOG = LoggerFactory.getLogger(SanitizedSourcePreviewController.class);

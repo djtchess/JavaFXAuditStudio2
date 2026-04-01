@@ -174,6 +174,91 @@ jas-ai-enrichment-view .badge-degraded {
   color: var(--surface-warning);
 }
 
+jas-ai-enrichment-view .provider-panel {
+  position: relative;
+  overflow: hidden;
+  padding: 0.95rem 1rem;
+  border-radius: 16px;
+  border: 1px solid rgba(101, 223, 255, 0.18);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(101, 223, 255, 0.16), transparent 28%),
+    radial-gradient(circle at 0% 100%, rgba(255, 154, 77, 0.12), transparent 24%),
+    linear-gradient(145deg, rgba(7, 20, 31, 0.96), rgba(11, 29, 44, 0.94) 52%, rgba(7, 18, 29, 0.98));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 18px 38px rgba(2, 8, 16, 0.34);
+}
+
+jas-ai-enrichment-view .provider-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, transparent, rgba(101, 223, 255, 0.06), transparent),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 42%);
+  pointer-events: none;
+}
+
+jas-ai-enrichment-view .provider-panel > * {
+  position: relative;
+  z-index: 1;
+}
+
+jas-ai-enrichment-view .provider-panel-header {
+  color: rgba(143, 205, 228, 0.72);
+}
+
+jas-ai-enrichment-view .provider-panel-header span:last-child {
+  padding: 0.28rem 0.72rem;
+  border-radius: 999px;
+  border: 1px solid rgba(101, 223, 255, 0.12);
+  background: rgba(7, 19, 30, 0.48);
+  color: rgba(160, 214, 239, 0.86);
+}
+
+jas-ai-enrichment-view .provider-panel-label {
+  color: var(--surface-ink-strong);
+}
+
+jas-ai-enrichment-view .provider-select {
+  border-radius: 12px;
+  border: 1px solid rgba(143, 205, 228, 0.18);
+  background: rgba(6, 17, 28, 0.74);
+  color: var(--surface-ink-strong);
+  color-scheme: dark;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 10px 24px rgba(2, 8, 16, 0.16);
+}
+
+jas-ai-enrichment-view .provider-select:hover:not(:disabled) {
+  border-color: rgba(101, 223, 255, 0.32);
+  background: rgba(8, 21, 33, 0.84);
+}
+
+jas-ai-enrichment-view .provider-select:focus {
+  border-color: rgba(101, 223, 255, 0.36);
+  background: rgba(8, 21, 33, 0.92);
+}
+
+jas-ai-enrichment-view .provider-select option {
+  background: #08141f;
+  color: #eaf5ff;
+}
+
+jas-ai-enrichment-view .provider-meta {
+  color: rgba(173, 195, 214, 0.88);
+}
+
+jas-ai-enrichment-view .provider-pill {
+  padding: 0.22rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid rgba(101, 223, 255, 0.14);
+  background: rgba(101, 223, 255, 0.1);
+  color: #b9eeff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
 jas-ai-enrichment-view .enrich-btn,
 jas-ai-enrichment-view .btn-confirm,
 jas-ai-enrichment-view .generate-btn {
@@ -315,3 +400,1085 @@ jas-ai-enrichment-view .refine-panel textarea:focus {
 jas-ai-enrichment-view .refine-note {
   color: var(--surface-ink-soft);
 }
+
+/* JAS-ACT-007: ai-enrichment-view styles moved global to keep Angular component budgets green. */
+jas-ai-enrichment-view
+{
+        display: block;
+
+}
+
+jas-ai-enrichment-view .status-row
+{
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+        color: var(--surface-ink);
+
+}
+
+jas-ai-enrichment-view .provider-panel
+{
+        display: grid;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+
+}
+
+jas-ai-enrichment-view .provider-panel.disabled
+{
+        opacity: 0.76;
+
+}
+
+jas-ai-enrichment-view .provider-panel-header
+{
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+
+}
+
+jas-ai-enrichment-view .provider-panel-label
+{
+        display: grid;
+        gap: 0.35rem;
+        font-size: 0.88rem;
+
+}
+
+jas-ai-enrichment-view .provider-panel-label span
+{
+        font-weight: 700;
+
+}
+
+jas-ai-enrichment-view .provider-select
+{
+        width: 100%;
+        max-width: 360px;
+        padding: 0.7rem 0.8rem;
+        font: inherit;
+        font-size: 0.88rem;
+        appearance: none;
+
+}
+
+jas-ai-enrichment-view .provider-select:focus
+{
+        outline: 2px solid rgba(101, 223, 255, 0.24);
+        outline-offset: 1px;
+
+}
+
+jas-ai-enrichment-view .provider-meta
+{
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+        font-size: 0.82rem;
+
+}
+
+jas-ai-enrichment-view .provider-pill
+{
+        display: inline-flex;
+        align-items: center;
+        font-weight: 700;
+
+}
+
+jas-ai-enrichment-view .status-dot
+{
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #9ca3af;
+        flex-shrink: 0;
+
+}
+
+jas-ai-enrichment-view .status-dot.active
+{
+        background: #10b981;
+
+}
+
+jas-ai-enrichment-view .credential-missing
+{
+        color: var(--surface-warning);
+        font-size: 0.82rem;
+
+}
+
+jas-ai-enrichment-view .enrich-btn
+{
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.55rem 1.4rem;
+        border: none;
+        border-radius: 999px;
+        background: #122338;
+        color: white;
+        font-weight: 700;
+        font-size: 0.88rem;
+        cursor: pointer;
+        transition: opacity 0.2s;
+        margin-bottom: 1.25rem;
+
+}
+
+jas-ai-enrichment-view .enrich-btn:hover:not(:disabled)
+{
+        opacity: 0.85;
+
+}
+
+jas-ai-enrichment-view .enrich-btn:disabled
+{
+        opacity: 0.45;
+        cursor: not-allowed;
+
+}
+
+jas-ai-enrichment-view .error-block
+{
+        padding: 0.7rem 1rem;
+        border-radius: 10px;
+        background: var(--surface-danger-soft);
+        border: 1px solid rgba(255, 118, 92, 0.24);
+        color: var(--surface-danger);
+        font-size: 0.85rem;
+        margin-bottom: 1rem;
+
+}
+
+jas-ai-enrichment-view .result-block
+{
+        padding: 0.7rem 1rem;
+        border-radius: 10px;
+        background: var(--surface-success-soft);
+        border: 1px solid rgba(76, 225, 198, 0.22);
+        margin-bottom: 1.25rem;
+
+}
+
+jas-ai-enrichment-view .result-block.degraded
+{
+        background: var(--surface-warning-soft);
+        border-color: rgba(255, 154, 77, 0.3);
+
+}
+
+jas-ai-enrichment-view .nominal-msg
+{
+        margin: 0;
+        font-size: 0.85rem;
+        color: var(--surface-success);
+
+}
+
+jas-ai-enrichment-view .degraded-msg
+{
+        margin: 0;
+        font-size: 0.85rem;
+        color: var(--surface-warning);
+
+}
+
+jas-ai-enrichment-view .confirm-overlay
+{
+        position: fixed;
+        inset: 0;
+        background: rgba(3, 8, 14, 0.62);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        padding: 1rem;
+
+}
+
+jas-ai-enrichment-view .confirm-card
+{
+        border-radius: 20px;
+        padding: 2rem;
+        width: min(480px, 100%);
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+
+}
+
+jas-ai-enrichment-view .confirm-card h3
+{
+        margin: 0;
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--surface-ink-strong);
+
+}
+
+jas-ai-enrichment-view .confirm-card p
+{
+        margin: 0;
+        font-size: 0.88rem;
+        color: var(--surface-ink-soft);
+
+}
+
+jas-ai-enrichment-view .confirm-actions
+{
+        display: flex;
+        gap: 0.75rem;
+        justify-content: flex-end;
+        margin-top: 0.5rem;
+
+}
+
+jas-ai-enrichment-view .btn-cancel
+{
+        padding: 0.5rem 1.2rem;
+        border-radius: 999px;
+        font-weight: 600;
+        font-size: 0.88rem;
+        cursor: pointer;
+        transition: background 0.15s;
+
+}
+
+jas-ai-enrichment-view .btn-confirm
+{
+        padding: 0.5rem 1.4rem;
+        border: none;
+        border-radius: 999px;
+        background: #122338;
+        color: white;
+        font-weight: 700;
+        font-size: 0.88rem;
+        cursor: pointer;
+        transition: opacity 0.2s;
+
+}
+
+jas-ai-enrichment-view .btn-confirm:hover
+{
+        opacity: 0.85;
+
+}
+
+jas-ai-enrichment-view .audit-table
+{
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.82rem;
+        margin-top: 0.5rem;
+
+}
+
+jas-ai-enrichment-view .audit-table th
+{
+        text-align: left;
+        padding: 0.5rem 0.75rem;
+        background: var(--surface-chip);
+        border-bottom: 2px solid var(--surface-line);
+        font-weight: 600;
+        color: var(--surface-ink);
+        white-space: nowrap;
+
+}
+
+jas-ai-enrichment-view .audit-table td
+{
+        padding: 0.5rem 0.75rem;
+        border-bottom: 1px solid var(--surface-line);
+        color: var(--surface-ink);
+        vertical-align: middle;
+
+}
+
+jas-ai-enrichment-view .audit-table tr:last-child td
+{
+        border-bottom: none;
+
+}
+
+jas-ai-enrichment-view .degraded-row td
+{
+        background: var(--surface-danger-soft);
+
+}
+
+jas-ai-enrichment-view .badge-nominal
+{
+        display: inline-block;
+        padding: 0.2rem 0.6rem;
+        border-radius: 999px;
+        background: var(--surface-success-soft);
+        color: var(--surface-success);
+        font-weight: 600;
+        font-size: 0.78rem;
+
+}
+
+jas-ai-enrichment-view .badge-degraded
+{
+        display: inline-block;
+        padding: 0.2rem 0.6rem;
+        border-radius: 999px;
+        background: var(--surface-warning-soft);
+        color: var(--surface-warning);
+        font-weight: 600;
+        font-size: 0.78rem;
+
+}
+
+jas-ai-enrichment-view .hash-cell
+{
+        font-family: monospace;
+        font-size: 0.8rem;
+        max-width: 110px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: var(--surface-ink-soft);
+
+}
+
+jas-ai-enrichment-view .no-audit
+{
+        margin: 0.5rem 0 0;
+        font-size: 0.85rem;
+        color: var(--surface-ink-soft);
+        font-style: italic;
+
+}
+
+jas-ai-enrichment-view .suggestions-list
+{
+        margin: 0.75rem 0 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+
+}
+
+jas-ai-enrichment-view .suggestion-item
+{
+        background: var(--surface-raised);
+        border: 1px solid var(--surface-line);
+        border-radius: 8px;
+        padding: 0.6rem 0.85rem;
+
+}
+
+jas-ai-enrichment-view .suggestion-handler
+{
+        font-weight: 700;
+        font-size: 0.82rem;
+        color: var(--surface-ink-strong);
+        font-family: monospace;
+        margin-bottom: 0.3rem;
+
+}
+
+jas-ai-enrichment-view .suggestion-text
+{
+        font-size: 0.84rem;
+        color: var(--surface-ink);
+        white-space: pre-wrap;
+        word-break: break-word;
+
+}
+
+jas-ai-enrichment-view .no-suggestions
+{
+        font-size: 0.83rem;
+        color: var(--surface-ink-soft);
+        font-style: italic;
+        margin: 0.5rem 0 0;
+
+}
+
+jas-ai-enrichment-view .audit-section-title
+{
+        margin: 1.25rem 0 0.5rem;
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: var(--surface-ink-strong);
+        letter-spacing: 0.03em;
+
+}
+
+jas-ai-enrichment-view .review-score-circle
+{
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        font-size: 1.1rem;
+        font-weight: 800;
+        border: 3px solid;
+        margin-right: 1rem;
+        flex-shrink: 0;
+
+}
+
+jas-ai-enrichment-view .review-header
+{
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+
+}
+
+jas-ai-enrichment-view .review-header-text
+{
+        font-size: 0.88rem;
+        color: var(--surface-ink);
+
+}
+
+jas-ai-enrichment-view .review-header-text strong
+{
+        display: block;
+        font-size: 0.95rem;
+        color: var(--surface-ink-strong);
+        margin-bottom: 0.2rem;
+
+}
+
+jas-ai-enrichment-view .review-section-label
+{
+        font-size: 0.78rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--surface-ink-soft);
+        margin: 1rem 0 0.4rem;
+
+}
+
+jas-ai-enrichment-view .artifact-review-item
+{
+        border-radius: 8px;
+        padding: 0.6rem 0.85rem;
+        margin-bottom: 0.5rem;
+
+}
+
+jas-ai-enrichment-view .artifact-type-badge
+{
+        display: inline-block;
+        padding: 0.15rem 0.55rem;
+        border-radius: 999px;
+        background: var(--surface-chip);
+        color: var(--surface-ink-strong);
+        font-weight: 700;
+        font-size: 0.75rem;
+        font-family: monospace;
+        margin-bottom: 0.35rem;
+
+}
+
+jas-ai-enrichment-view .artifact-review-text
+{
+        font-size: 0.83rem;
+        color: var(--surface-ink);
+        white-space: pre-wrap;
+        word-break: break-word;
+
+}
+
+jas-ai-enrichment-view .uncertain-item
+{
+        background: rgba(245, 158, 11, 0.05);
+        border: 1px solid rgba(245, 158, 11, 0.25);
+        border-radius: 8px;
+        padding: 0.5rem 0.85rem;
+        margin-bottom: 0.4rem;
+        font-size: 0.83rem;
+
+}
+
+jas-ai-enrichment-view .uncertain-rule-id
+{
+        font-weight: 700;
+        font-family: monospace;
+        color: var(--surface-warning);
+        margin-right: 0.5rem;
+
+}
+
+jas-ai-enrichment-view .global-suggestion-item
+{
+        padding: 0.4rem 0;
+        font-size: 0.84rem;
+        color: var(--surface-ink);
+        border-bottom: 1px dashed var(--surface-line);
+
+}
+
+jas-ai-enrichment-view .global-suggestion-item:last-child
+{
+        border-bottom: none;
+
+}
+
+jas-ai-enrichment-view .review-btn
+{
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.5rem 1.2rem;
+        border-radius: 999px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: background 0.15s;
+        margin-bottom: 1.25rem;
+
+}
+
+jas-ai-enrichment-view .review-btn:disabled
+{
+        opacity: 0.45;
+        cursor: not-allowed;
+
+}
+
+jas-ai-enrichment-view .section-divider
+{
+        border: none;
+        border-top: 1px solid var(--surface-line);
+        margin: 1.5rem 0;
+
+}
+
+jas-ai-enrichment-view .generate-btn
+{
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.5rem 1.2rem;
+        border-radius: 999px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: background 0.15s;
+        margin-bottom: 1.25rem;
+
+}
+
+jas-ai-enrichment-view .generate-btn:disabled
+{
+        opacity: 0.45;
+        cursor: not-allowed;
+
+}
+
+jas-ai-enrichment-view .generation-progress
+{
+        display: flex;
+        flex-direction: column;
+        gap: 0.45rem;
+        padding: 0.8rem 0.95rem;
+        border-radius: 12px;
+        border: 1px solid rgba(61, 134, 198, 0.18);
+        background: rgba(61, 134, 198, 0.08);
+        margin-bottom: 1rem;
+
+}
+
+jas-ai-enrichment-view .generation-progress-header
+{
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        font-size: 0.82rem;
+        color: #3d86c6;
+
+}
+
+jas-ai-enrichment-view .progress-track
+{
+        height: 8px;
+        border-radius: 999px;
+        background: rgba(61, 134, 198, 0.14);
+        overflow: hidden;
+
+}
+
+jas-ai-enrichment-view .progress-fill
+{
+        height: 100%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, var(--cyan), var(--accent));
+        transition: width 0.25s ease;
+
+}
+
+jas-ai-enrichment-view .generation-log
+{
+        margin: 0;
+        padding-left: 1rem;
+        color: #3d86c6;
+        font-size: 0.8rem;
+
+}
+
+jas-ai-enrichment-view .generated-class-item
+{
+        margin-bottom: 1rem;
+
+}
+
+jas-ai-enrichment-view .generated-class-item.streaming
+{
+        border-radius: 12px;
+        padding: 0.75rem;
+
+}
+
+jas-ai-enrichment-view .generated-class-header
+{
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+        flex-wrap: wrap;
+        margin-bottom: 0.35rem;
+
+}
+
+jas-ai-enrichment-view .generated-class-actions
+{
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        flex-wrap: wrap;
+
+}
+
+jas-ai-enrichment-view .generated-class-btn
+{
+        padding: 0.22rem 0.65rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        cursor: pointer;
+        transition: background 0.15s, color 0.15s;
+
+}
+
+jas-ai-enrichment-view .generated-class-code
+{
+        display: block;
+        background: #1e1e2e;
+        color: #cdd6f4;
+        font-family: monospace;
+        font-size: 0.78rem;
+        padding: 1rem;
+        border-radius: 8px;
+        overflow-x: auto;
+        white-space: pre;
+        max-height: 320px;
+        overflow-y: auto;
+        margin-top: 0.4rem;
+
+}
+
+jas-ai-enrichment-view .generated-feedback
+{
+        margin-top: 0.35rem;
+        font-size: 0.75rem;
+        color: var(--surface-success);
+
+}
+
+jas-ai-enrichment-view .generated-feedback.error
+{
+        color: var(--surface-danger);
+
+}
+
+jas-ai-enrichment-view .refine-panel
+{
+        margin-top: 0.55rem;
+        padding: 0.8rem;
+        border-radius: 12px;
+        display: grid;
+        gap: 0.55rem;
+
+}
+
+jas-ai-enrichment-view .refine-panel textarea
+{
+        width: 100%;
+        min-height: 84px;
+        resize: vertical;
+        border: 1px solid var(--surface-line);
+        border-radius: 10px;
+        padding: 0.7rem 0.8rem;
+        font: inherit;
+        font-size: 0.82rem;
+        background: var(--surface-input);
+        color: var(--surface-ink);
+
+}
+
+jas-ai-enrichment-view .refine-panel textarea:focus
+{
+        outline: 2px solid rgba(101, 223, 255, 0.24);
+        outline-offset: 1px;
+
+}
+
+jas-ai-enrichment-view .refine-actions
+{
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+
+}
+
+jas-ai-enrichment-view .refine-btn
+{
+        padding: 0.38rem 0.9rem;
+        border-radius: 999px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        cursor: pointer;
+
+}
+
+jas-ai-enrichment-view .refine-btn:disabled
+{
+        opacity: 0.45;
+        cursor: not-allowed;
+
+}
+
+jas-ai-enrichment-view .refine-note
+{
+        font-size: 0.75rem;
+        color: var(--ink-soft);
+
+}
+
+jas-ai-enrichment-view .zip-export-btn
+{
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.45rem 1rem;
+        border-radius: 999px;
+        font-weight: 700;
+        font-size: 0.82rem;
+        cursor: pointer;
+        margin-top: 0.75rem;
+
+}
+
+jas-ai-enrichment-view .zip-export-btn:disabled
+{
+        opacity: 0.5;
+        cursor: not-allowed;
+
+}
+
+jas-ai-enrichment-view .zip-export-result
+{
+        margin-top: 0.5rem;
+        font-size: 0.8rem;
+
+}
+
+jas-ai-enrichment-view .zip-export-result.ok
+{
+        color: #166534;
+
+}
+
+jas-ai-enrichment-view .zip-export-result.error
+{
+        color: #b91c1c;
+
+}
+
+jas-ai-enrichment-view .persisted-toolbar
+{
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 0.9rem;
+
+}
+
+jas-ai-enrichment-view .persisted-btn
+{
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.42rem 0.95rem;
+        border-radius: 999px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        cursor: pointer;
+
+}
+
+jas-ai-enrichment-view .persisted-btn.tiny
+{
+        padding: 0.25rem 0.65rem;
+        font-size: 0.74rem;
+
+}
+
+jas-ai-enrichment-view .persisted-list
+{
+        display: grid;
+        gap: 0.85rem;
+
+}
+
+jas-ai-enrichment-view .persisted-card
+{
+        border-radius: 16px;
+        padding: 0.9rem;
+
+}
+
+jas-ai-enrichment-view .persisted-card-header
+{
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        margin-bottom: 0.7rem;
+
+}
+
+jas-ai-enrichment-view .persisted-title
+{
+        font-weight: 700;
+        color: var(--slate);
+
+}
+
+jas-ai-enrichment-view .persisted-meta
+{
+        color: var(--surface-ink-soft);
+        font-size: 0.78rem;
+        margin-top: 0.15rem;
+
+}
+
+jas-ai-enrichment-view .persisted-status-badge
+{
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.2rem 0.55rem;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+
+}
+
+jas-ai-enrichment-view .persisted-status-badge.ready
+{
+        background: var(--surface-success-soft);
+        color: var(--surface-success);
+
+}
+
+jas-ai-enrichment-view .persisted-status-badge.incomplete
+{
+        background: var(--surface-warning-soft);
+        color: var(--surface-warning);
+
+}
+
+jas-ai-enrichment-view .persisted-warning
+{
+        margin: 0.65rem 0 0;
+        font-size: 0.8rem;
+        color: var(--surface-warning);
+
+}
+
+jas-ai-enrichment-view .persisted-code
+{
+        margin-top: 0;
+
+}
+
+jas-ai-enrichment-view .persisted-versions
+{
+        margin-top: 0.75rem;
+        display: grid;
+        gap: 0.45rem;
+
+}
+
+jas-ai-enrichment-view .persisted-version-row
+{
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+        font-size: 0.76rem;
+        color: var(--surface-ink);
+        padding: 0.45rem 0.55rem;
+        border-radius: 10px;
+        background: var(--surface-chip);
+
+}
+
+jas-ai-enrichment-view .persisted-version-badge
+{
+        padding: 0.15rem 0.45rem;
+        border-radius: 999px;
+        background: rgba(79, 70, 229, 0.1);
+        color: #3d86c6;
+        font-weight: 700;
+
+}
+
+jas-ai-enrichment-view .persisted-findings
+{
+        display: grid;
+        gap: 0.45rem;
+        margin-top: 0.6rem;
+
+}
+
+jas-ai-enrichment-view .persisted-finding
+{
+        display: grid;
+        gap: 0.15rem;
+        padding: 0.45rem 0.6rem;
+        border-radius: 10px;
+        background: var(--surface-chip);
+
+}
+
+jas-ai-enrichment-view .persisted-finding-key
+{
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: var(--slate);
+
+}
+
+jas-ai-enrichment-view .persisted-finding-value,
+jas-ai-enrichment-view .persisted-global-findings
+{
+        font-size: 0.8rem;
+        color: var(--surface-ink);
+
+}
+
+jas-ai-enrichment-view .persisted-global-findings
+{
+        margin: 0.6rem 0 0;
+        padding-left: 1.1rem;
+
+}
+
+jas-ai-enrichment-view .empty-persisted-state
+{
+        color: var(--surface-ink-soft);
+        font-size: 0.78rem;
+        font-style: italic;
+
+}
+
+jas-ai-enrichment-view .preview-btn
+{
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.5rem 1.2rem;
+        border-radius: 999px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: background 0.15s;
+        margin-bottom: 1.25rem;
+
+}
+
+jas-ai-enrichment-view .preview-btn:disabled
+{
+        opacity: 0.45;
+        cursor: not-allowed;
+
+}
+
+jas-ai-enrichment-view .sanitized-badge
+{
+        display: inline-block;
+        padding: 0.15rem 0.55rem;
+        border-radius: 999px;
+        font-weight: 600;
+        font-size: 0.75rem;
+        margin-left: 0.5rem;
+
+}
+
+jas-ai-enrichment-view .sanitized-badge.yes
+{
+        background: var(--surface-success-soft);
+        color: var(--surface-success);
+
+}
+
+jas-ai-enrichment-view .sanitized-badge.no
+{
+        background: var(--surface-warning-soft);
+        color: var(--surface-warning);
+
+}
+
+jas-ai-enrichment-view .source-meta
+{
+        font-size: 0.82rem;
+        color: var(--surface-ink-soft);
+        margin: 0.4rem 0 0.75rem;
+
+}
+
+jas-ai-enrichment-view .source-code-block
+{
+        display: block;
+        background: #1e1e2e;
+        color: #cdd6f4;
+        font-family: monospace;
+        font-size: 0.78rem;
+        padding: 1rem;
+        border-radius: 8px;
+        overflow-x: auto;
+        white-space: pre;
+        max-height: 400px;
+        overflow-y: auto;
+
+}
+
+/* End JAS-ACT-007 ai-enrichment-view styles */

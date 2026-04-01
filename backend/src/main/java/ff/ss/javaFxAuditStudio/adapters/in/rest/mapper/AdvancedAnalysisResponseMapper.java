@@ -23,6 +23,10 @@ public class AdvancedAnalysisResponseMapper {
                         transition.guardExpression(),
                         transition.sourceLine()))
                 .toList();
+        ControllerFlowResponse.ConditionalAnalysisDto inheritanceAnalysis =
+                toConditionalAnalysisDto(flow.inheritanceAnalysis());
+        ControllerFlowResponse.ConditionalAnalysisDto dynamicUiAnalysis =
+                toConditionalAnalysisDto(flow.dynamicUiAnalysis());
         return new ControllerFlowResponse(
                 flow.controllerRef(),
                 flow.controllerName(),
@@ -33,7 +37,10 @@ public class AdvancedAnalysisResponseMapper {
                 transitions,
                 flow.policyGuardCandidates(),
                 flow.uiGuardMethods(),
+                inheritanceAnalysis,
+                dynamicUiAnalysis,
                 flow.evidence(),
+                flow.consolidatedInsights(),
                 flow.warnings());
     }
 
@@ -82,5 +89,13 @@ public class AdvancedAnalysisResponseMapper {
                 delta.unchangedControllers(),
                 controllerDeltas,
                 delta.warnings());
+    }
+
+    private ControllerFlowResponse.ConditionalAnalysisDto toConditionalAnalysisDto(
+            final ControllerFlowAnalysis.ConditionalAnalysis analysis) {
+        return new ControllerFlowResponse.ConditionalAnalysisDto(
+                analysis.activated(),
+                analysis.findings(),
+                analysis.evidence());
     }
 }

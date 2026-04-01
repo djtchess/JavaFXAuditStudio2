@@ -1,7 +1,7 @@
 package ff.ss.javaFxAuditStudio.adapters.in.rest;
 
 import ff.ss.javaFxAuditStudio.application.ports.in.ReclassifyRuleUseCase;
-import ff.ss.javaFxAuditStudio.application.ports.out.ReclassificationAuditPort;
+import ff.ss.javaFxAuditStudio.application.ports.in.GetReclassificationHistoryUseCase;
 import ff.ss.javaFxAuditStudio.domain.rules.BusinessRule;
 import ff.ss.javaFxAuditStudio.domain.rules.ExtractionCandidate;
 import ff.ss.javaFxAuditStudio.domain.rules.ReclassificationAuditEntry;
@@ -45,7 +45,7 @@ class ReclassificationControllerIT {
     private ReclassifyRuleUseCase reclassifyRuleUseCase;
 
     @MockitoBean
-    private ReclassificationAuditPort reclassificationAuditPort;
+    private GetReclassificationHistoryUseCase getReclassificationHistoryUseCase;
 
     private MockMvc mockMvc;
 
@@ -72,7 +72,7 @@ class ReclassificationControllerIT {
                 eq(ANALYSIS_ID), eq(RULE_ID), eq(ResponsibilityClass.APPLICATION), any()))
                 .thenReturn(updatedRule);
 
-        mockMvc.perform(patch("/api/v1/analyses/{analysisId}/rules/{ruleId}/classification",
+        mockMvc.perform(patch("/api/v1/analysis/sessions/{analysisId}/rules/{ruleId}/classification",
                         ANALYSIS_ID, RULE_ID)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"category\": \"APPLICATION\", \"reason\": \"logique metier\"}"))
@@ -87,7 +87,7 @@ class ReclassificationControllerIT {
         when(reclassifyRuleUseCase.reclassify(any(), any(), any(), any()))
                 .thenThrow(new IllegalStateException("Session verrouilee (statut LOCKED)"));
 
-        mockMvc.perform(patch("/api/v1/analyses/{analysisId}/rules/{ruleId}/classification",
+        mockMvc.perform(patch("/api/v1/analysis/sessions/{analysisId}/rules/{ruleId}/classification",
                         ANALYSIS_ID, RULE_ID)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"category\": \"APPLICATION\", \"reason\": \"test\"}"))
@@ -99,7 +99,7 @@ class ReclassificationControllerIT {
         when(reclassifyRuleUseCase.reclassify(any(), any(), any(), any()))
                 .thenThrow(new NoSuchElementException("Regle introuvable"));
 
-        mockMvc.perform(patch("/api/v1/analyses/{analysisId}/rules/{ruleId}/classification",
+        mockMvc.perform(patch("/api/v1/analysis/sessions/{analysisId}/rules/{ruleId}/classification",
                         ANALYSIS_ID, RULE_ID)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"category\": \"APPLICATION\", \"reason\": \"test\"}"))
@@ -108,7 +108,7 @@ class ReclassificationControllerIT {
 
     @Test
     void patch_returns400_whenCategoryIsInvalid() throws Exception {
-        mockMvc.perform(patch("/api/v1/analyses/{analysisId}/rules/{ruleId}/classification",
+        mockMvc.perform(patch("/api/v1/analysis/sessions/{analysisId}/rules/{ruleId}/classification",
                         ANALYSIS_ID, RULE_ID)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"category\": \"CATEGORIE_INVALIDE\", \"reason\": \"test\"}"))
@@ -126,10 +126,10 @@ class ReclassificationControllerIT {
                 "raison de test",
                 Instant.parse("2026-01-15T10:00:00Z"));
 
-        when(reclassificationAuditPort.findByAnalysisIdAndRuleId(ANALYSIS_ID, RULE_ID))
+        when(getReclassificationHistoryUseCase.handle(ANALYSIS_ID, RULE_ID))
                 .thenReturn(List.of(entry));
 
-        mockMvc.perform(get("/api/v1/analyses/{analysisId}/rules/{ruleId}/classification/history",
+        mockMvc.perform(get("/api/v1/analysis/sessions/{analysisId}/rules/{ruleId}/classification/history",
                         ANALYSIS_ID, RULE_ID))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
@@ -140,11 +140,34 @@ class ReclassificationControllerIT {
     }
 
     @Test
+    void patch_keeps_legacy_plural_alias_operational() throws Exception {
+        BusinessRule updatedRule = new BusinessRule(
+                RULE_ID,
+                "Description de test",
+                "com/example/MyController.java",
+                42,
+                ResponsibilityClass.APPLICATION,
+                ExtractionCandidate.USE_CASE,
+                false);
+
+        when(reclassifyRuleUseCase.reclassify(
+                eq(ANALYSIS_ID), eq(RULE_ID), eq(ResponsibilityClass.APPLICATION), any()))
+                .thenReturn(updatedRule);
+
+        mockMvc.perform(patch("/api/v1/analyses/{analysisId}/rules/{ruleId}/classification",
+                        ANALYSIS_ID, RULE_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"category\": \"APPLICATION\", \"reason\": \"alias legacy\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.ruleId").value(RULE_ID));
+    }
+
+    @Test
     void getHistory_returns200_withEmptyList_whenNoHistory() throws Exception {
-        when(reclassificationAuditPort.findByAnalysisIdAndRuleId(ANALYSIS_ID, RULE_ID))
+        when(getReclassificationHistoryUseCase.handle(ANALYSIS_ID, RULE_ID))
                 .thenReturn(List.of());
 
-        mockMvc.perform(get("/api/v1/analyses/{analysisId}/rules/{ruleId}/classification/history",
+        mockMvc.perform(get("/api/v1/analysis/sessions/{analysisId}/rules/{ruleId}/classification/history",
                         ANALYSIS_ID, RULE_ID))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())

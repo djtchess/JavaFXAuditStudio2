@@ -4,6 +4,7 @@ import ff.ss.javaFxAuditStudio.domain.rules.BusinessRule;
 import ff.ss.javaFxAuditStudio.domain.rules.ExtractionResult;
 import ff.ss.javaFxAuditStudio.domain.rules.ParsingMode;
 import ff.ss.javaFxAuditStudio.domain.rules.ResponsibilityClass;
+import ff.ss.javaFxAuditStudio.domain.analysis.DependencyKind;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -240,5 +241,33 @@ class JavaControllerRuleExtractionAdapterTest {
         ExtractionResult result = adapterWithExclusions.extract("MyController", content);
 
         assertThat(result.excludedLifecycleMethodsCount()).isEqualTo(0);
+    }
+
+    @Test
+    void should_detect_inheritance_and_dynamic_ui_dependencies() {
+        String content = """
+                public class RichController extends AbstractWorkflowController {
+                    public void initialize() {
+                        reviewPane.managedProperty().bind(reviewPane.visibleProperty());
+                        reviewVisible.bind(formPane.visibleProperty());
+                        reviewVisible.addListener((obs, oldValue, newValue) -> refreshButtons());
+                        nextButton.setOnAction(event -> submit());
+                    }
+                }
+                """;
+
+        ExtractionResult result = adapter.extract("RichController", content);
+
+        assertThat(result.dependencies()).anyMatch(dependency ->
+                dependency.kind() == DependencyKind.INHERITANCE
+                        && dependency.target().equals("AbstractWorkflowController"));
+        assertThat(result.dependencies()).anyMatch(dependency ->
+                dependency.kind() == DependencyKind.DYNAMIC_UI_VISIBILITY);
+        assertThat(result.dependencies()).anyMatch(dependency ->
+                dependency.kind() == DependencyKind.DYNAMIC_UI_BINDING);
+        assertThat(result.dependencies()).anyMatch(dependency ->
+                dependency.kind() == DependencyKind.DYNAMIC_UI_LISTENER);
+        assertThat(result.dependencies()).anyMatch(dependency ->
+                dependency.kind() == DependencyKind.DYNAMIC_UI_EVENT_HANDLER);
     }
 }

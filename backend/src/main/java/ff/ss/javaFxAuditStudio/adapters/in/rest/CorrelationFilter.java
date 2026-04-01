@@ -20,7 +20,7 @@ public class CorrelationFilter extends OncePerRequestFilter {
     private static final String HEADER_NAME = "X-Correlation-Id";
     private static final String MDC_KEY = "correlationId";
     private static final String SESSION_MDC_KEY = "sessionId";
-    private static final Pattern SESSION_PATH_PATTERN = Pattern.compile("/analysis/sessions/([^/]+)");
+    private static final Pattern SESSION_PATH_PATTERN = Pattern.compile("/(?:analysis/sessions|analyses)/([^/]+)");
 
     @Override
     protected void doFilterInternal(

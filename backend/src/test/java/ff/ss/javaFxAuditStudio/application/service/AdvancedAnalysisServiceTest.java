@@ -36,8 +36,9 @@ class AdvancedAnalysisServiceTest {
         Map<String, String> sources = Map.of(
                 "OrderController.java",
                 """
-                public class OrderController {
+                public class OrderController extends BaseWorkflowController implements Initializable {
                     private OrderState state;
+                    private BooleanProperty reviewVisible;
 
                     private boolean isVisible() {
                         return button != null;
@@ -51,6 +52,15 @@ class AdvancedAnalysisServiceTest {
                         if (state == OrderState.DRAFT) {
                             state = OrderState.REVIEW;
                         }
+                    }
+
+                    @Override
+                    public void initialize() {
+                        super.initialize();
+                        reviewVisible.bind(formPane.visibleProperty());
+                        reviewVisible.addListener((obs, oldValue, newValue) -> refreshButtons());
+                        nextButton.setOnAction(event -> handleNext());
+                        root.getChildren().add(buildBadge());
                     }
 
                     public void handleApprove() {
@@ -85,6 +95,17 @@ class AdvancedAnalysisServiceTest {
         assertThat(flow.policyGuardCandidates()).contains("isReady");
         assertThat(flow.uiGuardMethods()).contains("isVisible");
         assertThat(flow.transitions()).isNotEmpty();
+        assertThat(flow.inheritanceAnalysis().activated()).isTrue();
+        assertThat(flow.inheritanceAnalysis().findings()).contains("extends BaseWorkflowController", "implements Initializable");
+        assertThat(flow.dynamicUiAnalysis().activated()).isTrue();
+        assertThat(flow.dynamicUiAnalysis().findings()).contains("bindings detectes : 1", "listeners detectes : 1");
+        assertThat(flow.consolidatedInsights()).contains(
+                "consolidation:mandatory-core",
+                "inheritance-analysis:active-conditional-path",
+                "dynamic-ui-analysis:active-priority-path",
+                "pdf-analysis:out-of-mvp-by-default");
+        assertThat(flow.consolidatedInsights()).anyMatch(item -> item.contains("inheritance-analysis actif"));
+        assertThat(flow.consolidatedInsights()).anyMatch(item -> item.contains("dynamic-ui-analysis actif"));
     }
 
     @Test

@@ -20,6 +20,7 @@ import ff.ss.javaFxAuditStudio.application.ports.out.PromptContextSanitizerPort;
 import ff.ss.javaFxAuditStudio.application.ports.out.ReclassificationAuditPort;
 import ff.ss.javaFxAuditStudio.application.ports.out.SanitizationPort;
 import ff.ss.javaFxAuditStudio.application.ports.out.SourceFileReaderPort;
+import ff.ss.javaFxAuditStudio.domain.ai.AiArtifactImplementationInspector;
 import ff.ss.javaFxAuditStudio.domain.ai.AiCodeGenerationResult;
 import ff.ss.javaFxAuditStudio.domain.ai.AiEnrichmentRequest;
 import ff.ss.javaFxAuditStudio.domain.ai.AiEnrichmentResult;
@@ -265,12 +266,14 @@ public class AiSpringBootGenerationService implements GenerateSpringBootClassesU
                     llmResult.provider());
         }
 
-        if (hasActionableSourceSnippets(ruleSourceSnippets) && containsImplementationTodo(cleanedClasses)) {
-            LOG.warn("Generation IA {}: des TODO persistent alors que des extraits source etaient disponibles", sessionId);
+        if (hasActionableSourceSnippets(ruleSourceSnippets) && containsImplementationPlaceholder(cleanedClasses)) {
+            LOG.warn(
+                    "Generation IA {}: des placeholders d'implementation persistent alors que des extraits source etaient disponibles",
+                    sessionId);
             return new AiCodeGenerationResult(
                     llmResult.requestId(),
                     true,
-                    "Le fournisseur IA a retourne un code incomplet avec des TODO alors que des extraits source exploitables etaient disponibles.",
+                    "Le fournisseur IA a retourne un code incomplet avec des placeholders d'implementation alors que des extraits source exploitables etaient disponibles.",
                     Map.of(),
                     llmResult.tokensUsed(),
                     llmResult.provider());
@@ -314,9 +317,9 @@ public class AiSpringBootGenerationService implements GenerateSpringBootClassesU
                 && !ruleSourceSnippets.startsWith("Aucun extrait");
     }
 
-    private boolean containsImplementationTodo(final Map<String, String> generatedArtifacts) {
+    private boolean containsImplementationPlaceholder(final Map<String, String> generatedArtifacts) {
         return generatedArtifacts.values().stream()
-                .anyMatch(content -> content != null && content.contains("// TODO: implementer"));
+                .anyMatch(AiArtifactImplementationInspector::isIncomplete);
     }
 
     private ArtifactType resolveArtifactType(final String rawArtifactType) {

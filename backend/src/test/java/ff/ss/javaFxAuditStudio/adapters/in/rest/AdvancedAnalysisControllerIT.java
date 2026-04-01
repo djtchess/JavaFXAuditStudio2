@@ -60,7 +60,21 @@ class AdvancedAnalysisControllerIT {
                                 42)),
                         List.of("isReady"),
                         List.of("isVisible"),
+                        new ControllerFlowAnalysis.ConditionalAnalysis(
+                                true,
+                                List.of("extends BaseWorkflowController"),
+                                List.of("extends BaseWorkflowController")),
+                        new ControllerFlowAnalysis.ConditionalAnalysis(
+                                true,
+                                List.of("bindings detectes : 2", "listeners detectes : 1"),
+                                List.of("reviewVisible.bind(formPane.visibleProperty());")),
                         List.of("STATE", "isReady", "isVisible"),
+                        List.of(
+                                "consolidation:mandatory-core",
+                                "inheritance-analysis:active-conditional-path",
+                                "dynamic-ui-analysis:active-priority-path",
+                                "pdf-analysis:out-of-mvp-by-default",
+                                "inheritance-analysis actif : extends BaseWorkflowController"),
                         List.of()));
 
         mockMvc.perform(get("/api/v1/analysis/sessions/{sessionId}/flow", "session-flow")
@@ -70,7 +84,13 @@ class AdvancedAnalysisControllerIT {
                 .andExpect(jsonPath("$.detectionLevel").value("CONFIRMED"))
                 .andExpect(jsonPath("$.states[0]").value("STATE"))
                 .andExpect(jsonPath("$.policyGuardCandidates[0]").value("isReady"))
-                .andExpect(jsonPath("$.uiGuardMethods[0]").value("isVisible"));
+                .andExpect(jsonPath("$.uiGuardMethods[0]").value("isVisible"))
+                .andExpect(jsonPath("$.inheritanceAnalysis.activated").value(true))
+                .andExpect(jsonPath("$.dynamicUiAnalysis.activated").value(true))
+                .andExpect(jsonPath("$.consolidatedInsights[0]").value("consolidation:mandatory-core"))
+                .andExpect(jsonPath("$.consolidatedInsights[1]").value("inheritance-analysis:active-conditional-path"))
+                .andExpect(jsonPath("$.consolidatedInsights[2]").value("dynamic-ui-analysis:active-priority-path"))
+                .andExpect(jsonPath("$.consolidatedInsights[3]").value("pdf-analysis:out-of-mvp-by-default"));
     }
 
     @Test

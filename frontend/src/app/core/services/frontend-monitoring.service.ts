@@ -31,6 +31,8 @@ export class FrontendMonitoringService {
   private readonly totalDurationMsSignal = signal(0);
   private readonly lastCompletedAtSignal = signal<string | null>(null);
 
+  readonly recentRequests = computed(() => this.recentEventsSignal());
+
   readonly summary = computed<FrontendMonitoringSummary>(() => {
     const totalCompletedRequests = this.totalCompletedRequestsSignal();
     const failedRequests = this.failedRequestsSignal();

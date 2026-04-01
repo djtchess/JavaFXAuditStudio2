@@ -45,7 +45,7 @@ describe('ReclassificationApiService', () => {
       });
 
       const req = httpMock.expectOne(
-        `/api/v1/analyses/${analysisId}/rules/${ruleId}/classification`,
+        `/api/v1/analysis/sessions/${analysisId}/rules/${ruleId}/classification`,
       );
       expect(req.request.method).toBe('PATCH');
       expect(req.request.body).toEqual(request);
@@ -65,7 +65,7 @@ describe('ReclassificationApiService', () => {
       });
 
       const req = httpMock.expectOne(
-        `/api/v1/analyses/${analysisId}/rules/${ruleId}/classification`,
+        `/api/v1/analysis/sessions/${analysisId}/rules/${ruleId}/classification`,
       );
       req.flush({ message: 'Analyse locked' }, { status: 409, statusText: 'Conflict' });
       expect(receivedError).toBeTruthy();
@@ -92,7 +92,7 @@ describe('ReclassificationApiService', () => {
       });
 
       const req = httpMock.expectOne(
-        `/api/v1/analyses/${analysisId}/rules/${ruleId}/classification/history`,
+        `/api/v1/analysis/sessions/${analysisId}/rules/${ruleId}/classification/history`,
       );
       expect(req.request.method).toBe('GET');
       req.flush(mockEntries);
@@ -107,7 +107,7 @@ describe('ReclassificationApiService', () => {
       });
 
       const req = httpMock.expectOne(
-        `/api/v1/analyses/${analysisId}/rules/${ruleId}/classification/history`,
+        `/api/v1/analysis/sessions/${analysisId}/rules/${ruleId}/classification/history`,
       );
       req.flush([]);
     });

@@ -14,7 +14,7 @@ import { ArtifactReviewResponse } from '../../core/models/analysis.model';
 
 /**
  * Widget autonome affichant le score de migration IA pour une session donnee.
- * Lance POST /api/v1/analyses/{sessionId}/review a la demande de l'utilisateur.
+ * Lance POST /api/v1/analysis/sessions/{sessionId}/review a la demande de l'utilisateur.
  * JAS-030
  *
  * Usage :

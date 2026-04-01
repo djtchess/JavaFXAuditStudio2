@@ -5,5 +5,10 @@ package ff.ss.javaFxAuditStudio.domain.analysis;
  */
 public enum DependencyKind {
     DIRECT_CONTROLLER,
-    SHARED_SERVICE
+    SHARED_SERVICE,
+    INHERITANCE,
+    DYNAMIC_UI_BINDING,
+    DYNAMIC_UI_LISTENER,
+    DYNAMIC_UI_VISIBILITY,
+    DYNAMIC_UI_EVENT_HANDLER
 }

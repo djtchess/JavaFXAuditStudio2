@@ -35,7 +35,7 @@ import ff.ss.javaFxAuditStudio.domain.ai.LlmProvider;
 import ff.ss.javaFxAuditStudio.domain.generation.ArtifactType;
 
 @RestController
-@RequestMapping("/api/v1/analyses")
+@RequestMapping(path = {"/api/v1/analysis/sessions", "/api/v1/analyses"})
 public class AiGeneratedArtifactController {
 
     private final ListAiGeneratedArtifactsUseCase listAiGeneratedArtifactsUseCase;

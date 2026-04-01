@@ -18,7 +18,6 @@ import ff.ss.javaFxAuditStudio.application.ports.in.GenerateArtifactsUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.in.ProduceMigrationPlanUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.in.ProduceRestitutionUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.in.SubmitAnalysisUseCase;
-import ff.ss.javaFxAuditStudio.application.ports.out.AnalysisSessionPort;
 import ff.ss.javaFxAuditStudio.domain.workbench.AnalysisSession;
 import ff.ss.javaFxAuditStudio.domain.workbench.AnalysisStatus;
 import ff.ss.javaFxAuditStudio.domain.workbench.OrchestratedAnalysisResult;
@@ -54,9 +53,6 @@ class AnalysisControllerRunEndpointTest {
 
     @Mock
     private ProduceRestitutionUseCase produceRestitutionUseCase;
-
-    @Mock
-    private AnalysisSessionPort analysisSessionPort;
 
     @Mock
     private SubmitAnalysisUseCase submitAnalysisUseCase;
@@ -103,7 +99,6 @@ class AnalysisControllerRunEndpointTest {
                 produceRestitutionUseCase,
                 submitAnalysisUseCase,
                 getAnalysisSessionUseCase,
-                analysisSessionPort,
                 analysisOrchestrationUseCase,
                 analysisSessionResponseMapper,
                 cartographyResponseMapper,
@@ -121,7 +116,7 @@ class AnalysisControllerRunEndpointTest {
         ResponseEntity<OrchestratedAnalysisResultResponse> response;
 
         sessionId = "session-introuvable";
-        when(analysisSessionPort.findById(sessionId)).thenReturn(Optional.empty());
+        when(getAnalysisSessionUseCase.handle(sessionId)).thenReturn(Optional.empty());
 
         response = controller.runPipeline(sessionId);
 
@@ -144,7 +139,7 @@ class AnalysisControllerRunEndpointTest {
                 AnalysisStatus.INGESTING,
                 Instant.now());
 
-        when(analysisSessionPort.findById(sessionId)).thenReturn(Optional.of(sessionEnCours));
+        when(getAnalysisSessionUseCase.handle(sessionId)).thenReturn(Optional.of(sessionEnCours));
 
         response = controller.runPipeline(sessionId);
 
@@ -180,7 +175,7 @@ class AnalysisControllerRunEndpointTest {
                 null, null, null, null, null,
                 List.of());
 
-        when(analysisSessionPort.findById(sessionId)).thenReturn(Optional.of(sessionCreee));
+        when(getAnalysisSessionUseCase.handle(sessionId)).thenReturn(Optional.of(sessionCreee));
         when(analysisOrchestrationUseCase.orchestrate(sessionId)).thenReturn(orchestrationResult);
         when(orchestratedAnalysisResultResponseMapper.toResponse(orchestrationResult)).thenReturn(responseDto);
 

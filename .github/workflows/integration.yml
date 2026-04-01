@@ -14,9 +14,6 @@ jobs:
   postgres-smoke:
     name: PostgreSQL smoke test
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
     services:
       postgres:
         image: postgres:15
@@ -42,16 +39,17 @@ jobs:
           java-version: '21'
           cache: maven
 
-      - name: Make Maven wrapper executable
-        run: chmod +x mvnw
+      - name: Make local scripts executable
+        run: chmod +x backend/mvnw scripts/test.sh
 
       - name: Run PostgreSQL smoke integration
         env:
           CI_POSTGRES_ENABLED: true
+          MAVEN_REPO_LOCAL: /home/runner/.m2/repository
           DB_URL: jdbc:postgresql://localhost:5432/javafx_audit
           DB_USER: javafx_audit
           DB_PASSWORD: changeme
-        run: ./mvnw -B -Dtest=PostgresServiceContainerIT test
+        run: ./scripts/test.sh backend-postgres-smoke
 
   compose-validation:
     name: Docker compose validation

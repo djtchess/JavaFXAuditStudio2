@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @Tag(name = "Revue IA")
 @RestController
-@RequestMapping("/api/v1/analyses")
+@RequestMapping(path = {"/api/v1/analysis/sessions", "/api/v1/analyses"})
 public class ArtifactReviewController {
 
     private static final Logger LOG = LoggerFactory.getLogger(ArtifactReviewController.class);

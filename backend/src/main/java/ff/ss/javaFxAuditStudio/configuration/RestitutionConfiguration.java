@@ -10,6 +10,7 @@ import ff.ss.javaFxAuditStudio.application.ports.out.ClassificationPersistencePo
 import ff.ss.javaFxAuditStudio.application.ports.out.MigrationPlanPersistencePort;
 import ff.ss.javaFxAuditStudio.application.ports.out.RestitutionFormatterPort;
 import ff.ss.javaFxAuditStudio.application.ports.out.RestitutionPersistencePort;
+import ff.ss.javaFxAuditStudio.application.ports.out.SourceReaderPort;
 import ff.ss.javaFxAuditStudio.application.service.ProduceRestitutionService;
 
 @Configuration
@@ -22,13 +23,17 @@ public class RestitutionConfiguration {
             final ArtifactPersistencePort artifactPersistencePort,
             final CartographyPersistencePort cartographyPersistencePort,
             final MigrationPlanPersistencePort migrationPlanPersistencePort,
-            final RestitutionFormatterPort restitutionFormatterPort) {
+            final RestitutionFormatterPort restitutionFormatterPort,
+            final SourceReaderPort sourceReaderPort,
+            final AnalysisProperties analysisProperties) {
         return new ProduceRestitutionService(
                 restitutionPersistencePort,
                 classificationPersistencePort,
                 artifactPersistencePort,
                 cartographyPersistencePort,
                 migrationPlanPersistencePort,
-                restitutionFormatterPort);
+                restitutionFormatterPort,
+                sourceReaderPort,
+                analysisProperties);
     }
 }

@@ -63,7 +63,7 @@ class AiGeneratedArtifactControllerIT {
         when(listAiGeneratedArtifactsUseCase.listVersions("sess-1", "USE_CASE"))
                 .thenReturn(List.of(aiArtifact("USE_CASE", "PatientUseCase", 2)));
 
-        mockMvc.perform(get("/api/v1/analyses/sess-1/artifacts/ai/USE_CASE/versions"))
+        mockMvc.perform(get("/api/v1/analysis/sessions/sess-1/artifacts/ai/USE_CASE/versions"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.sessionId").value("sess-1"))
                 .andExpect(jsonPath("$.artifacts[0].artifactType").value("USE_CASE"))
@@ -80,7 +80,7 @@ class AiGeneratedArtifactControllerIT {
                         3,
                         "package ff.example.policy;\npublic class PatientPolicy {\n    // TODO: implementer\n    boolean isReady() {\n        return false;\n    }\n}")));
 
-        mockMvc.perform(get("/api/v1/analyses/sess-1/artifacts/ai"))
+        mockMvc.perform(get("/api/v1/analysis/sessions/sess-1/artifacts/ai"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.artifacts[0].artifactType").value("POLICY"))
                 .andExpect(jsonPath("$.artifacts[0].implementationStatus").value("INCOMPLETE"))
@@ -90,13 +90,13 @@ class AiGeneratedArtifactControllerIT {
 
     @Test
     void should_return_400_for_invalid_artifact_type_on_versions() throws Exception {
-        mockMvc.perform(get("/api/v1/analyses/sess-1/artifacts/ai/not-valid/versions"))
+        mockMvc.perform(get("/api/v1/analysis/sessions/sess-1/artifacts/ai/not-valid/versions"))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     void should_return_400_for_invalid_artifact_type_on_refine_alias() throws Exception {
-        mockMvc.perform(post("/api/v1/analyses/sess-1/generate/ai/refine")
+        mockMvc.perform(post("/api/v1/analysis/sessions/sess-1/generate/ai/refine")
                         .contentType("application/json")
                         .content("""
                                 {"artifactType":"not-valid","instruction":"ameliore","previousCode":"code"}
@@ -109,7 +109,7 @@ class AiGeneratedArtifactControllerIT {
         when(refineAiArtifactUseCase.refine(eq("missing"), any()))
                 .thenThrow(new IllegalArgumentException("Session introuvable"));
 
-        mockMvc.perform(post("/api/v1/analyses/missing/generate/ai/refine")
+        mockMvc.perform(post("/api/v1/analysis/sessions/missing/generate/ai/refine")
                         .contentType("application/json")
                         .content("""
                                 {"artifactType":"USE_CASE","instruction":"ameliore","previousCode":"code"}
@@ -122,7 +122,7 @@ class AiGeneratedArtifactControllerIT {
         when(exportAiGeneratedArtifactsUseCase.export("sess-1"))
                 .thenReturn(new AiArtifactZipExport("ai-artifacts-sess-1.zip", new byte[] {1, 2, 3}, 1));
 
-        mockMvc.perform(get("/api/v1/analyses/sess-1/generate/ai/export/zip"))
+        mockMvc.perform(get("/api/v1/analysis/sessions/sess-1/generate/ai/export/zip"))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Content-Type", "application/zip"))
                 .andExpect(header().string("X-AI-Artifact-Count", "1"))

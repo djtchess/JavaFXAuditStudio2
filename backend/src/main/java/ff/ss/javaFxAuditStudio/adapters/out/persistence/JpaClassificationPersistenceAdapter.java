@@ -1,5 +1,10 @@
 package ff.ss.javaFxAuditStudio.adapters.out.persistence;
 
+import ff.ss.javaFxAuditStudio.domain.analysis.ControllerDependency;
+import ff.ss.javaFxAuditStudio.domain.analysis.DeltaAnalysisSummary;
+import ff.ss.javaFxAuditStudio.domain.analysis.DetectionStatus;
+import ff.ss.javaFxAuditStudio.domain.analysis.StateMachineInsight;
+import ff.ss.javaFxAuditStudio.domain.analysis.StateTransition;
 import ff.ss.javaFxAuditStudio.application.ports.out.ClassificationPersistencePort;
 import ff.ss.javaFxAuditStudio.domain.rules.BusinessRule;
 import ff.ss.javaFxAuditStudio.domain.rules.ClassificationResult;
@@ -36,6 +41,19 @@ public class JpaClassificationPersistenceAdapter implements ClassificationPersis
                 result.excludedLifecycleMethodsCount());
         result.rules().forEach(rule -> entity.getRules().add(toRuleEntity(rule, entity)));
         result.uncertainRules().forEach(rule -> entity.getRules().add(toRuleEntity(rule, entity)));
+        entity.setStateMachineStatus(result.stateMachine().status());
+        entity.setStateMachineConfidence(result.stateMachine().confidence());
+        entity.getStateMachineStates().addAll(result.stateMachine().states());
+        result.stateMachine().transitions().forEach(transition ->
+                entity.getStateTransitions().add(new StateTransitionEmbeddable(
+                        transition.fromState(),
+                        transition.toState(),
+                        transition.trigger())));
+        result.dependencies().forEach(dependency ->
+                entity.getDependencies().add(new ClassificationDependencyEmbeddable(
+                        dependency.kind(),
+                        dependency.target(),
+                        dependency.via())));
         ClassificationResultEntity saved = repository.save(entity);
         return toDomain(saved);
     }
@@ -69,6 +87,19 @@ public class JpaClassificationPersistenceAdapter implements ClassificationPersis
         ParsingMode parsingMode = entity.getParsingMode() != null
                 ? entity.getParsingMode()
                 : ParsingMode.AST;
+        DetectionStatus detectionStatus = entity.getStateMachineStatus() != null
+                ? entity.getStateMachineStatus()
+                : DetectionStatus.ABSENT;
+        StateMachineInsight stateMachine = new StateMachineInsight(
+                detectionStatus,
+                entity.getStateMachineConfidence(),
+                entity.getStateMachineStates(),
+                entity.getStateTransitions().stream()
+                        .map(this::toStateTransition)
+                        .toList());
+        List<ControllerDependency> dependencies = entity.getDependencies().stream()
+                .map(this::toDependencyDomain)
+                .toList();
 
         return new ClassificationResult(
                 entity.getControllerRef(),
@@ -76,7 +107,10 @@ public class JpaClassificationPersistenceAdapter implements ClassificationPersis
                 uncertain,
                 parsingMode,
                 entity.getParsingFallbackReason(),
-                entity.getExcludedLifecycleMethodsCount());
+                entity.getExcludedLifecycleMethodsCount(),
+                stateMachine,
+                dependencies,
+                DeltaAnalysisSummary.none());
     }
 
     private BusinessRule toRuleDomain(final BusinessRuleEntity e) {
@@ -88,5 +122,19 @@ public class JpaClassificationPersistenceAdapter implements ClassificationPersis
                 ResponsibilityClass.valueOf(e.getResponsibilityClass()),
                 ExtractionCandidate.valueOf(e.getExtractionCandidate()),
                 e.isUncertain());
+    }
+
+    private StateTransition toStateTransition(final StateTransitionEmbeddable transition) {
+        return new StateTransition(
+                transition.getFromState(),
+                transition.getToState(),
+                transition.getTrigger());
+    }
+
+    private ControllerDependency toDependencyDomain(final ClassificationDependencyEmbeddable dependency) {
+        return new ControllerDependency(
+                dependency.getKind(),
+                dependency.getTarget(),
+                dependency.getVia());
     }
 }

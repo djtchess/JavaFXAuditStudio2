@@ -49,7 +49,7 @@ class ArtifactRefinementControllerIT {
                         11,
                         LlmProvider.CLAUDE_CODE));
 
-        mockMvc.perform(post("/api/v1/analyses/sess-1/refine")
+        mockMvc.perform(post("/api/v1/analysis/sessions/sess-1/refine")
                         .contentType("application/json")
                         .content("""
                                 {"artifactType":"USE_CASE","instruction":"ameliore","previousCode":"code"}
@@ -64,7 +64,7 @@ class ArtifactRefinementControllerIT {
         when(refineArtifactUseCase.refine(any(), any()))
                 .thenThrow(new IllegalArgumentException("Session introuvable : unknown"));
 
-        mockMvc.perform(post("/api/v1/analyses/unknown/refine")
+        mockMvc.perform(post("/api/v1/analysis/sessions/unknown/refine")
                         .contentType("application/json")
                         .content("""
                                 {"artifactType":"USE_CASE","instruction":"ameliore","previousCode":"code"}
@@ -74,7 +74,7 @@ class ArtifactRefinementControllerIT {
 
     @Test
     void should_return_400_for_invalid_artifact_type() throws Exception {
-        mockMvc.perform(post("/api/v1/analyses/sess-1/refine")
+        mockMvc.perform(post("/api/v1/analysis/sessions/sess-1/refine")
                         .contentType("application/json")
                         .content("""
                                 {"artifactType":"NOT_A_TYPE","instruction":"ameliore","previousCode":"code"}

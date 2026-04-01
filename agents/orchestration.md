@@ -94,6 +94,21 @@ Sorties attendues :
 - consolidation des evidences ;
 - restitution exploitable par le backend et le frontend.
 
+### Arbitrage actif au 2026-04-01
+
+- `consolidation` est un module obligatoire du MVP moteur.
+- `inheritance-analysis` est un module conditionnel :
+  l'activer seulement si une hierarchie non triviale, un heritage metier ou un
+  contrat implicite est detecte.
+- `dynamic-ui-analysis` est un module conditionnel :
+  l'activer seulement si le comportement UI depasse le FXML statique et le flux
+  direct du controller.
+- `pdf-analysis` est un module optionnel hors MVP par defaut :
+  l'activer uniquement si l'entree contient des references PDF/DOCX ou des
+  documents fournis explicitement pour l'analyse.
+- `JAS-ACT-012` doit implementer ce perimetre arbitre sans regonfler la phase 4
+  en quatre sous-chantiers obligatoires.
+
 ## Phase 5 - Relecture et qualite
 
 Agents :
@@ -143,3 +158,4 @@ Les skills `.codex` servent de sous-agents specialises pendant les phases 2 a 5.
 - Les agents analytiques peuvent travailler en parallele sur un meme controller seulement si `consolidation` reste unique.
 - Toute ambiguite fonctionnelle remonte vers `architecture-applicative` et `gouvernance`.
 - Toute ambiguite de version frontend remonte avant generation du squelette Angular.
+

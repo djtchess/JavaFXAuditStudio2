@@ -51,7 +51,7 @@ class ArtifactCoherenceControllerIT {
                         List.of("tout est aligne"),
                         LlmProvider.OPENAI_GPT54));
 
-        mockMvc.perform(post("/api/v1/analyses/sess-1/coherence"))
+        mockMvc.perform(post("/api/v1/analysis/sessions/sess-1/coherence"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.coherent").value(true))
                 .andExpect(jsonPath("$.artifactIssues.USE_CASE").value("ok"));
@@ -62,7 +62,7 @@ class ArtifactCoherenceControllerIT {
         when(verifyArtifactCoherenceUseCase.verify(any()))
                 .thenThrow(new IllegalArgumentException("Session introuvable : unknown"));
 
-        mockMvc.perform(post("/api/v1/analyses/unknown/coherence"))
+        mockMvc.perform(post("/api/v1/analysis/sessions/unknown/coherence"))
                 .andExpect(status().isNotFound());
     }
 }

@@ -5,6 +5,9 @@ import ff.ss.javaFxAuditStudio.application.ports.out.ArtifactPersistencePort;
 import ff.ss.javaFxAuditStudio.application.ports.out.CartographyPersistencePort;
 import ff.ss.javaFxAuditStudio.application.ports.out.ClassificationPersistencePort;
 import ff.ss.javaFxAuditStudio.application.ports.out.MigrationPlanPersistencePort;
+import ff.ss.javaFxAuditStudio.application.ports.out.SourceReaderPort;
+import ff.ss.javaFxAuditStudio.configuration.AnalysisProperties;
+import ff.ss.javaFxAuditStudio.domain.analysis.ControllerFlowAnalysis;
 import ff.ss.javaFxAuditStudio.application.ports.out.RestitutionPersistencePort;
 import ff.ss.javaFxAuditStudio.application.ports.out.RestitutionFormatterPort;
 import ff.ss.javaFxAuditStudio.domain.cartography.CartographyUnknown;
@@ -36,6 +39,8 @@ public final class ProduceRestitutionService implements ProduceRestitutionUseCas
     private final CartographyPersistencePort cartographyPersistencePort;
     private final MigrationPlanPersistencePort migrationPlanPersistencePort;
     private final RestitutionFormatterPort restitutionFormatterPort;
+    private final SourceReaderPort sourceReaderPort;
+    private final AnalysisProperties.ClassificationPatterns classificationPatterns;
 
     public ProduceRestitutionService(
             final RestitutionPersistencePort restitutionPersistencePort,
@@ -43,13 +48,21 @@ public final class ProduceRestitutionService implements ProduceRestitutionUseCas
             final ArtifactPersistencePort artifactPersistencePort,
             final CartographyPersistencePort cartographyPersistencePort,
             final MigrationPlanPersistencePort migrationPlanPersistencePort,
-            final RestitutionFormatterPort restitutionFormatterPort) {
+            final RestitutionFormatterPort restitutionFormatterPort,
+            final SourceReaderPort sourceReaderPort,
+            final AnalysisProperties analysisProperties) {
         this.restitutionPersistencePort = Objects.requireNonNull(restitutionPersistencePort);
         this.classificationPersistencePort = Objects.requireNonNull(classificationPersistencePort);
         this.artifactPersistencePort = Objects.requireNonNull(artifactPersistencePort);
         this.cartographyPersistencePort = Objects.requireNonNull(cartographyPersistencePort);
         this.migrationPlanPersistencePort = Objects.requireNonNull(migrationPlanPersistencePort);
         this.restitutionFormatterPort = Objects.requireNonNull(restitutionFormatterPort);
+        this.sourceReaderPort = Objects.requireNonNull(sourceReaderPort);
+        this.classificationPatterns = analysisProperties != null
+                && analysisProperties.classificationPatterns() != null
+                ? analysisProperties.classificationPatterns()
+                : new AnalysisProperties.ClassificationPatterns(
+                        null, null, null, null, null, null, null, null);
     }
 
     @Override
@@ -65,6 +78,7 @@ public final class ProduceRestitutionService implements ProduceRestitutionUseCas
         Optional<ClassificationResult> classifOpt = classificationPersistencePort.findBySessionId(sessionId);
         Optional<MigrationPlan> migrationPlanOpt = migrationPlanPersistencePort.findBySessionId(sessionId);
         Optional<GenerationResult> generationOpt = artifactPersistencePort.findBySessionId(sessionId);
+        Optional<ControllerFlowAnalysis> flowOpt = analyzeControllerFlow(controllerRef);
 
         int ruleCount = classifOpt.map(c -> c.rules().size() + c.uncertainRules().size()).orElse(0);
         int uncertainCount = classifOpt.map(c -> c.uncertainRules().size()).orElse(0);
@@ -77,7 +91,7 @@ public final class ProduceRestitutionService implements ProduceRestitutionUseCas
                 controllerRef, ruleCount, uncertainCount, artifactCount, 0, confidence, false);
 
         List<String> unknowns = buildUnknowns(cartographyOpt);
-        List<String> findings = buildFindings(classifOpt, generationOpt);
+        List<String> findings = buildFindings(classifOpt, generationOpt, flowOpt);
         List<String> lotSummaries = buildLotSummaries(migrationPlanOpt);
         List<String> artifactSummaries = buildArtifactSummaries(generationOpt);
 
@@ -132,7 +146,8 @@ public final class ProduceRestitutionService implements ProduceRestitutionUseCas
 
     private List<String> buildFindings(
             final Optional<ClassificationResult> classifOpt,
-            final Optional<GenerationResult> generationOpt) {
+            final Optional<GenerationResult> generationOpt,
+            final Optional<ControllerFlowAnalysis> flowOpt) {
         var findings = new java.util.ArrayList<String>();
         if (classifOpt.isEmpty()) {
             findings.add("Classification non disponible pour cette session");
@@ -144,7 +159,16 @@ public final class ProduceRestitutionService implements ProduceRestitutionUseCas
         } else if (!generationOpt.get().warnings().isEmpty()) {
             findings.add("Generation realisee avec avertissements : " + String.join(", ", generationOpt.get().warnings()));
         }
+        flowOpt.ifPresent(flow -> findings.addAll(flow.consolidatedInsights()));
         return List.copyOf(findings);
+    }
+
+    private Optional<ControllerFlowAnalysis> analyzeControllerFlow(final String controllerRef) {
+        String source = ControllerAnalysisSupport.readSource(controllerRef, sourceReaderPort);
+        if (source.isBlank()) {
+            return Optional.empty();
+        }
+        return Optional.of(ControllerAnalysisSupport.analyzeFlow(controllerRef, source, classificationPatterns));
     }
 
     private List<String> buildUnknowns(final Optional<ControllerCartography> cartographyOpt) {

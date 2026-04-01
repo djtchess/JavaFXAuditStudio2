@@ -7,7 +7,9 @@ import org.springframework.context.annotation.Configuration;
 import ff.ss.javaFxAuditStudio.adapters.out.ai.PayloadHasher;
 import ff.ss.javaFxAuditStudio.adapters.out.persistence.JpaLlmAuditAdapter;
 import ff.ss.javaFxAuditStudio.adapters.out.persistence.LlmAuditRepository;
+import ff.ss.javaFxAuditStudio.application.ports.in.ListLlmAuditEntriesUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.out.LlmAuditPort;
+import ff.ss.javaFxAuditStudio.application.service.ListLlmAuditEntriesService;
 
 /**
  * Configuration d'assemblage du sous-systeme d'audit LLM (JAS-029).
@@ -35,5 +37,16 @@ public class LlmAuditConfiguration {
     @Bean
     public LlmAuditPort llmAuditPort(final LlmAuditRepository repo) {
         return new JpaLlmAuditAdapter(repo);
+    }
+
+    /**
+     * Bean du use case entrant de consultation des audits LLM.
+     *
+     * @param llmAuditPort port sortant d'audit LLM
+     * @return use case de lecture des entrees d'audit
+     */
+    @Bean
+    public ListLlmAuditEntriesUseCase listLlmAuditEntriesUseCase(final LlmAuditPort llmAuditPort) {
+        return new ListLlmAuditEntriesService(llmAuditPort);
     }
 }

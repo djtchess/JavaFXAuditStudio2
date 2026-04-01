@@ -64,7 +64,8 @@ class ProjectReferencePatternControllerIT {
         when(listProjectReferencePatternsUseCase.list("USE_CASE"))
                 .thenReturn(List.of(pattern("USE_CASE", "ReferenceUseCase")));
 
-        mockMvc.perform(get("/api/v1/ai/reference-patterns").param("artifactType", "USE_CASE"))
+        mockMvc.perform(get("/api/v1/ai/reference-patterns")
+                        .param("artifactType", "USE_CASE"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.patterns[0].artifactType").value("USE_CASE"))
                 .andExpect(jsonPath("$.patterns[0].referenceName").value("ReferenceUseCase"));

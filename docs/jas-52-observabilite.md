@@ -1,161 +1,270 @@
 # JAS-52 - Strategie d'observabilite et de logs de workflow
 
-Story : JAS-52 | Epic : JAS-EPIC-06
-Date : 2026-03-26
+Story : JAS-52 | Realignement : JAS-ACT-009 / JAS-ACT-010
+Date : 2026-04-01
 
 ---
 
 ## 1. Observabilite exposee
 
-### Actuator
+### Backend
 
-Les endpoints suivants sont exposes :
+Les endpoints Actuator exposes par le backend sont :
 
 - `GET /actuator/health`
 - `GET /actuator/info`
 - `GET /actuator/metrics`
+- `GET /actuator/metrics/{metricName}`
+- `GET /actuator/prometheus`
+- `GET /actuator/ai-health`
 
-La health globale agrège maintenant :
+Quand `APP_SECURITY_API_KEY_ENABLED=false`, ces endpoints restent accessibles comme en developpement local.
+
+Quand `APP_SECURITY_API_KEY_ENABLED=true` :
+
+- `GET /actuator/health`
+- `GET /actuator/info`
+
+restent publics, et le reste de `/actuator/**` devient protege par le bearer token applicatif.
+
+La health globale agrege notamment :
 
 - `analysisWorkflow`
 - `llmEnrichment`
 
-### Metriques
+Les principales familles de metriques exposees sont :
 
-Metriques principales disponibles :
+- `jas.analysis.sessions`
+- `jas.analysis.pipeline.count`
+- `jas.analysis.pipeline.duration`
+- `jas.analysis.pipeline.stage.count`
+- `jas.analysis.pipeline.stage.duration`
+- `jas.llm.enrichment.count`
+- `jas.llm.enrichment.duration`
+- `llm.requests.duration`
 
-- `jas.analysis.sessions` avec le tag `status` pour suivre le volume de sessions par statut
-- `jas.analysis.pipeline.stage.count` et `jas.analysis.pipeline.stage.duration` pour les etapes du pipeline
-- `jas.analysis.pipeline.count` et `jas.analysis.pipeline.duration` pour le resultat global du pipeline
-- `jas.llm.enrichment.count` et `jas.llm.enrichment.duration` pour les appels d enrichissement IA
+Tags principaux utilises :
 
-Tags utilises :
-
+- `status`
 - `stage`
 - `outcome`
 - `provider`
 - `taskType`
-- `status`
 
-## 2. Points de logs critiques par service
+### Frontend
+
+Le frontend expose une observabilite visible dans la route :
+
+- `/monitoring`
+
+Cette page combine deux sources :
+
+- les metriques backend lues via `MetricsApiService`
+- un resume local en memoire des appels HTTP du navigateur via `FrontendMonitoringService`
+
+Le resume frontend affiche :
+
+- le nombre de requetes en vol
+- le nombre total de requetes completees
+- le nombre d'echecs
+- le taux de succes
+- la latence moyenne
+- les echecs recents avec `correlationId`, statut HTTP, duree et message
+
+Important :
+
+- ces donnees frontend sont locales a l'onglet navigateur courant
+- elles ne sont pas persistees cote backend
+- elles servent au diagnostic d'exploitation et de developpement, pas a l'audit metier
+
+---
+
+## 2. Chaine d'observabilite frontend
+
+L'ordre des interceptors HTTP Angular est le suivant :
+
+1. `correlationIdInterceptor`
+2. `frontendMonitoringInterceptor`
+3. `errorInterceptor`
+
+### `correlationIdInterceptor`
+
+- ajoute `X-Correlation-Id` a chaque requete sortante
+- genere un UUID quand le client n'en fournit pas
+
+### `frontendMonitoringInterceptor`
+
+- ouvre un compteur de requete en vol au depart
+- mesure la duree reelle de l'appel
+- enregistre pour chaque reponse :
+  - methode HTTP
+  - URL
+  - statut
+  - duree
+  - `correlationId`
+  - succes ou echec
+  - message d'erreur eventuel
+  - horodatage de fin
+- ferme le compteur via `finalize`
+- conserve jusqu'a `20` evenements recents
+
+### `errorInterceptor`
+
+- journalise les erreurs HTTP avec le `correlationId`
+- normalise les erreurs de proxy local Angular quand le backend Spring Boot est indisponible
+- preserve le `correlationId` de la reponse ou replie sur celui de la requete
+
+---
+
+## 3. Correlation et contexte de session
+
+### Backend
+
+`CorrelationFilter` applique les regles suivantes :
+
+- lit `X-Correlation-Id` si le client le fournit
+- sinon genere un UUID
+- renvoie toujours `X-Correlation-Id` dans la reponse HTTP
+- injecte `correlationId` dans le MDC
+- injecte aussi `sessionId` dans le MDC quand l'URL matche :
+  - `/analysis/sessions/{sessionId}`
+  - `/analyses/{sessionId}`
+
+Le `sessionId` MDC permet de corriger rapidement le diagnostic des workflows d'analyse dans les logs backend.
+
+### Refus d'authentification
+
+`ApiAuthenticationEntryPoint` renvoie un `401` JSON standardise sur les endpoints proteges quand la cle API est activee et absente ou invalide.
+
+Forme de la reponse :
+
+```json
+{"status":401,"error":"Authentification requise","correlationId":"..."}
+```
+
+La reponse renvoie aussi :
+
+- `X-Correlation-Id`
+- `X-Content-Type-Options: nosniff`
+- `X-Frame-Options: DENY`
+- `Cache-Control: no-store`
+
+---
+
+## 4. Points de logs critiques
 
 ### IngestSourcesService
 
 | Moment | Niveau | Message |
 |---|---|---|
-| Debut de handle() | DEBUG | `Ingestion demarree - {n} refs` |
-| Reference absente (FILE_NOT_FOUND) | WARN | `Reference non trouvee - ref masquee par securite` |
-| Fin de handle() | DEBUG | `Ingestion terminee - {n} inputs, {n} erreurs` |
+| Debut de `handle()` | DEBUG | `Ingestion demarree - {n} refs` |
+| Reference absente | WARN | `Reference non trouvee - ref masquee par securite` |
+| Fin de `handle()` | DEBUG | `Ingestion terminee - {n} inputs, {n} erreurs` |
 
-Regles specifiques :
-- La valeur brute de la reference fichier n'est jamais incluse dans le message de log.
-- Le WARN FILE_NOT_FOUND est toujours emis, meme en profil INFO, car WARN >= INFO.
+Regles :
+
+- ne jamais logguer une reference brute de fichier
+- conserver uniquement des compteurs ou identifiants opaques
 
 ### CartographyService
 
 | Moment | Niveau | Message |
 |---|---|---|
-| Debut de handle() | DEBUG | `Cartographie demarree - controllerRef masquee` |
-| Fin de handle() | DEBUG | `Cartographie terminee - {n} composants, {n} handlers, {n} inconnues` |
+| Debut de `handle()` | DEBUG | `Cartographie demarree - controllerRef masquee` |
+| Fin de `handle()` | DEBUG | `Cartographie terminee - {n} composants, {n} handlers, {n} inconnues` |
 
-Regles specifiques :
-- `controllerRef` et `fxmlRef` ne sont jamais interpolees dans les messages.
-- Les compteurs (composants, handlers, inconnues) sont des entiers sans semantique metier sensible.
+### RestExceptionHandler
 
-### RestExceptionHandler (existant, JAS-03)
+- journalise le type d'exception serveur
+- n'expose pas de stack trace dans la reponse HTTP
 
-- Log le nom de classe de l'exception uniquement (pas le message).
-- La stack trace n'est jamais incluse dans la reponse HTTP (`server.error.include-stacktrace=never`).
+### Frontend
 
-### CorrelationFilter (existant, JAS-03)
+Le frontend journalise uniquement des erreurs HTTP techniques cote navigateur.
 
-- Injecte `correlationId` dans le MDC Logback a chaque requete entrante.
-- Le correlationId est retire du MDC en fin de requete (finally).
+Format actuel :
 
----
-
-## 3. Conventions : ce qui ne doit JAMAIS apparaitre dans les logs
-
-Les interdictions suivantes s'appliquent a tous les services et adaptateurs, sans exception :
-
-- **Contenu source** : le code Java ou FXML analyse (corps des fichiers lus via `SourceReaderPort`) ne doit jamais etre logue, ni en entier ni en extrait.
-- **Chemins absolus** : les chemins systeme complets (ex. `C:\Users\...`) ne doivent pas apparaitre. Logguer uniquement des compteurs ou des identifiants opaques.
-- **References metier brutes** : les `controllerRef`, `fxmlRef`, `sourceRef` sont des valeurs fournies par l'utilisateur ; elles peuvent contenir des informations de chemin. Ne jamais les interpoler dans un message de log.
-- **Stack traces** : interdites dans les reponses HTTP. Dans les logs serveur, reservees au niveau ERROR avec un identifiant de correlation exploitable.
-- **Donnees d'authentification / jetons** : hors perimetre actuel mais interdit par principe.
-- **Messages d'exception Spring internes** : le champ `message` des exceptions techniques ne doit pas etre expose (il peut contenir des chemins ou des details d'infrastructure).
-
----
-
-## 4. Activation du niveau DEBUG
-
-### Via profil Spring (recommande en developpement local)
-
-```bash
-# Au lancement Maven
-./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
-
-# Ou variable d'environnement
-SPRING_PROFILES_ACTIVE=dev ./mvnw spring-boot:run
-
-# Ou argument JVM
-java -jar app.jar --spring.profiles.active=dev
+```text
+[HTTP Error] <status> <statusText> | Correlation-Id: <id> | URL: <url>
 ```
 
-### Via variable d'environnement sans profil (surcharge ponctuelle)
+Ce log ne doit jamais contenir :
+
+- de code source Java ou FXML
+- de contenu de prompt
+- de secret ou de jeton
+- de payload metier sensible en clair
+
+---
+
+## 5. Ce qui ne doit jamais apparaitre dans les logs
+
+Interdictions communes backend/frontend :
+
+- code source Java analyse
+- contenu FXML brut
+- chemins absolus machine
+- references utilisateur brutes (`controllerRef`, `fxmlRef`, `sourceRef`)
+- prompts complets ou contexte sanitise complet hors debug local explicitement active
+- stack traces dans les reponses HTTP
+- jetons, credentials, `APP_SECURITY_API_KEY`, `CLAUDE_API_KEY`, `OPENAI_API_KEY`
+- messages techniques Spring ou proxy exposes tels quels a l'utilisateur final
+
+---
+
+## 6. Activation du diagnostic
+
+### Backend
+
+Via profil Spring :
+
+```bash
+./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+```
+
+Ou :
+
+```bash
+SPRING_PROFILES_ACTIVE=dev ./mvnw spring-boot:run
+```
+
+Ou ponctuellement :
 
 ```bash
 LOGGING_LEVEL_FF_SS_JAVAFXAUDITSTUDIO=DEBUG java -jar app.jar
 ```
 
-### En production
+### Frontend
 
-Le profil `default` est actif. Le niveau `ff.ss.javaFxAuditStudio` reste a INFO.
-Les messages DEBUG ne sont jamais emis. Aucune configuration supplementaire n'est requise.
+Le diagnostic frontend repose surtout sur :
 
----
+- la page `/monitoring`
+- la console navigateur en developpement
+- les erreurs HTTP normalisees avec `correlationId`
 
-## 5. Format du correlationId dans les logs
-
-Le pattern Logback defini dans `logback-spring.xml` est :
-
-```
-%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} level=%-5level app=${APP_NAME} corr=%X{correlationId:-no-corr} thread=%thread logger=%logger{36} msg=%msg%n
-```
-
-Exemple de ligne produite avec correlationId present :
-
-```
-2026-03-26T14:32:07.421+01:00 level=DEBUG app=javaFxAuditStudio corr=a1b2c3d4-e5f6-7890-abcd-ef1234567890 thread=http-nio-8080-exec-3 logger=f.s.j.a.s.IngestSourcesService msg=Ingestion demarree - 3 refs
-```
-
-Exemple sans correlationId (appel hors contexte HTTP) :
-
-```
-2026-03-26T14:32:07.422+01:00 level=DEBUG app=javaFxAuditStudio corr=no-corr thread=main logger=f.s.j.a.s.CartographyService msg=Cartographie demarree - controllerRef masquee
-```
-
-Le champ `[%X{correlationId:-no-corr}]` utilise la valeur MDC injectee par `CorrelationFilter`. La valeur de repli `no-corr` signale qu'aucune requete HTTP n'est a l'origine de l'appel (batch, test, demarrage).
+Le frontend ne doit pas surjournaliser. Les erreurs console restent reservees aux anomalies techniques utiles au diagnostic.
 
 ---
 
-## 6. Fichiers crees ou modifies par cette story
+## 7. Fichiers pivots
 
-| Fichier | Action |
+| Fichier | Role |
 |---|---|
-| `backend/pom.xml` | Actuator ajoute |
-| `backend/src/main/java/.../observability/*` | Health checks et metriques Micrometer |
-| `backend/src/main/java/.../service/AnalysisOrchestrationService.java` | Instrumentation pipeline |
-| `backend/src/main/java/.../service/EnrichAnalysisService.java` | Instrumentation LLM |
-| `backend/src/main/resources/logback-spring.xml` | Pattern de logs structure |
-| `backend/src/main/resources/application.properties` | Exposure Actuator et options metrics |
-| `docs/jas-52-observabilite.md` | Documentation alignee sur l implementation |
+| `backend/src/main/resources/application.properties` | exposition Actuator, tags metrics et options de securite minimale |
+| `backend/src/main/java/ff/ss/javaFxAuditStudio/adapters/in/rest/CorrelationFilter.java` | correlationId et sessionId dans le MDC |
+| `backend/src/main/java/ff/ss/javaFxAuditStudio/adapters/in/rest/ApiAuthenticationEntryPoint.java` | reponse `401` JSON standardisee |
+| `backend/src/main/java/ff/ss/javaFxAuditStudio/configuration/ApiSecurityEndpointCatalog.java` | perimetre public/protege |
+| `frontend/src/app/core/interceptors/correlation-id.interceptor.ts` | injection de `X-Correlation-Id` cote Angular |
+| `frontend/src/app/core/interceptors/frontend-monitoring.interceptor.ts` | instrumentation HTTP frontend |
+| `frontend/src/app/core/interceptors/error.interceptor.ts` | journalisation et normalisation des erreurs |
+| `frontend/src/app/core/services/frontend-monitoring.service.ts` | agregats frontend en memoire |
+| `frontend/src/app/features/monitoring/monitoring-dashboard.component.ts` | exposition visible du monitoring |
 
 ---
 
-## 7. Handoffs
+## 8. Handoffs
 
-- **securite** : valider que les conventions d'interdiction de log (section 2) sont couvertes par une revue de code ou un test statique.
-- **devops-ci-cd** : confirmer que le profil `dev` n'est pas active dans les pipelines CI (seul `default` doit etre actif en integration).
-- **backend-hexagonal** : appliquer les memes conventions aux futurs adaptateurs (ports out) qui liront ou ecriront des fichiers source.
-- **frontend-angular** : les correlationIds sont transmis dans l'en-tete `X-Correlation-Id` ; le frontend peut les conserver pour les inclure dans ses propres rapports d'erreur.
+- `documentation-technique` : garder ce document aligne avec les interceptors frontend et les endpoints Actuator reels
+- `observabilite-exploitation` : verifier toute evolution de tags, histogrammes ou endpoints exposes
+- `securite` : revalider l'impact de `APP_SECURITY_API_KEY_ENABLED` sur `/actuator/**`, Swagger et les endpoints IA
+- `frontend-angular` : conserver le dashboard `/monitoring` comme vue de diagnostic, sans deplacer la logique experte hors backend

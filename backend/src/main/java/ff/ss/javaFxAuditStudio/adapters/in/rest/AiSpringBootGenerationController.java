@@ -36,7 +36,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
  */
 @Tag(name = "Generation IA Spring Boot")
 @RestController
-@RequestMapping("/api/v1/analyses")
+@RequestMapping(path = {"/api/v1/analysis/sessions", "/api/v1/analyses"})
 public class AiSpringBootGenerationController {
 
     private static final Logger LOG = LoggerFactory.getLogger(AiSpringBootGenerationController.class);

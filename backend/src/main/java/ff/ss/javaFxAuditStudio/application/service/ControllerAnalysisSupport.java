@@ -31,6 +31,21 @@ final class ControllerAnalysisSupport {
                     + "(?:static\\s+)?([\\w<>.?\\[\\]]+)\\s+(\\w+)\\s*\\([^\\)]*\\)\\s*\\{");
     private static final Pattern BOOLEAN_METHOD_PATTERN = Pattern.compile(
             "(?m)^\\s*(?:@FXML\\s+)?(?:public|private|protected)\\s+(?:static\\s+)?(?:boolean|Boolean)\\s+(\\w+)\\s*\\(");
+    private static final Pattern CLASS_SIGNATURE_PATTERN = Pattern.compile(
+            "(?m)^\\s*(?:public\\s+)?(?:abstract\\s+)?class\\s+\\w+\\s*"
+                    + "(?:extends\\s+([\\w.]+))?\\s*(?:implements\\s+([^\\{]+))?\\s*\\{");
+    private static final Pattern OVERRIDE_METHOD_PATTERN = Pattern.compile(
+            "(?m)@Override\\s*(?:\\R\\s*)*(?:public|private|protected)\\s+"
+                    + "(?:static\\s+)?(?:[\\w<>.?\\[\\]]+)\\s+(\\w+)\\s*\\(");
+    private static final Pattern SUPER_CALL_PATTERN = Pattern.compile("\\bsuper\\.(\\w+)\\s*\\(");
+    private static final Pattern PROPERTY_BINDING_PATTERN = Pattern.compile(
+            "(?m)^.*(?:\\b\\w+Property\\(\\)\\.(?:bind|bindBidirectional)|\\b\\w+\\.(?:bind|bindBidirectional))\\([^;]+;\\s*$");
+    private static final Pattern LISTENER_PATTERN = Pattern.compile(
+            "(?m)^.*\\.addListener\\([^;]+;\\s*$");
+    private static final Pattern EVENT_HANDLER_PATTERN = Pattern.compile(
+            "(?m)^.*\\.setOn[A-Z]\\w*\\([^;]+;\\s*$");
+    private static final Pattern DYNAMIC_NODE_MUTATION_PATTERN = Pattern.compile(
+            "(?m)^.*(?:getChildren\\(\\)\\.(?:add|addAll)|setItems\\(|setCellFactory\\(|setRowFactory\\(|new\\s+[A-Z][A-Za-z0-9_]*\\s*\\().*;\\s*$");
     private static final Pattern CASE_PATTERN = Pattern.compile("\\bcase\\s+([A-Z0-9_]+)\\b");
     private static final Pattern ASSIGNMENT_PATTERN = Pattern.compile(
             "\\b(?:mode|state|phase|step|screen|view|status)\\s*=\\s*([A-Z0-9_]+)\\b");
@@ -83,10 +98,14 @@ final class ControllerAnalysisSupport {
         List<String> policyGuards = collectPolicyGuards(source, patterns);
         List<String> uiGuards = collectUiGuards(source, patterns);
         List<ControllerFlowAnalysis.StateTransition> transitions = collectTransitions(source, states);
+        ControllerFlowAnalysis.ConditionalAnalysis inheritanceAnalysis = analyzeInheritance(source);
+        ControllerFlowAnalysis.ConditionalAnalysis dynamicUiAnalysis = analyzeDynamicUi(source);
         List<String> evidence = new ArrayList<>();
         states.forEach(state -> evidence.add(state.label()));
         evidence.addAll(policyGuards);
         evidence.addAll(uiGuards);
+        evidence.addAll(inheritanceAnalysis.evidence());
+        evidence.addAll(dynamicUiAnalysis.evidence());
         double confidence = confidence(states.size(), transitions.size(), policyGuards.size());
         double threshold = patterns.effectiveStateMachineConfidenceThreshold();
         boolean detected = confidence >= threshold && !states.isEmpty();
@@ -95,6 +114,14 @@ final class ControllerAnalysisSupport {
         if (states.isEmpty()) {
             warnings.add("Aucun signal de state machine detecte");
         }
+        List<String> consolidatedInsights = buildConsolidatedInsights(
+                detected,
+                states,
+                transitions,
+                policyGuards,
+                uiGuards,
+                inheritanceAnalysis,
+                dynamicUiAnalysis);
         return new ControllerFlowAnalysis(
                 controllerRef,
                 controllerName,
@@ -105,8 +132,49 @@ final class ControllerAnalysisSupport {
                 transitions,
                 policyGuards,
                 uiGuards,
-                evidence,
+                inheritanceAnalysis,
+                dynamicUiAnalysis,
+                deduplicate(evidence),
+                consolidatedInsights,
                 warnings);
+    }
+
+    static ControllerFlowAnalysis.ConditionalAnalysis analyzeInheritance(final String source) {
+        List<String> findings = new ArrayList<>();
+        List<String> evidence = new ArrayList<>();
+        String currentSource = source == null ? "" : source;
+        Matcher classSignatureMatcher = CLASS_SIGNATURE_PATTERN.matcher(currentSource);
+        if (classSignatureMatcher.find()) {
+            collectInheritanceClause(classSignatureMatcher.group(1), "extends ", findings, evidence);
+            collectInheritanceInterfaces(classSignatureMatcher.group(2), findings, evidence);
+        }
+        Matcher overrideMatcher = OVERRIDE_METHOD_PATTERN.matcher(currentSource);
+        while (overrideMatcher.find()) {
+            String overrideMethod = "override " + overrideMatcher.group(1);
+            findings.add(overrideMethod);
+            evidence.add(overrideMethod);
+        }
+        Matcher superCallMatcher = SUPER_CALL_PATTERN.matcher(currentSource);
+        while (superCallMatcher.find()) {
+            String superCall = "super." + superCallMatcher.group(1) + "()";
+            findings.add(superCall);
+            evidence.add(superCall);
+        }
+        return buildConditionalAnalysis(findings, evidence);
+    }
+
+    static ControllerFlowAnalysis.ConditionalAnalysis analyzeDynamicUi(final String source) {
+        List<String> bindings = collectLineMatches(source, PROPERTY_BINDING_PATTERN);
+        List<String> listeners = collectLineMatches(source, LISTENER_PATTERN);
+        List<String> eventHandlers = collectLineMatches(source, EVENT_HANDLER_PATTERN);
+        List<String> mutations = collectLineMatches(source, DYNAMIC_NODE_MUTATION_PATTERN);
+        List<String> findings = new ArrayList<>();
+        List<String> evidence = new ArrayList<>();
+        addDynamicFinding(findings, evidence, "bindings detectes", bindings);
+        addDynamicFinding(findings, evidence, "listeners detectes", listeners);
+        addDynamicFinding(findings, evidence, "event handlers detectes", eventHandlers);
+        addDynamicFinding(findings, evidence, "mutations UI detectees", mutations);
+        return buildConditionalAnalysis(findings, evidence);
     }
 
     static List<ControllerFlowAnalysis.StateTransition> collectTransitions(
@@ -135,6 +203,114 @@ final class ControllerAnalysisSupport {
             }
         }
         return List.copyOf(transitions);
+    }
+
+    private static List<String> buildConsolidatedInsights(
+            final boolean stateMachineDetected,
+            final List<StateCandidate> states,
+            final List<ControllerFlowAnalysis.StateTransition> transitions,
+            final List<String> policyGuards,
+            final List<String> uiGuards,
+            final ControllerFlowAnalysis.ConditionalAnalysis inheritanceAnalysis,
+            final ControllerFlowAnalysis.ConditionalAnalysis dynamicUiAnalysis) {
+        List<String> insights = new ArrayList<>();
+        insights.add("consolidation:mandatory-core");
+        insights.add(inheritanceAnalysis.activated()
+                ? "inheritance-analysis:active-conditional-path"
+                : "inheritance-analysis:inactive");
+        insights.add(dynamicUiAnalysis.activated()
+                ? "dynamic-ui-analysis:active-priority-path"
+                : "dynamic-ui-analysis:inactive");
+        insights.add("pdf-analysis:out-of-mvp-by-default");
+        if (stateMachineDetected) {
+            insights.add("state-machine confirmee : " + states.size() + " etats, "
+                    + transitions.size() + " transitions");
+        }
+        if (!policyGuards.isEmpty()) {
+            insights.add("policy guards detectes : " + policyGuards.size());
+        }
+        if (!uiGuards.isEmpty()) {
+            insights.add("ui guards detectes : " + uiGuards.size());
+        }
+        if (inheritanceAnalysis.activated()) {
+            insights.add("inheritance-analysis actif : " + String.join("; ", inheritanceAnalysis.findings()));
+        }
+        if (dynamicUiAnalysis.activated()) {
+            insights.add("dynamic-ui-analysis actif : " + String.join("; ", dynamicUiAnalysis.findings()));
+        }
+        return deduplicate(insights);
+    }
+
+    private static void collectInheritanceClause(
+            final String rawType,
+            final String prefix,
+            final List<String> findings,
+            final List<String> evidence) {
+        String typeName = normalizeTypeName(rawType);
+        if (!typeName.isBlank() && !"Object".equals(typeName)) {
+            String finding = prefix + typeName;
+            findings.add(finding);
+            evidence.add(finding);
+        }
+    }
+
+    private static void collectInheritanceInterfaces(
+            final String rawInterfaces,
+            final List<String> findings,
+            final List<String> evidence) {
+        if (rawInterfaces != null && !rawInterfaces.isBlank()) {
+            String[] segments = rawInterfaces.split(",");
+            for (String segment : segments) {
+                collectInheritanceClause(segment, "implements ", findings, evidence);
+            }
+        }
+    }
+
+    private static String normalizeTypeName(final String rawType) {
+        String normalized = rawType == null ? "" : rawType.trim();
+        int genericIndex = normalized.indexOf('<');
+        if (genericIndex >= 0) {
+            normalized = normalized.substring(0, genericIndex);
+        }
+        int packageSeparator = normalized.lastIndexOf('.');
+        if (packageSeparator >= 0 && packageSeparator < normalized.length() - 1) {
+            normalized = normalized.substring(packageSeparator + 1);
+        }
+        return normalized.trim();
+    }
+
+    private static List<String> collectLineMatches(final String source, final Pattern pattern) {
+        List<String> matches = new ArrayList<>();
+        String currentSource = source == null ? "" : source;
+        Matcher matcher = pattern.matcher(currentSource);
+        while (matcher.find()) {
+            String line = matcher.group().trim();
+            if (!line.isBlank()) {
+                matches.add(line);
+            }
+        }
+        return deduplicate(matches);
+    }
+
+    private static void addDynamicFinding(
+            final List<String> findings,
+            final List<String> evidence,
+            final String label,
+            final List<String> matches) {
+        if (!matches.isEmpty()) {
+            findings.add(label + " : " + matches.size());
+            evidence.addAll(matches);
+        }
+    }
+
+    private static ControllerFlowAnalysis.ConditionalAnalysis buildConditionalAnalysis(
+            final List<String> findings,
+            final List<String> evidence) {
+        List<String> distinctFindings = deduplicate(findings);
+        List<String> distinctEvidence = deduplicate(evidence);
+        return distinctFindings.isEmpty() && distinctEvidence.isEmpty()
+                ? ControllerFlowAnalysis.ConditionalAnalysis.inactive()
+                : new ControllerFlowAnalysis.ConditionalAnalysis(true, distinctFindings, distinctEvidence);
     }
 
     static List<String> collectPolicyGuards(
@@ -471,6 +647,10 @@ final class ControllerAnalysisSupport {
     private static double confidence(final int stateCount, final int transitionCount, final int policyGuardCount) {
         double raw = stateCount * 0.20d + transitionCount * 0.25d + policyGuardCount * 0.15d;
         return Math.min(1.0d, raw);
+    }
+
+    private static List<String> deduplicate(final List<String> values) {
+        return List.copyOf(new LinkedHashSet<>(values));
     }
 
     private static List<String> difference(final List<String> left, final List<String> right) {

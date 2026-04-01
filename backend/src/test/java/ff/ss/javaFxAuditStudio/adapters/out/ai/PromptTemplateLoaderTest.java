@@ -76,4 +76,24 @@ class PromptTemplateLoaderTest {
 
         assertThat(rendered).contains(source);
     }
+
+    @Test
+    void should_render_spring_boot_generation_template_without_todo_instruction() {
+        Map<String, Object> context = Map.of(
+                "controllerRef", "Component_Gen",
+                "sanitizedSource", "class Controller { void save() { service.save(); } }",
+                "estimatedTokens", 64,
+                "classifiedRules", "[RG-001] save -> USE_CASE / APPLICATION",
+                "screenContext", "Session: sess-1",
+                "reclassificationFeedback", "Aucune reclassification",
+                "ruleSourceSnippets", "save() -> service.save();",
+                "projectReferencePatterns", "PatientUseCase -> save()");
+
+        String rendered = loader.render("spring-boot-generation", context);
+
+        assertThat(rendered)
+                .contains("Ne jamais laisser de placeholder")
+                .doesNotContain("Laisser un commentaire `// TODO: implementer`")
+                .contains("return true;");
+    }
 }

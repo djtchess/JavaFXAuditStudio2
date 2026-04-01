@@ -67,7 +67,7 @@ class SanitizedSourcePreviewControllerIT {
 
         when(previewSanitizedSourceUseCase.preview(eq("sess-preview-1"))).thenReturn(result);
 
-        mockMvc.perform(post("/api/v1/analyses/sess-preview-1/preview-sanitized"))
+        mockMvc.perform(post("/api/v1/analysis/sessions/sess-preview-1/preview-sanitized"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.sanitized").value(true))
                 .andExpect(jsonPath("$.reportApproved").value(true))
@@ -88,7 +88,7 @@ class SanitizedSourcePreviewControllerIT {
 
         when(previewSanitizedSourceUseCase.preview(eq("sess-preview-2"))).thenReturn(result);
 
-        mockMvc.perform(post("/api/v1/analyses/sess-preview-2/preview-sanitized"))
+        mockMvc.perform(post("/api/v1/analysis/sessions/sess-preview-2/preview-sanitized"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.sanitized").value(false))
                 .andExpect(jsonPath("$.reportApproved").doesNotExist())
@@ -100,7 +100,7 @@ class SanitizedSourcePreviewControllerIT {
         when(previewSanitizedSourceUseCase.preview(eq("unknown")))
                 .thenThrow(new IllegalArgumentException("Session introuvable : unknown"));
 
-        mockMvc.perform(post("/api/v1/analyses/unknown/preview-sanitized"))
+        mockMvc.perform(post("/api/v1/analysis/sessions/unknown/preview-sanitized"))
                 .andExpect(status().isNotFound());
     }
 
@@ -121,7 +121,7 @@ class SanitizedSourcePreviewControllerIT {
 
         when(previewSanitizedSourceUseCase.preview(eq("sess-preview-3"))).thenReturn(result);
 
-        mockMvc.perform(post("/api/v1/analyses/sess-preview-3/preview-sanitized"))
+        mockMvc.perform(post("/api/v1/analysis/sessions/sess-preview-3/preview-sanitized"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.sanitized").value(false))
                 .andExpect(jsonPath("$.reportApproved").value(false))

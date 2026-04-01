@@ -15,7 +15,7 @@ import {
 @Injectable({ providedIn: 'root' })
 export class ReclassificationApiService {
   private readonly http = inject(HttpClient);
-  private readonly base = '/api/v1/analyses';
+  private readonly base = '/api/v1/analysis/sessions';
 
   reclassify(
     analysisId: string,

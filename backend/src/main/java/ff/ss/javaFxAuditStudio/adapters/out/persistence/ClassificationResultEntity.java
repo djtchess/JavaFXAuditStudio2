@@ -1,9 +1,12 @@
 package ff.ss.javaFxAuditStudio.adapters.out.persistence;
 
+import ff.ss.javaFxAuditStudio.domain.analysis.DetectionStatus;
 import ff.ss.javaFxAuditStudio.domain.rules.ParsingMode;
 
-import jakarta.persistence.CascadeType;
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -11,6 +14,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
@@ -44,6 +48,26 @@ public class ClassificationResultEntity {
 
     @Column(name = "excluded_lifecycle_methods_count", nullable = false)
     private int excludedLifecycleMethodsCount = 0;
+
+    @Column(name = "state_machine_status", nullable = false, length = 30)
+    @Enumerated(EnumType.STRING)
+    private DetectionStatus stateMachineStatus = DetectionStatus.ABSENT;
+
+    @Column(name = "state_machine_confidence", nullable = false)
+    private double stateMachineConfidence = 0.0d;
+
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "classification_result_state", joinColumns = @JoinColumn(name = "classification_id"))
+    @Column(name = "state_name", nullable = false, length = 120)
+    private List<String> stateMachineStates = new ArrayList<>();
+
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "classification_result_transition", joinColumns = @JoinColumn(name = "classification_id"))
+    private List<StateTransitionEmbeddable> stateTransitions = new ArrayList<>();
+
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "classification_result_dependency", joinColumns = @JoinColumn(name = "classification_id"))
+    private List<ClassificationDependencyEmbeddable> dependencies = new ArrayList<>();
 
     @OneToMany(mappedBy = "classification", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<BusinessRuleEntity> rules = new ArrayList<>();
@@ -131,5 +155,33 @@ public class ClassificationResultEntity {
 
     public List<BusinessRuleEntity> getRules() {
         return rules;
+    }
+
+    public DetectionStatus getStateMachineStatus() {
+        return stateMachineStatus;
+    }
+
+    public void setStateMachineStatus(final DetectionStatus stateMachineStatus) {
+        this.stateMachineStatus = stateMachineStatus != null ? stateMachineStatus : DetectionStatus.ABSENT;
+    }
+
+    public double getStateMachineConfidence() {
+        return stateMachineConfidence;
+    }
+
+    public void setStateMachineConfidence(final double stateMachineConfidence) {
+        this.stateMachineConfidence = stateMachineConfidence;
+    }
+
+    public List<String> getStateMachineStates() {
+        return stateMachineStates;
+    }
+
+    public List<StateTransitionEmbeddable> getStateTransitions() {
+        return stateTransitions;
+    }
+
+    public List<ClassificationDependencyEmbeddable> getDependencies() {
+        return dependencies;
     }
 }

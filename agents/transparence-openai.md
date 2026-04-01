@@ -44,6 +44,7 @@ Un fichier Markdown contenant dans le dossier /TransparenceOpenAI:
 ## Appuis recommandes
 
 - `AGENTS.md`
+- `AGENTS-claude.md`
 - `agents/catalog.md`
 - `agents/contracts.md`
 - `agents/orchestration.md`

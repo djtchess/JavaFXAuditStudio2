@@ -240,7 +240,7 @@ class AiSpringBootGenerationServiceTest {
     }
 
     @Test
-    void should_reject_generated_todo_when_matching_source_snippet_is_available() {
+    void should_reject_generated_placeholder_when_matching_source_snippet_is_available() {
         AiSpringBootGenerationService serviceWithSourceReader = new AiSpringBootGenerationService(
                 sessionPort,
                 classificationPort,
@@ -284,7 +284,7 @@ class AiSpringBootGenerationServiceTest {
         AiCodeGenerationResult result = serviceWithSourceReader.generate("sess-7c");
 
         assertThat(result.degraded()).isTrue();
-        assertThat(result.degradationReason()).contains("TODO");
+        assertThat(result.degradationReason()).contains("placeholders d'implementation");
         assertThat(result.generatedClasses()).isEmpty();
     }
 

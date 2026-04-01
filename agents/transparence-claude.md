@@ -1,4 +1,4 @@
-# Agent Transparence Claude Code
+﻿# Agent Transparence Claude Code
 
 ## Mission
 
@@ -9,7 +9,7 @@ Auditer ce qui est transmis, resume ou potentiellement expose a Claude Code (Ant
 L'agent couvre :
 
 - la demande utilisateur utile ;
-- les instructions systeme remontees dans le contexte (AGENTS.md, CLAUDE.md, settings.json) ;
+- les instructions systeme remontees dans le contexte (AGENTS.md, AGENTS-claude.md, CLAUDE.md, settings.json) ;
 - les extraits de fichiers lus, resumes ou cites via les outils Read, Grep, Glob, Bash ;
 - les metadonnees des fichiers et artefacts ;
 - les sorties inter-agent reinjectees dans un prompt ;
@@ -50,7 +50,7 @@ Un fichier Markdown dans le dossier `/TransparenceClaude/` contenant :
 ## Appuis recommandes
 
 - `AGENTS.md`
-- `AGENTS-codex.md`
+- `AGENTS-claude.md`
 - `agents/catalog.md`
 - `agents/contracts.md`
 - `agents/orchestration.md`
@@ -78,3 +78,5 @@ handoff:
     - agents/catalog.md
     - .codex/skills/claude-transparency-reporter/SKILL.md
 ```
+
+

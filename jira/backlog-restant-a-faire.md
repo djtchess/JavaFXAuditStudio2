@@ -1,252 +1,452 @@
-# Backlog maitre - reste a faire
+﻿# Backlog JIRA consolide - source unique
+
+> Date de reference : 2026-04-01
+> Statut documentaire : ce fichier est desormais l'unique backlog Markdown conserve dans `./jira`.
+> Source de verite : `AGENTS.md`, `agents/orchestration.md`, `backend/`, `frontend/`, l'etat reel du depot et les validations locales realisees le `2026-04-01`.
 
 ## objectif
 
-Centraliser le reste a faire reel du produit a partir des sources de verite du repo, des backlogs existants et de l'etat actuel du code, afin d'eviter le double pilotage entre documents historiques.
+Centraliser dans un seul document :
 
-## perimetre
+- la priorisation active du produit
+- l'ordre d'execution par lot et par agent
+- le decoupage Jira exploitable
+- la trace minimale des anciens backlogs consolides
 
-- produit Angular + Spring Boot du dossier `frontend/` et `backend/`
-- moteur d'analyse/refactoring, pipeline IA et sanitisation
-- backlog restant au `2026-03-26`
-- hors perimetre : replanifier ce qui est deja livre et valide dans le repo
+## decisions de gouvernance
 
-## faits
+- `jira/backlog-restant-a-faire.md` devient la seule reference Markdown conservee dans `./jira`.
+- Les anciens fichiers Jira sont consolides ici puis supprimes du dossier `jira/`.
+- La numerotation active pour le pilotage courant est `JAS-ACT-*`.
+- Les familles historiques `JAS-*`, `JAS-3xx/4xx/5xx/...`, `IAP-*`, `QW-*` et `AI-*` restent conservees ici sous forme de synthese d'archive.
+- Le backlog reflote sur l'etat reel du code apres l'implementation de `JAS-ACT-001` a `JAS-ACT-011`.
 
-- Les sources de verite declarees par `AGENTS.md` sont le guide produit, `AGENTS.md`, `backend/pom.xml`, `backend/` et la cible Angular `21.x`.
-- Le backend cible `Spring Boot 4.0.3` et `Java 21` dans `backend/pom.xml`.
-- Le frontend cible `Angular 21.2.x` dans `frontend/package.json`.
-- La commande `backend\\mvnw.cmd -f backend\\pom.xml test` a passe le `2026-03-26` avec `522` tests verts.
-- La commande `Set-Location frontend; npm run build` a passe le `2026-03-26`.
-- Les endpoints principaux du pipeline existent deja dans `backend/src/main/java/ff/ss/javaFxAuditStudio/adapters/in/rest/AnalysisController.java`.
-- Les adapters reels de cartographie, classification, plan de migration et generation existent deja dans `backend/src/main/java/ff/ss/javaFxAuditStudio/adapters/out/analysis/`.
-- La persistance JPA/Flyway existe deja dans `backend/src/main/java/ff/ss/javaFxAuditStudio/adapters/out/persistence/` et `backend/src/main/resources/db/migration/`.
-- La reclassification manuelle, le dashboard projet, l'OpenAPI, l'audit LLM et les vues Angular de diagnostic existent deja dans le repo.
-- `jira/refactoring-app-initial-backlog.md`, `jira/backlog-phase-2.md` et `docs/phase3-jira-tickets.md` se recouvrent partiellement et ne refletent plus l'etat reel du code.
+## etat reel du depot
 
-## interpretations
+### faits verifies
 
-- Une grande partie des backlogs "phase 2" et "phase 3" est deja livree dans le code.
-- Le reste a faire ne porte plus principalement sur le socle CRUD/pipeline, mais sur l'alignement documentaire, l'observabilite, le DevOps, la finition IA/sanitisation et quelques manques de conformite architecturale.
-- Les backlogs specialises `jira/backlog-ia-refactoring-pipeline.md` et `jira/backlog-sanitisation-audit.md` restent utiles, mais ne doivent plus servir de vue globale a eux seuls.
+- Le backend `Spring Boot 4.0.3 / Java 21` est revenu au vert.
+- `backend\\mvnw.cmd -f backend\\pom.xml test` passe avec `667` tests, `0` failure, `0` error, `1` skipped.
+- Le backend dispose maintenant d'un socle Spring Security minimal opt-in pour les endpoints sensibles, base sur un bearer token applicatif.
+- Le frontend `Angular 21.2.x` est revenu au vert sur le perimetre principal.
+- `npm test -- --watch=false` passe avec `104` tests verts.
+- `npm run build` passe.
+- Le build frontend ne remonte plus de warning `anyComponentStyle` sur `ai-enrichment-view`.
+- L'observabilite frontend est maintenant branchee sur les parcours HTTP via un interceptor dedie, un suivi des correlation IDs et une exposition dans l'ecran de monitoring.
+- La documentation technique front/back est maintenant realignee sur l'etat reel du depot pour la securite minimale, l'observabilite, les routes frontend et les validations locales.
+- La convention API cote frontend est maintenant alignee sur `/api/v1/analysis/sessions/...`.
+- Le backend conserve encore un alias legacy `/api/v1/analyses/...` pour transition.
+- Les scripts de recette locale et la CI d'integration backend sont harmonises autour des scripts `scripts/test.*`.
+- Le repo contient deja des workflows CI, des Dockerfiles, `docker-compose.yml`, des bases d'observabilite et de documentation technique.
+- Les rapports `TransparenceOpenAI` et `TransparenceClaude` ont ete rejoues le `2026-04-01` sur l'etat reel du depot.
+- L'arbitrage moteur est maintenant trace : `consolidation` est obligatoire dans le noyau existant, `inheritance-analysis` est absorbe comme chemin conditionnel, `dynamic-ui-analysis` devient le module conditionnel prioritaire, `pdf-analysis` sort du MVP par defaut.
 
-## hypotheses
+### conclusions
 
-- Les identifiants historiques (`JAS-*`, `IAP-*`, `QW-*`, `AI-*`) sont conserves pour la tracabilite.
-- Les fichiers non committes autour de la sanitisation correspondent a du travail en cours et ne doivent pas etre comptes comme livres tant qu'ils ne sont pas stabilises.
-- L'equipe prefere une vue maitre du reste a faire plutot qu'une renumerotation complete du programme.
+- La phase de bootstrap est terminee.
+- Les tickets `JAS-ACT-001` a `JAS-ACT-011` peuvent etre consideres comme traites.
+- Le prochain ticket de code prioritaire est `JAS-ACT-012`.
+- Le reste a faire porte surtout sur l'implementation du perimetre moteur arbitre puis l'industrialisation.
 
-## incertitudes
+## tickets deja traites
 
-- Le choix entre "rebaser les docs sur l'implementation actuelle" et "refactorer le code pour coller aux docs historiques" n'est pas encore arbitre.
-- Certains chantiers IA avances sont partiellement presents en squelette ou en service local, mais pas encore assez stabilises pour etre marques DONE.
-- Les livrables DevOps/documentation peuvent exister hors repo, sans etre visibles ici.
+| Ticket | Statut | Synthese |
+| --- | --- | --- |
+| `JAS-ACT-001` | DONE | Diagnostic et correction du faux etat rouge backend ; suite backend relancee proprement |
+| `JAS-ACT-002` | DONE | Fermeture des ecarts hexagonaux REST prioritaires via use cases entrants |
+| `JAS-ACT-003` | DONE | Stabilisation de l'execution locale backend et alignement CI/local |
+| `JAS-ACT-004` | DONE | Harmonisation de la convention API `/analysis/sessions` avec alias legacy backend |
+| `JAS-ACT-005` | DONE | Socle Spring Security minimal pose sur les endpoints sensibles, avec bearer token applicatif opt-in, classification documentaire et tests dedies |
+| `JAS-ACT-006` | DONE | Gouvernance documentaire et rapports de transparence realignes sur l'etat reel du repo, avec references de pilotage corrigees |
+| `JAS-ACT-007` | DONE | Suite frontend stabilisee durablement ; build sans warning de budget `anyComponentStyle` et validations locales repassees au vert |
+| `JAS-ACT-008` | DONE | Dette de structure frontend reduite sur le flux IA via extraction de panneaux dedies pour l'audit, les artefacts persistes et la previsualisation sanitisee |
+| `JAS-ACT-009` | DONE | Observabilite frontend branchee sur les parcours HTTP critiques avec correlation IDs, synthese locale et exposition dans le dashboard de monitoring |
+| `JAS-ACT-010` | DONE | Guides techniques front/back, README et observabilite realignes sur les routes, la securite minimale, le monitoring et les validations locales |
+| `JAS-ACT-011` | DONE | Arbitrage moteur formalise : consolidation obligatoire, inheritance-analysis absorbe comme chemin conditionnel, dynamic-ui-analysis conditionnel prioritaire, pdf-analysis optionnel hors MVP |
 
-## decisions
+## prochain ticket a implementer
 
-- Ce fichier devient la vue maitre du reste a faire.
-- `jira/refactoring-app-initial-backlog.md` conserve l'historique du backlog initial.
-- `jira/backlog-phase-2.md` conserve l'historique du backlog socle produit.
-- `docs/phase3-jira-tickets.md` conserve l'historique du backlog intermediaire phase 3.
-- `jira/backlog-ia-refactoring-pipeline.md` et `jira/backlog-sanitisation-audit.md` restent les sous-backlogs detailles de reference pour l'IA et la sanitisation.
+- `JAS-ACT-012` - Implementer ou de-scoper proprement les modules arbitres
 
-## liste priorisee du reste a faire
+Pourquoi maintenant :
 
-### P0 - socle produit a terminer ou realigner
+- l'ambiguite sur les modules specialises du moteur est maintenant fermee
+- `consolidation` doit etre formalise dans le noyau existant avant tout elargissement du moteur
+- `dynamic-ui-analysis` est le premier slice conditionnel a forte valeur a implementer proprement
 
-- `P0-01` Exposer `GET /api/v1/analysis/sessions/{sessionId}` et trancher l'alignement API/use cases entre le design documentaire et l'implementation actuelle. References : `JAS-57`, `JAS-55` a `JAS-61`.
-- `P0-02` Rendre les statuts d'analyse fins, persistants et tracables sur tout le pipeline, puis aligner `AnalysisStatus`, l'orchestrateur et la base. References : `JAS-86`.
-- `P0-03` Brancher reellement la restitution markdown dans la chaine applicative au lieu de laisser seulement l'adapter present. References : `JAS-74`, `JAS-605`.
-- `P0-04` Renforcer les tests backend pour verifier le contenu metier des reponses, pas seulement les codes HTTP et les statuts finaux. References : `JAS-89`, `JAS-90`, `JAS-92`.
-- `P0-05` Completer la couverture frontend sur les composants et services encore non testes ou peu testes : `analysis-submit`, `analysis-detail`, `cartography-view`, `migration-plan-view`, `artifacts-view`, `report-view`, `analysis-api`, `ai-enrichment-api`, interceptors.
-- `P0-06` Finaliser l'observabilite d'exploitation : logs structures production, health checks, metriques pipeline et metriques LLM. References : `JAS-801`, `JAS-802`, `JAS-803`, `IAP-9`, `IAP-11`.
-- `P0-07` Produire le lot DevOps manquant : `Dockerfile` backend, `Dockerfile` frontend, workflows CI, scripts de build/run et README racine exploitable. References : `JAS-701` a `JAS-704`.
-- `P0-08` Produire la documentation technique manquante : ADR, guide developpeur backend, guide d'integration frontend/backend. References : `JAS-901` a `JAS-903`.
-- `P0-09` Fermer les fuites potentielles cote IA/sanitisation, en particulier les logs DEBUG du prompt complet et les ecarts de sanitisation encore ouverts. References : `AI-1`, `QW-3`, `AI-4`.
-- `P0-10` Sanitiser tout le contexte promptable envoye aux fournisseurs LLM et bloquer l'ecrasement des variables reservees de template. References : `AI-5`, `AI-6`.
+## priorisation active
 
-### P1 - qualite moteur et IA
+### P0 - fermer le socle
 
-- `P1-01` Finaliser la qualite AST/regex : dictionnaire configurable externe, validation robuste des reponses LLM, comptage de tokens fiable, elimination des constantes residuelles. References : `JAS-002`, `IAP-3`, `IAP-8`, `IAP-12`.
-- `P1-02` Finaliser la qualite des artefacts generes : composants JavaFX custom, nommage semantique, verification compilabilite, tests snapshots et tests generes plus riches. References : `JAS-007`, `JAS-008`, `JAS-009`, `JAS-011`, `JAS-027`, `IAP-14` a `IAP-19`.
-- `P1-03` Finaliser l'analyse metier avancee : detection state machine, extraction des gardes policy, analyse multi-controllers, dependances inter-controllers, delta analysis. References : `JAS-019`, `JAS-020`, `JAS-023`, `JAS-024`, `JAS-025`.
-- `P1-04` Finaliser l'experience IA cote produit : streaming SSE, vue diff template/IA, raffinement multi-tour, feedback visuel de progression, copie/telechargement unitaire cote UI. References : `IAP-20` a `IAP-24`.
-- `P1-05` Finaliser la persistance/versioning des artefacts IA, y compris historique et export ZIP. References : `IAP-25` a `IAP-28`.
-- `P1-06` Finaliser le contexte IA enrichi : contexte ecran complet, injection du feedback de reclassification, verification de coherence inter-artefacts et apprentissage de patterns projet. References : `IAP-29` a `IAP-32`.
-- `P1-07` Durcir les contrats fournisseur Claude/OpenAI : sorties structurees strictes, budgets de contexte par tache et reduction explicite des donnees envoyees. References : `AI-7`, `AI-8`.
+- Aucun ticket `P0` ouvert apres la cloture de `JAS-ACT-008`.
 
-### P2 - industrialisation et extensions produit
+### P1 - stabiliser le produit visible
 
-- `P2-01` Industrialiser l'export des artefacts vers une structure cible Maven/Gradle plutot qu'un export a plat. Reference : `JAS-026`.
-- `P2-02` Etendre le dashboard actuel vers un vrai dashboard de monitoring technique frontend. Reference : `JAS-804`.
-- `P2-03` Formaliser un audit documentaire clair de l'architecture de sanitisation et sa trace de gouvernance si l'equipe souhaite conserver `QW-1` comme DONE. Reference : `QW-1`.
-- `P2-04` Enrichir et durcir le corpus et les regles Semgrep au-dela du jeu minimal actuel. Reference : `AI-3`.
+- Aucun ticket `P1` ouvert apres la cloture de `JAS-ACT-010`.
 
-## plan de sprints recommande
+### P1 - finaliser produit et moteur
 
-### Sprint 1 - realignement socle et garde-fous
-
-- Objectif : remettre le socle pipeline en conformite avant toute extension.
-- Contenu : `P0-01`, `P0-02`, `P0-03`, `P0-09`, `P0-10`.
-- Sortie attendue : API/session coherente, statuts de pipeline fins, restitution markdown branchee, logs IA nettoyes et contexte promptable sanitise.
-
-### Sprint 2 - qualite executable et couverture
-
-- Objectif : rendre le socle vraiment robuste a la regression.
-- Contenu : `P0-04`, `P0-05`.
-- Sortie attendue : tests backend sur le contenu metier, couverture frontend et services critiques nettement montee.
-
-### Sprint 3 - observabilite, livraison et docs
-
-- Objectif : rendre le produit exploitable par une equipe et un CI reel.
-- Contenu : `P0-06`, `P0-07`, `P0-08`.
-- Sortie attendue : health checks, metriques, packaging, CI, docs d'architecture et d'integration.
-
-### Sprint 4 - qualite moteur
-
-- Objectif : fiabiliser le moteur d'analyse et la generation avant d'aller plus loin cote IA.
-- Contenu : `P1-01`, `P1-02`, `P1-03`, `P1-07`.
-- Sortie attendue : meilleur AST/regex, artefacts generes plus fiables, heuristiques metier avancees stabilisees et contrats fournisseur IA durcis.
-
-### Sprint 5 - IA produit
-
-- Objectif : passer d'une IA utile a une IA exploitable en workflow complet.
-- Contenu : `P1-04`, `P1-05`, `P1-06`.
-- Sortie attendue : UX IA plus riche, persistence/versioning des generations, contexte et coherence inter-artefacts.
-
-### Sprint 6 - extensions et durcissement final
-
-- Objectif : terminer les sujets d'industrialisation non bloquants et les extensions produit.
-- Contenu : `P2-01`, `P2-02`, `P2-03`, `P2-04`.
-- Sortie attendue : export structure, monitoring frontend, audit sanitisation formalise, Semgrep enrichi.
-
-## dependances inter-sprints
-
-- `Sprint 1` est prerequis pour tous les autres sprints.
-- `Sprint 2` et `Sprint 3` peuvent se derouler en parallele apres `Sprint 1` si l'equipe est suffisante.
-- `Sprint 4` doit attendre la fin de `Sprint 1` et beneficie fortement des sorties de `Sprint 2`.
-- `Sprint 5` doit demarrer apres `Sprint 4`.
-- `Sprint 6` peut commencer apres `Sprint 3`, mais sa cloture ideale vient apres `Sprint 5`.
-
-## tickets par sprint
-
-### Sprint 1 - tickets
-
-| Ticket | Contenu | Agent lead | Appuis | Estimation |
+| Ticket | Priorite | SP | Agent lead | Objet |
 | --- | --- | --- | --- | --- |
-| `P0-01` | Endpoint session + alignement API/use cases | `backend-hexagonal` | `api-contrats`, `gouvernance` | 5 SP |
-| `P0-02` | Statuts de pipeline fins et persistants | `backend-hexagonal` | `database-postgres`, `observabilite-exploitation` | 8 SP |
-| `P0-03` | Restitution markdown branchee dans la chaine applicative | `backend-hexagonal` | `implementation-moteur-analyse` | 3 SP |
-| `P0-09` | Nettoyage logs IA et ecarts de sanitisation critiques | `securite` | `transparence-openai`, `backend-hexagonal` | 5 SP |
-| `P0-10` | Sanitisation du contexte promptable et protection des variables reservees | `securite` | `backend-hexagonal`, `transparence-openai` | 13 SP |
-| **Total sprint 1** |  |  |  | **34 SP** |
+| `JAS-ACT-012` | P1 | 13 | `implementation-moteur-analyse` | implementer ou de-scoper proprement les modules arbitres |
+| `JAS-ACT-013` | P1 | 8 | `product-owner-fonctionnel` | cadrer l'evolution de l'ingestion et du module conversationnel |
 
-### Sprint 2 - tickets
+### P2 - industrialiser
 
-| Ticket | Contenu | Agent lead | Appuis | Estimation |
+| Ticket | Priorite | SP | Agent lead | Objet |
 | --- | --- | --- | --- | --- |
-| `P0-04` | Tests backend sur contenu metier | `qa-backend` | `test-automation`, `backend-hexagonal` | 5 SP |
-| `P0-05` | Couverture frontend et services critiques | `qa-frontend` | `frontend-angular`, `test-automation` | 8 SP |
-| **Total sprint 2** |  |  |  | **13 SP** |
+| `JAS-ACT-014` | P2 | 8 | `devops-ci-cd` | durcir la CI en vraies gates qualite |
+| `JAS-ACT-015` | P2 | 8 | `devops-ci-cd` | completer la chaine de livraison et d'exploitation |
+| `JAS-ACT-016` | P2 | 5 | `database-postgres` | durcir l'industrialisation data et moteur |
 
-### Sprint 3 - tickets
+## ordre d'execution recommande
 
-| Ticket | Contenu | Agent lead | Appuis | Estimation |
-| --- | --- | --- | --- | --- |
-| `P0-06` | Observabilite prod et metriques pipeline/LLM | `observabilite-exploitation` | `backend-hexagonal`, `frontend-angular` | 8 SP |
-| `P0-07` | Dockerfiles, CI et scripts de build/run | `devops-ci-cd` | `backend-hexagonal`, `frontend-angular` | 8 SP |
-| `P0-08` | ADR, guide backend, guide integration | `documentation-technique` | `gouvernance`, `backend-hexagonal`, `frontend-angular` | 5 SP |
-| **Total sprint 3** |  |  |  | **21 SP** |
+1. `implementation-moteur-analyse` sur `JAS-ACT-012`
+2. `product-owner-fonctionnel` + `architecture-applicative` sur `JAS-ACT-013`
+3. `devops-ci-cd` + `database-postgres` sur `JAS-ACT-014` a `JAS-ACT-016`
 
-### Sprint 4 - tickets
+## lots recommandes
 
-| Ticket | Contenu | Agent lead | Appuis | Estimation |
-| --- | --- | --- | --- | --- |
-| `P1-01` | Qualite AST/regex et validation LLM | `implementation-moteur-analyse` | `backend-hexagonal`, `securite` | 8 SP |
-| `P1-02` | Qualite des artefacts generes | `implementation-moteur-analyse` | `test-automation`, `qa-backend` | 8 SP |
-| `P1-03` | Analyse metier avancee | `implementation-moteur-analyse` | `analyste-regles-metier`, `architecture-moteur-analyse` | 13 SP |
-| `P1-07` | Contrats fournisseur stricts et budgets de contexte | `backend-hexagonal` | `securite`, `observabilite-exploitation` | 8 SP |
-| **Total sprint 4** |  |  |  | **37 SP** |
+### Lot 1 - Securite et gouvernance
 
-### Sprint 5 - tickets
+- Tickets : `JAS-ACT-005`, `JAS-ACT-006`
+- Objectif : proteger le socle et remettre la gouvernance documentaire au meme niveau que le code
+- Sortie attendue : endpoints sensibles classes, premier niveau de protection pose, transparence et doc de pilotage rejouees
 
-| Ticket | Contenu | Agent lead | Appuis | Estimation |
-| --- | --- | --- | --- | --- |
-| `P1-04` | UX IA produit | `frontend-angular` | `backend-hexagonal`, `api-contrats` | 13 SP |
-| `P1-05` | Persistance/versioning des artefacts IA | `backend-hexagonal` | `database-postgres`, `implementation-moteur-analyse` | 8 SP |
-| `P1-06` | Contexte IA enrichi et coherence inter-artefacts | `implementation-moteur-analyse` | `backend-hexagonal`, `analyste-regles-metier` | 13 SP |
-| **Total sprint 5** |  |  |  | **34 SP** |
+### Lot 2 - Stabilisation produit visible
 
-### Sprint 6 - tickets
+- Tickets : aucun ticket ouvert
+- Objectif : lot cloture apres `JAS-ACT-010`
+- Sortie attendue : docs a jour, parcours critiques traces proprement, references front/back realignees
 
-| Ticket | Contenu | Agent lead | Appuis | Estimation |
-| --- | --- | --- | --- | --- |
-| `P2-01` | Export structure Maven/Gradle | `backend-hexagonal` | `devops-ci-cd` | 5 SP |
-| `P2-02` | Monitoring technique frontend | `frontend-angular` | `observabilite-exploitation` | 5 SP |
-| `P2-03` | Audit documentaire sanitisation | `gouvernance` | `documentation-technique`, `transparence-openai` | 3 SP |
-| `P2-04` | Durcissement corpus et regles Semgrep | `securite` | `implementation-moteur-analyse` | 5 SP |
-| **Total sprint 6** |  |  |  | **18 SP** |
+### Lot 3 - Finalisation moteur et trajectoire produit
 
-## charge consolidee
+- Tickets : `JAS-ACT-012`, `JAS-ACT-013`
+- Objectif : implementer le perimetre moteur arbitre puis cadrer l'evolution produit
+- Sortie attendue : consolidation formalisee, modules conditionnels traces, trajectoire conversationnelle clarifiee
 
-- `Sprint 1` : 34 SP
-- `Sprint 2` : 13 SP
-- `Sprint 3` : 21 SP
-- `Sprint 4` : 37 SP
-- `Sprint 5` : 34 SP
-- `Sprint 6` : 18 SP
-- **Total programme restant** : **157 SP**
+### Lot 4 - Industrialisation finale
 
-## lecture de capacite
+- Tickets : `JAS-ACT-014`, `JAS-ACT-015`, `JAS-ACT-016`
+- Objectif : rendre le produit durablement exploitable
+- Sortie attendue : gates qualite, livraison outillee, runbooks, hygiene data et moteur renforcee
 
-- Avec une seule equipe fullstack, `Sprint 1`, `Sprint 4` et `Sprint 5` sont les sprints les plus charges et devront sans doute etre recoupes.
-- Avec deux equipes, il est pertinent de faire tourner `Sprint 2` et `Sprint 3` en parallele apres `Sprint 1`.
-- Si la capacite est faible, la premiere coupe naturelle consiste a repousser `P2-01` a `P2-04`, puis a fractionner `P0-10`, `P1-04` et `P1-06`.
+## backlog Jira exploitable
 
-## sous-backlogs actifs
+## EPIC JAS-ACT-EPIC-01 - Retour au vert backend
 
-- IA avancee detaillee : `jira/backlog-ia-refactoring-pipeline.md`
-- Sanitisation detaillee : `jira/backlog-sanitisation-audit.md`
-- Historique backlog initial : `jira/refactoring-app-initial-backlog.md`
-- Historique socle produit : `jira/backlog-phase-2.md`
-- Historique phase 3 : `docs/phase3-jira-tickets.md`
+**Statut**
 
-## livrables
+- Epic clos sur le perimetre prioritaire
 
-- `jira/backlog-restant-a-faire.md`
-- mise a jour du statut documentaire des anciens backlogs globaux
+### `JAS-ACT-001` - Diagnostiquer et corriger les regressions backend critiques
 
-## dependances
+- Type : Story
+- Statut : DONE
+- Priorite : P0
+- Estimation : 8 SP
+- Lead : `backend-hexagonal`
 
-- `AGENTS.md`
-- `guide_generique_refactoring_controller_javafx_spring.md`
-- `backend/pom.xml`
-- `backend/`
-- `jira/backlog-ia-refactoring-pipeline.md`
-- `jira/backlog-sanitisation-audit.md`
+### `JAS-ACT-002` - Refermer les ecarts hexagonaux prioritaires cote REST
 
-## verifications
+- Type : Story
+- Statut : DONE
+- Priorite : P0
+- Estimation : 5 SP
+- Lead : `backend-hexagonal`
 
-- Validation backend executee le `2026-03-26` : `522` tests verts.
-- Validation frontend executee le `2026-03-26` : build production OK.
-- Les priorites ci-dessus ne reouvrent pas les chantiers deja livres dans les adapters reels, la persistance, l'orchestration de base, la reclassification, le dashboard projet et l'OpenAPI.
-- Les tickets listes comme restants ont ete retenus soit par absence de code/artefact visible, soit parce que l'implementation actuelle reste partielle au regard des criteres du backlog historique.
+### `JAS-ACT-003` - Stabiliser l'execution locale backend
 
-## handoff
+- Type : Story
+- Statut : DONE
+- Priorite : P0
+- Estimation : 3 SP
+- Lead : `test-automation`
+
+## EPIC JAS-ACT-EPIC-02 - Contrats API, securite et gouvernance
+
+**Objectif**
+
+Figer les conventions d'API, poser le socle de securite et maintenir un pilotage documentaire aligne sur le repo reel.
+
+### `JAS-ACT-004` - Trancher et harmoniser la convention `/analysis` vs `/analyses`
+
+- Type : Story
+- Statut : DONE
+- Priorite : P0
+- Estimation : 3 SP
+- Lead : `api-contrats`
+
+### `JAS-ACT-005` - Definir et poser le socle securite backend minimal
+
+- Type : Story
+- Statut : DONE
+- Priorite : P0
+- Estimation : 8 SP
+- Lead : `securite`
+- Appuis : `api-contrats`, `backend-hexagonal`
+
+Criteres d'acceptation :
+
+- les endpoints sensibles sont classes et documentes
+- le modele d'authentification et d'autorisation cible du socle est defini
+- une premiere implementation protege les endpoints critiques ou formalise explicitement leur exposition
+- des tests de securite de base sont ajoutes ou realignes
+
+Validation constatee le `2026-04-01` :
+
+- socle Spring Security stateless ajoute au backend
+- endpoints sensibles centralises dans `ApiSecurityEndpointCatalog`
+- bearer token applicatif opt-in via `APP_SECURITY_API_KEY_ENABLED` et `APP_SECURITY_API_KEY`
+- tests cibles de securite et d'observabilite verts sur le slice `JAS-ACT-005`
+
+### `JAS-ACT-006` - Realigner backlog, doc de pilotage et transparence
+
+- Type : Story
+- Statut : DONE
+- Priorite : P0
+- Estimation : 5 SP
+- Lead : `architecture-applicative`
+- Appuis : `documentation-technique`, `transparence-openai`, `gouvernance`
+
+Criteres d'acceptation :
+
+- le backlog maitre reste coherent avec l'etat reel du repo
+- les conventions de pilotage et d'execution sont a jour
+- le rapport de transparence est rejoue si les changements de prompts ou de flux le necessitent
+
+Validation constatee le `2026-04-01` :
+
+- backlog Jira consolide aligne sur les tickets `JAS-ACT-001` a `JAS-ACT-006`
+- references de gouvernance Claude corrigees vers `AGENTS-claude.md`
+- rapports `TransparenceOpenAI` et `TransparenceClaude` rejoues sur l'etat reel du depot
+
+## EPIC JAS-ACT-EPIC-03 - Stabilisation frontend et observabilite
+
+**Objectif**
+
+Conserver un frontend stable, plus lisible et reellement observable, sans deplacer la logique experte hors du backend.
+
+### `JAS-ACT-007` - Remettre durablement la suite frontend au vert
+
+- Type : Story
+- Statut : DONE
+- Validation : `npm run typecheck`, `npm run build`, `npm test -- --watch=false`
+- Priorite : P1
+- Estimation : 5 SP
+- Lead : `frontend-angular`
+- Appuis : `qa-frontend`, `test-automation`
+
+### `JAS-ACT-008` - Reduire la dette de structure des composants frontend majeurs
+
+- Type : Story
+- Statut : DONE
+- Validation : `npm run typecheck`, `npm run build`, `npm test -- --watch=false`
+- Priorite : P1
+- Estimation : 8 SP
+- Lead : `frontend-angular`
+- Appuis : `qa-frontend`, `revue-code`
+
+### `JAS-ACT-009` - Brancher l'observabilite frontend reelle
+
+- Type : Story
+- Statut : DONE
+- Validation : `npm run typecheck`, `npm run build`, `npm test -- --watch=false`
+- Priorite : P1
+- Estimation : 5 SP
+- Lead : `observabilite-exploitation`
+- Appuis : `frontend-angular`, `qa-frontend`
+
+### `JAS-ACT-010` - Mettre a jour la documentation technique frontend/backend
+
+- Type : Story
+- Statut : DONE
+- Validation : verification manuelle des guides, references et commandes documentees
+- Priorite : P1
+- Estimation : 5 SP
+- Lead : `documentation-technique`
+- Appuis : `backend-hexagonal`, `frontend-angular`, `gouvernance`
+
+## EPIC JAS-ACT-EPIC-04 - Finalisation moteur specialise et trajectoire produit
+
+**Objectif**
+
+Fermer les ecarts encore ouverts entre la cible du moteur specialise et ce qui est effectivement implemente dans le depot.
+
+### `JAS-ACT-011` - Arbitrer et fermer les modules specialises restants
+
+- Type : Story
+- Statut : DONE
+- Validation : verification croisee de `agents/orchestration.md`, `agents/catalog.md`, `docs/jas-act-011-arbitrage-modules-specialises.md` et du code reel backend/samples
+- Priorite : P1
+- Estimation : 5 SP
+- Lead : `architecture-moteur-analyse`
+- Appuis : `implementation-moteur-analyse`, `gouvernance`
+
+Decisions constatees :
+
+- `consolidation` : obligatoire, a formaliser dans le noyau orchestration/coherence/restitution existant
+- `inheritance-analysis` : conditionnel, a absorber dans `controller-analysis`
+- `dynamic-ui-analysis` : conditionnel et prioritaire sur un MVP etroit
+- `pdf-analysis` : optionnel hors MVP par defaut
+
+### `JAS-ACT-012` - Implementer ou de-scoper proprement les modules arbitres
+
+- Type : Story
+- Statut : TODO
+- Priorite : P1
+- Estimation : 13 SP
+- Lead : `implementation-moteur-analyse`
+- Appuis : `analyste-regles-metier`, `test-automation`
+
+Perimetre arbitre :
+
+- formaliser `consolidation` dans le noyau existant
+- etendre `controller-analysis` avec `inheritance-analysis` comme chemin conditionnel
+- implementer `dynamic-ui-analysis` comme chemin conditionnel prioritaire
+- laisser `pdf-analysis` hors MVP par defaut avec point d'extension ou de-scope explicite
+
+### `JAS-ACT-013` - Cadrer l'evolution de l'ingestion et du module conversationnel
+
+- Type : Story
+- Statut : TODO
+- Priorite : P1
+- Estimation : 8 SP
+- Lead : `product-owner-fonctionnel`
+- Appuis : `architecture-applicative`, `api-contrats`, `frontend-angular`
+
+## EPIC JAS-ACT-EPIC-05 - Industrialisation finale
+
+**Objectif**
+
+Transformer la base existante en produit durablement exploitable, avec qualite mesurable et chaine de livraison outillee.
+
+### `JAS-ACT-014` - Durcir la CI en vraies gates qualite
+
+- Type : Story
+- Statut : TODO
+- Priorite : P2
+- Estimation : 8 SP
+- Lead : `devops-ci-cd`
+- Appuis : `qa-backend`, `qa-frontend`, `observabilite-exploitation`
+
+### `JAS-ACT-015` - Completer la chaine de livraison et d'exploitation
+
+- Type : Story
+- Statut : TODO
+- Priorite : P2
+- Estimation : 8 SP
+- Lead : `devops-ci-cd`
+- Appuis : `observabilite-exploitation`, `documentation-technique`
+
+### `JAS-ACT-016` - Durcir l'industrialisation data et moteur
+
+- Type : Story
+- Statut : TODO
+- Priorite : P2
+- Estimation : 5 SP
+- Lead : `database-postgres`
+- Appuis : `securite`, `implementation-moteur-analyse`
+
+## estimation consolidee
+
+| Epic | SP |
+| --- | --- |
+| `JAS-ACT-EPIC-01` | 16 SP |
+| `JAS-ACT-EPIC-02` | 16 SP |
+| `JAS-ACT-EPIC-03` | 23 SP |
+| `JAS-ACT-EPIC-04` | 26 SP |
+| `JAS-ACT-EPIC-05` | 21 SP |
+| **Total historique du programme `JAS-ACT`** | **102 SP** |
+| **Reste a faire apres `JAS-ACT-001` a `011`** | **42 SP** |
+
+## synthese d'archive des anciens backlogs
+
+### cadrage initial epic 01
+
+Les anciens documents `JAS-01`, `JAS-02` et `JAS-03` ont fourni :
+
+- le parcours utilisateur initial du cockpit
+- le contrat d'API initial du workbench
+- les exigences de securite et d'exposition de depart
+
+Leur substance active est maintenant reprise par :
+
+- `JAS-ACT-005` pour la securite
+- `JAS-ACT-010` pour la documentation et les contrats techniques
+- `JAS-ACT-013` pour la trajectoire produit et conversationnelle
+
+### backlog produit et phase 2 / phase 3
+
+Les anciens fichiers `refactoring-app-initial-backlog.md`, `backlog-phase-2.md` et `docs/phase3-jira-tickets.md` ont servi de reservoir historique pour :
+
+- le remplacement progressif des stubs
+- la persistence PostgreSQL
+- l'UX Angular
+- le moteur d'analyse
+- DevOps, observabilite et documentation
+
+Ils sont desormais resumes par les epics `JAS-ACT-001` a `JAS-ACT-016`, plus courts et aligns sur l'etat reel du depot.
+
+### backlog IA pipeline
+
+L'ancien backlog `IAP-*` couvrait surtout :
+
+- robustesse du pipeline IA
+- observabilite et metriques LLM
+- qualite du code genere
+- experience utilisateur IA
+- persistance/versioning des artefacts
+- enrichissement contextuel et feedback
+
+Ces sujets restent utiles mais ne sont plus pilotes comme backlog separable dans `./jira`. Ils se redistribuent maintenant principalement dans :
+
+- `JAS-ACT-006`
+- `JAS-ACT-009`
+- `JAS-ACT-010`
+- `JAS-ACT-012`
+- `JAS-ACT-016`
+
+### backlog sanitisation et audit
+
+Les anciennes familles `QW-*` et `AI-*` couvraient le durcissement de la sanitisation, de l'assemblage de prompts et de la gouvernance LLM.
+
+Leur substance active est maintenant suivie via :
+
+- `JAS-ACT-005` pour la classification et la protection des flux sensibles
+- `JAS-ACT-006` pour la transparence et la gouvernance
+- `JAS-ACT-012` pour les impacts moteur
+- `JAS-ACT-016` pour l'industrialisation data/moteur
+
+## definition de done minimale
+
+- build ou execution locale reproductible sur le perimetre du lot
+- tests critiques verts
+- aucune regression connue non documentee sur le perimetre traite
+- documentation mise a jour si le lot touche contrats, exploitation ou usages
+- revue `revue-code` puis verification QA ciblee quand le lot le justifie
+
+## handoff recommande
 
 ```text
 handoff:
   vers: gouvernance
   preconditions:
-    - backlog maitre cree
-    - backlogs historiques explicitement declasses comme vues secondaires
+    - considerer ce fichier comme l'unique backlog Markdown dans ./jira
+    - lancer le prochain lot sur JAS-ACT-012
+    - enchainer ensuite sur JAS-ACT-013 apres stabilisation du perimetre moteur arbitre
   points_de_vigilance:
-    - arbitrer rapidement l'ecart entre design documentaire et code reel sur les endpoints/use cases
-    - ne pas relancer de chantier produit sans traiter P0-06, P0-07 et P0-08
-    - garder l'IA et la sanitisation comme sous-backlogs specialises, pas comme backlog maitre
+    - ne pas reouvrir artificiellement des chantiers deja livres dans le depot
+    - conserver /api/v1/analyses seulement comme alias legacy tant que la transition n'est pas fermee
+    - rejouer la transparence a chaque evolution des prompts, providers ou donnees exposees
   artefacts_a_consulter:
-    - jira/backlog-restant-a-faire.md
-    - jira/backlog-ia-refactoring-pipeline.md
-    - jira/backlog-sanitisation-audit.md
     - AGENTS.md
+    - agents/orchestration.md
+    - backend/
+    - frontend/
+    - docs/
 ```
+
+
+
+

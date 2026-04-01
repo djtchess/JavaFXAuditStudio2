@@ -1,6 +1,6 @@
 package ff.ss.javaFxAuditStudio.adapters.in.rest;
 
-import ff.ss.javaFxAuditStudio.application.ports.out.LlmAuditPort;
+import ff.ss.javaFxAuditStudio.application.ports.in.ListLlmAuditEntriesUseCase;
 import ff.ss.javaFxAuditStudio.domain.ai.LlmAuditEntry;
 import ff.ss.javaFxAuditStudio.domain.ai.LlmProvider;
 import ff.ss.javaFxAuditStudio.domain.ai.TaskType;
@@ -39,7 +39,7 @@ class LlmAuditControllerIT {
     private WebApplicationContext webApplicationContext;
 
     @MockitoBean
-    private LlmAuditPort llmAuditPort;
+    private ListLlmAuditEntriesUseCase listLlmAuditEntriesUseCase;
 
     private MockMvc mockMvc;
 
@@ -50,7 +50,7 @@ class LlmAuditControllerIT {
 
     @Test
     void should_return_empty_list_when_no_audits() throws Exception {
-        when(llmAuditPort.findBySessionId("sess-empty")).thenReturn(List.of());
+        when(listLlmAuditEntriesUseCase.handle("sess-empty")).thenReturn(List.of());
 
         mockMvc.perform(get("/api/v1/analysis/sessions/sess-empty/llm-audit"))
                 .andExpect(status().isOk())
@@ -70,7 +70,7 @@ class LlmAuditControllerIT {
                 100,
                 false,
                 "");
-        when(llmAuditPort.findBySessionId("sess-with-data")).thenReturn(List.of(entry));
+        when(listLlmAuditEntriesUseCase.handle("sess-with-data")).thenReturn(List.of(entry));
 
         mockMvc.perform(get("/api/v1/analysis/sessions/sess-with-data/llm-audit"))
                 .andExpect(status().isOk())
@@ -98,7 +98,7 @@ class LlmAuditControllerIT {
                 50,
                 false,
                 "");
-        when(llmAuditPort.findBySessionId("sess-privacy")).thenReturn(List.of(entry));
+        when(listLlmAuditEntriesUseCase.handle("sess-privacy")).thenReturn(List.of(entry));
 
         mockMvc.perform(get("/api/v1/analysis/sessions/sess-privacy/llm-audit"))
                 .andExpect(status().isOk())

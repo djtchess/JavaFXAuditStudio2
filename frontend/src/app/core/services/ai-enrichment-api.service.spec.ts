@@ -150,7 +150,7 @@ describe('AiEnrichmentApiService', () => {
       expect(result).toEqual(ENRICH_RESPONSE);
     });
 
-    const req = httpMock.expectOne('/api/v1/analyses/session-1/enrich?taskType=NAMING&provider=openai-codex-cli');
+    const req = httpMock.expectOne('/api/v1/analysis/sessions/session-1/enrich?taskType=NAMING&provider=openai-codex-cli');
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toBeNull();
     req.flush(ENRICH_RESPONSE);
@@ -161,7 +161,7 @@ describe('AiEnrichmentApiService', () => {
       expect(result).toEqual(REVIEW_RESPONSE);
     });
 
-    const req = httpMock.expectOne('/api/v1/analyses/session-1/review?provider=claude-code-cli');
+    const req = httpMock.expectOne('/api/v1/analysis/sessions/session-1/review?provider=claude-code-cli');
     expect(req.request.method).toBe('POST');
     req.flush(REVIEW_RESPONSE);
   });
@@ -171,7 +171,7 @@ describe('AiEnrichmentApiService', () => {
       expect(result).toEqual(GENERATE_RESPONSE);
     });
 
-    const req = httpMock.expectOne('/api/v1/analyses/session-1/generate/ai?provider=openai-gpt54');
+    const req = httpMock.expectOne('/api/v1/analysis/sessions/session-1/generate/ai?provider=openai-gpt54');
     expect(req.request.method).toBe('POST');
     req.flush(GENERATE_RESPONSE);
   });
@@ -184,7 +184,7 @@ describe('AiEnrichmentApiService', () => {
       events.push(event);
     });
 
-    const req = httpMock.expectOne('/api/v1/analyses/session-1/generate/ai?provider=openai-codex-cli');
+    const req = httpMock.expectOne('/api/v1/analysis/sessions/session-1/generate/ai?provider=openai-codex-cli');
     expect(req.request.method).toBe('POST');
     req.flush(GENERATE_RESPONSE);
 
@@ -204,7 +204,7 @@ describe('AiEnrichmentApiService', () => {
       expect(result).toEqual(GENERATE_RESPONSE);
     });
 
-    const req = httpMock.expectOne('/api/v1/analyses/session-1/generate/ai/refine?provider=claude-code-cli');
+    const req = httpMock.expectOne('/api/v1/analysis/sessions/session-1/generate/ai/refine?provider=claude-code-cli');
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual(request);
     req.flush(GENERATE_RESPONSE);
@@ -215,7 +215,7 @@ describe('AiEnrichmentApiService', () => {
       expect(result).toBeInstanceOf(Blob);
     });
 
-    const req = httpMock.expectOne('/api/v1/analyses/session-1/generate/ai/export/zip');
+    const req = httpMock.expectOne('/api/v1/analysis/sessions/session-1/generate/ai/export/zip');
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toBeNull();
     expect(req.request.responseType).toBe('blob');
@@ -235,15 +235,15 @@ describe('AiEnrichmentApiService', () => {
       expect(result).toEqual(PERSISTED_COHERENCE);
     });
 
-    const artifactsReq = httpMock.expectOne('/api/v1/analyses/session-1/artifacts/ai');
+    const artifactsReq = httpMock.expectOne('/api/v1/analysis/sessions/session-1/artifacts/ai');
     expect(artifactsReq.request.method).toBe('GET');
     artifactsReq.flush(PERSISTED_ARTIFACTS);
 
-    const versionsReq = httpMock.expectOne('/api/v1/analyses/session-1/artifacts/ai/USE_CASE/versions');
+    const versionsReq = httpMock.expectOne('/api/v1/analysis/sessions/session-1/artifacts/ai/USE_CASE/versions');
     expect(versionsReq.request.method).toBe('GET');
     versionsReq.flush(PERSISTED_ARTIFACTS);
 
-    const coherenceReq = httpMock.expectOne('/api/v1/analyses/session-1/artifacts/ai/coherence');
+    const coherenceReq = httpMock.expectOne('/api/v1/analysis/sessions/session-1/artifacts/ai/coherence');
     expect(coherenceReq.request.method).toBe('POST');
     expect(coherenceReq.request.body).toBeNull();
     coherenceReq.flush(PERSISTED_COHERENCE);
@@ -254,7 +254,7 @@ describe('AiEnrichmentApiService', () => {
       expect(result).toEqual(PREVIEW_RESPONSE);
     });
 
-    const req = httpMock.expectOne('/api/v1/analyses/session-1/preview-sanitized');
+    const req = httpMock.expectOne('/api/v1/analysis/sessions/session-1/preview-sanitized');
     expect(req.request.method).toBe('POST');
     req.flush(PREVIEW_RESPONSE);
   });

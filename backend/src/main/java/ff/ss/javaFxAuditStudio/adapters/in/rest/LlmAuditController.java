@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import ff.ss.javaFxAuditStudio.adapters.in.rest.dto.LlmAuditEntryResponse;
-import ff.ss.javaFxAuditStudio.application.ports.out.LlmAuditPort;
+import ff.ss.javaFxAuditStudio.application.ports.in.ListLlmAuditEntriesUseCase;
 import ff.ss.javaFxAuditStudio.domain.ai.LlmAuditEntry;
 
 /**
@@ -39,10 +39,12 @@ public class LlmAuditController {
 
     private static final Logger LOG = LoggerFactory.getLogger(LlmAuditController.class);
 
-    private final LlmAuditPort llmAuditPort;
+    private final ListLlmAuditEntriesUseCase listLlmAuditEntriesUseCase;
 
-    public LlmAuditController(final LlmAuditPort llmAuditPort) {
-        this.llmAuditPort = Objects.requireNonNull(llmAuditPort, "llmAuditPort must not be null");
+    public LlmAuditController(final ListLlmAuditEntriesUseCase listLlmAuditEntriesUseCase) {
+        this.listLlmAuditEntriesUseCase = Objects.requireNonNull(
+                listLlmAuditEntriesUseCase,
+                "listLlmAuditEntriesUseCase must not be null");
     }
 
     /**
@@ -61,7 +63,7 @@ public class LlmAuditController {
             @Parameter(name = "sessionId", description = "Identifiant de la session", required = true)
             @PathVariable final String sessionId) {
         LOG.debug("Consultation audit LLM — session={}", sessionId);
-        return llmAuditPort.findBySessionId(sessionId)
+        return listLlmAuditEntriesUseCase.handle(sessionId)
                 .stream()
                 .map(LlmAuditController::toResponse)
                 .toList();

@@ -60,6 +60,16 @@ public final class JavaControllerRuleExtractionAdapter implements RuleExtraction
             Pattern.compile("(?:private|protected|public)\\s+(\\w+Controller)\\s+(\\w+)\\s*;");
     private static final Pattern DIRECT_CONTROLLER_CREATION_PATTERN =
             Pattern.compile("new\\s+(\\w+Controller)\\s*\\(");
+    private static final Pattern CLASS_EXTENDS_PATTERN =
+            Pattern.compile("class\\s+\\w+\\s+extends\\s+([\\w.]+)");
+    private static final Pattern DYNAMIC_VISIBILITY_PATTERN =
+            Pattern.compile("(\\w+)\\.managedProperty\\(\\)\\.bind\\(\\1\\.visibleProperty\\(\\)\\)");
+    private static final Pattern DYNAMIC_BINDING_PATTERN =
+            Pattern.compile("([\\w.]+(?:Property\\(\\))?)\\.bind\\s*\\(");
+    private static final Pattern DYNAMIC_LISTENER_PATTERN =
+            Pattern.compile("([\\w.]+(?:Property\\(\\))?)\\.addListener\\s*\\(");
+    private static final Pattern DYNAMIC_EVENT_HANDLER_PATTERN =
+            Pattern.compile("([\\w.]+)\\.(setOn\\w+)\\s*\\(");
     private static final List<String> SHARED_SERVICE_SUFFIXES = List.of(
             "Service", "Manager", "Handler", "Validator", "Facade", "Processor");
 
@@ -423,6 +433,16 @@ public final class JavaControllerRuleExtractionAdapter implements RuleExtraction
     private List<ControllerDependency> detectDependencies(final String content, final String ref) {
         LinkedHashSet<ControllerDependency> dependencies = new LinkedHashSet<>();
         String currentController = shortControllerRef(ref);
+        Matcher extendsMatcher = CLASS_EXTENDS_PATTERN.matcher(content);
+        while (extendsMatcher.find()) {
+            String parentType = normalizeTypeName(extendsMatcher.group(1));
+            if (!parentType.isBlank() && !parentType.equals(currentController) && !"Object".equals(parentType)) {
+                dependencies.add(new ControllerDependency(
+                        DependencyKind.INHERITANCE,
+                        parentType,
+                        "extends:" + parentType));
+            }
+        }
         Matcher fieldMatcher = DIRECT_CONTROLLER_FIELD_PATTERN.matcher(content);
         while (fieldMatcher.find()) {
             String typeName = fieldMatcher.group(1);
@@ -455,6 +475,7 @@ public final class JavaControllerRuleExtractionAdapter implements RuleExtraction
                         "field:" + fieldName));
             }
         }
+        addDynamicUiDependencies(content, dependencies);
         return List.copyOf(dependencies);
     }
 
@@ -465,5 +486,57 @@ public final class JavaControllerRuleExtractionAdapter implements RuleExtraction
             }
         }
         return false;
+    }
+
+    private void addDynamicUiDependencies(
+            final String content,
+            final LinkedHashSet<ControllerDependency> dependencies) {
+        addDynamicDependencies(content, DYNAMIC_VISIBILITY_PATTERN, dependencies,
+                DependencyKind.DYNAMIC_UI_VISIBILITY, "managed-visible-binding");
+        addDynamicDependencies(content, DYNAMIC_LISTENER_PATTERN, dependencies,
+                DependencyKind.DYNAMIC_UI_LISTENER, "addListener");
+        addDynamicDependencies(content, DYNAMIC_EVENT_HANDLER_PATTERN, dependencies,
+                DependencyKind.DYNAMIC_UI_EVENT_HANDLER, null);
+        addBindingDependencies(content, dependencies);
+    }
+
+    private void addBindingDependencies(
+            final String content,
+            final LinkedHashSet<ControllerDependency> dependencies) {
+        Matcher bindingMatcher = DYNAMIC_BINDING_PATTERN.matcher(content);
+        while (bindingMatcher.find()) {
+            String target = normalizeTypeName(bindingMatcher.group(1));
+            if (!target.isBlank() && !target.contains("managedProperty()")) {
+                dependencies.add(new ControllerDependency(
+                        DependencyKind.DYNAMIC_UI_BINDING,
+                        target,
+                        "bind"));
+            }
+        }
+    }
+
+    private void addDynamicDependencies(
+            final String content,
+            final Pattern pattern,
+            final LinkedHashSet<ControllerDependency> dependencies,
+            final DependencyKind kind,
+            final String fixedVia) {
+        Matcher matcher = pattern.matcher(content);
+        while (matcher.find()) {
+            String target = normalizeTypeName(matcher.group(1));
+            String via = fixedVia != null ? fixedVia : matcher.group(2);
+            if (!target.isBlank()) {
+                dependencies.add(new ControllerDependency(kind, target, via));
+            }
+        }
+    }
+
+    private String normalizeTypeName(final String rawValue) {
+        String normalized = rawValue == null ? "" : rawValue.trim();
+        int genericIndex = normalized.indexOf('<');
+        if (genericIndex >= 0) {
+            normalized = normalized.substring(0, genericIndex);
+        }
+        return normalized;
     }
 }

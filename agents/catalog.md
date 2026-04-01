@@ -9,8 +9,8 @@
 | analyste-regles-metier | Extraire et formuler les regles stables du refactoring | catalogue de regles, invariants, decisions metier | GPT-5.4 | guide, `javafx-business-rules-extractor` |
 | api-contrats | Definir les contrats echanges front/back et moteur/backend | endpoints, DTO, schemas, versioning | GPT-5.4 | `backend/`, `agents/contracts.md` |
 | securite | Poser les controles de securite et d'exposition | menaces, exigences, controles, journalisation | GPT-5.4 | contrats, backend |
-| transparence-openai | Auditer la surface de donnees, prompts et fichiers exposes a OpenAI | rapport Markdown, inventaire de fichiers, trace agent observable | GPT-5.4 | `AGENTS.md`, `agents/`, `.codex/`, prompts du repo |
-| transparence-claude | Auditer la surface de donnees, prompts, permissions et fichiers exposes a Claude Code | rapport Markdown, inventaire de fichiers, trace agent observable | claude-sonnet-4-6 | `AGENTS.md`, `AGENTS-codex.md`, `agents/`, `.claude/`, `.codex/`, prompts du repo |
+| transparence-openai | Auditer la surface de donnees, prompts et fichiers exposes a OpenAI | rapport Markdown, inventaire de fichiers, trace agent observable | GPT-5.4 | `AGENTS.md`, `AGENTS-claude.md`, `agents/`, `.codex/`, prompts du repo |
+| transparence-claude | Auditer la surface de donnees, prompts, permissions et fichiers exposes a Claude Code | rapport Markdown, inventaire de fichiers, trace agent observable | claude-sonnet-4-6 | `AGENTS.md`, `AGENTS-claude.md`, `agents/`, `.claude/`, `.codex/`, prompts du repo |
 | architecture-moteur-analyse | Decouper le moteur d'analyse/refactoring en composants implementables | architecture du moteur, interfaces, flux de donnees | GPT-5.4 | guide, `.codex` skills |
 | audit-qualite-analyse | Evaluer la fiabilite des analyses et garde-fous | score de confiance, alertes, checklist de qualite | GPT-5.4 | `javafx-quality-smell-detector` |
 | jira-estimation | Transformer le scope en epics/stories/tasks | backlog estime, dependances, risques | GPT-5.4 | guide, architecture cible |
@@ -34,11 +34,11 @@
 | source-ingestion | Lire et normaliser fichiers sources et artefacts lies | inventaire, texte prepare, liens entre fichiers | GPT-5.3-codex | echantillons source |
 | fxml-analysis | Cartographier FXML, fx:id, evenements et zones UI | carte d'ecran, composants, handlers lies | GPT-5.3-codex | `javafx-screen-cartographer` |
 | controller-analysis | Reconstituer les flux du controller et ses dependances | flux, etats, handlers, appels externes | GPT-5.3-codex | `javafx-controller-flow-analyzer` |
-| inheritance-analysis | Evaluer heritages, contrats implicites et specialisations | hierarchies, effets de bord, contraintes | GPT-5.4 | code Java |
+| inheritance-analysis | Evaluer les heritages quand une hierarchie non triviale est detectee | hierarchies utiles, effets de bord, contraintes implicites | GPT-5.4 | code Java |
 | spring-analysis | Evaluer injections, services Spring et coutures techniques | carte Spring, points d'integration, dependances | GPT-5.3-codex | code Java, contexte Spring |
-| pdf-analysis | Extraire et relier les contenus PDF/DOCX utiles | evidences documentaires, limites, sources | GPT-5.3-codex | documents fournis |
-| dynamic-ui-analysis | Reconstituer les comportements UI non declares dans le FXML | flux dynamiques, listeners, zones invisibles | GPT-5.4 | controller, FXML |
-| consolidation | Fusionner les analyses et arbitrer les contradictions | sortie consolidee, scores, alertes | GPT-5.4 | toutes les analyses |
+| pdf-analysis | Extraire et relier les contenus PDF/DOCX quand des documents sont fournis | evidences documentaires optionnelles, limites, sources | GPT-5.3-codex | documents fournis |
+| dynamic-ui-analysis | Reconstituer les comportements UI non declares quand le FXML statique ne suffit pas | flux dynamiques utiles, listeners, zones invisibles | GPT-5.4 | controller, FXML |
+| consolidation | Fusionner les analyses et arbitrer les contradictions ; module obligatoire du MVP | sortie consolidee, scores, alertes, arbitrage final | GPT-5.4 | toutes les analyses |
 | restitution | Produire une restitution exploitable par le produit | rapport final, JSON, priorites, risques | GPT-5.4 | consolidation, `javafx-report-writer` |
 
 ## Skills `.codex` de support
@@ -56,3 +56,6 @@
 | javafx-report-writer | Rediger la restitution finale | GPT-5.4 | sorties consolidees |
 | openai-transparency-reporter | Produire un rapport Markdown de transparence OpenAI | GPT-5.4 | `agents/`, `.codex/prompts`, fichiers lus dans la session |
 | claude-transparency-reporter | Produire un rapport Markdown de transparence Claude Code | claude-sonnet-4-6 | `agents/`, `.claude/settings.local.json`, `.codex/prompts`, fichiers lus dans la session |
+
+
+

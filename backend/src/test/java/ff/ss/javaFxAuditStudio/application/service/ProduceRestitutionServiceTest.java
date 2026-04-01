@@ -6,6 +6,9 @@ import ff.ss.javaFxAuditStudio.application.ports.out.ClassificationPersistencePo
 import ff.ss.javaFxAuditStudio.application.ports.out.MigrationPlanPersistencePort;
 import ff.ss.javaFxAuditStudio.application.ports.out.RestitutionFormatterPort;
 import ff.ss.javaFxAuditStudio.application.ports.out.RestitutionPersistencePort;
+import ff.ss.javaFxAuditStudio.application.ports.out.SourceReaderPort;
+import ff.ss.javaFxAuditStudio.domain.ingestion.SourceInput;
+import ff.ss.javaFxAuditStudio.domain.ingestion.SourceInputType;
 import ff.ss.javaFxAuditStudio.domain.cartography.ControllerCartography;
 import ff.ss.javaFxAuditStudio.domain.generation.CodeArtifact;
 import ff.ss.javaFxAuditStudio.domain.generation.GenerationResult;
@@ -52,6 +55,9 @@ class ProduceRestitutionServiceTest {
 
     @Mock
     private RestitutionFormatterPort restitutionFormatterPort;
+
+    @Mock
+    private SourceReaderPort sourceReaderPort;
 
     @InjectMocks
     private ProduceRestitutionService service;
@@ -100,6 +106,18 @@ class ProduceRestitutionServiceTest {
                 List.of(),
                 true)));
         when(artifactPersistencePort.findBySessionId("session-1")).thenReturn(Optional.of(generationResult));
+        when(sourceReaderPort.read("SampleController")).thenReturn(Optional.of(new SourceInput(
+                "SampleController",
+                SourceInputType.JAVA_CONTROLLER,
+                """
+                public class SampleController extends BaseWorkflowController {
+                    @Override
+                    public void initialize() {
+                        super.initialize();
+                        statusLabel.visibleProperty().bind(formPane.visibleProperty());
+                    }
+                }
+                """)));
         when(restitutionPersistencePort.save(anyString(), any(RestitutionReport.class))).thenReturn(savedReport);
         when(restitutionFormatterPort.formatAsMarkdown(any(RestitutionReport.class))).thenReturn("# Restitution\n\n## Synthese");
 
@@ -112,7 +130,8 @@ class ProduceRestitutionServiceTest {
         assertThat(reportCaptor.getValue().markdown()).contains("# Restitution");
         assertThat(result.markdown()).contains("# Restitution");
         assertThat(result.summary().controllerRef()).isEqualTo("SampleController");
-        assertThat(result.findings()).isEmpty();
+        assertThat(reportCaptor.getValue().findings()).anyMatch(item -> item.contains("inheritance-analysis actif"));
+        assertThat(reportCaptor.getValue().findings()).anyMatch(item -> item.contains("dynamic-ui-analysis actif"));
     }
 
     @Test

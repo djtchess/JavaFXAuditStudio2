@@ -36,7 +36,9 @@ describe('FrontendMonitoringService', () => {
     expect(service.summary().totalCompletedRequests).toBe(2);
     expect(service.summary().failedRequests).toBe(1);
     expect(service.summary().averageDurationMs).toBe(100);
+    expect(service.recentRequests()).toHaveLength(2);
     expect(service.recentFailures()).toHaveLength(1);
+    expect(service.recentRequests()[0].correlationId).toBe('corr-fail');
     expect(service.recentFailures()[0].correlationId).toBe('corr-fail');
   });
 });

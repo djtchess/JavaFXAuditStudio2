@@ -3,8 +3,8 @@ package ff.ss.javaFxAuditStudio.adapters.in.rest;
 import ff.ss.javaFxAuditStudio.adapters.in.rest.dto.ReclassificationAuditEntryResponse;
 import ff.ss.javaFxAuditStudio.adapters.in.rest.dto.ReclassifiedRuleResponse;
 import ff.ss.javaFxAuditStudio.adapters.in.rest.dto.ReclassifyRuleRequest;
+import ff.ss.javaFxAuditStudio.application.ports.in.GetReclassificationHistoryUseCase;
 import ff.ss.javaFxAuditStudio.application.ports.in.ReclassifyRuleUseCase;
-import ff.ss.javaFxAuditStudio.application.ports.out.ReclassificationAuditPort;
 import ff.ss.javaFxAuditStudio.domain.rules.BusinessRule;
 import ff.ss.javaFxAuditStudio.domain.rules.ReclassificationAuditEntry;
 import ff.ss.javaFxAuditStudio.domain.rules.ResponsibilityClass;
@@ -32,24 +32,26 @@ import java.util.Objects;
 /**
  * Controller REST pour la reclassification manuelle des regles de gestion.
  * Expose les endpoints JAS-013 :
- * - PATCH /api/v1/analyses/{analysisId}/rules/{ruleId}/classification
- * - GET  /api/v1/analyses/{analysisId}/rules/{ruleId}/classification/history
+ * - PATCH /api/v1/analysis/sessions/{analysisId}/rules/{ruleId}/classification
+ * - GET  /api/v1/analysis/sessions/{analysisId}/rules/{ruleId}/classification/history
+ *
+ * <p>Compatibilite legacy maintenue temporairement sur `/api/v1/analyses/...`.
  */
 @Tag(name = "Reclassification")
 @RestController
-@RequestMapping("/api/v1/analyses")
+@RequestMapping(path = {"/api/v1/analysis/sessions", "/api/v1/analyses"})
 public class ReclassificationController {
 
     private static final Logger log = LoggerFactory.getLogger(ReclassificationController.class);
 
     private final ReclassifyRuleUseCase reclassifyRuleUseCase;
-    private final ReclassificationAuditPort reclassificationAuditPort;
+    private final GetReclassificationHistoryUseCase getReclassificationHistoryUseCase;
 
     public ReclassificationController(
             final ReclassifyRuleUseCase reclassifyRuleUseCase,
-            final ReclassificationAuditPort reclassificationAuditPort) {
+            final GetReclassificationHistoryUseCase getReclassificationHistoryUseCase) {
         this.reclassifyRuleUseCase = Objects.requireNonNull(reclassifyRuleUseCase);
-        this.reclassificationAuditPort = Objects.requireNonNull(reclassificationAuditPort);
+        this.getReclassificationHistoryUseCase = Objects.requireNonNull(getReclassificationHistoryUseCase);
     }
 
     /**
@@ -112,8 +114,8 @@ public class ReclassificationController {
             @PathVariable final String analysisId,
             @Parameter(name = "ruleId", description = "Identifiant de la regle metier", required = true)
             @PathVariable final String ruleId) {
-        return reclassificationAuditPort
-                .findByAnalysisIdAndRuleId(analysisId, ruleId)
+        return getReclassificationHistoryUseCase
+                .handle(analysisId, ruleId)
                 .stream()
                 .map(this::toAuditResponse)
                 .toList();

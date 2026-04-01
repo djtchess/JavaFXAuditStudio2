@@ -1,4 +1,4 @@
-package ui.view.production.examen;
+package terminal.operation.transit;
 
 import java.io.File;
 import java.io.IOException;
@@ -62,15 +62,15 @@ import org.springframework.stereotype.Component;
 
 import com.google.common.base.Strings;
 
-import .business.AffectationMaterielService;
-import .business.ConstatPublieService;
-import .business.ConsultantService;
-import .business.DonneesEntretienMedicalConclusionService;
-import .business.EditiqueStorageService;
-import .business.ExamenParacliniqueRealiseService;
-import .business.FapDataRdvService;
-import .business.LanceurApplicationService;
-import .business.SuiviOrientationService;
+import .business.AttributionEquipementService;
+import .business.SignalDiffusionService;
+import .business.PassagerService;
+import .business.SyntheseTransitService;
+import .business.ArchivageDocumentService;
+import .business.OperationTransitFinaliseeService;
+import .business.FichePassageService;
+import .business.LanceurModuleService;
+import .business.AcheminementService;
 import .business.commons.exception.FileNotFoundInDirectoryException;
 import .business.commons.exception.MaterielConnectedAquisitionFileNotFoundException;
 import .business.commons.exception.MaterielConnectedAquisitionResultsEmptyException;
@@ -79,454 +79,454 @@ import .business.commons.validation.ErrorLevel;
 import .business.commons.validation.ValidationError;
 import .business.commons.validation.ValidationRule;
 import .business.commons.validation.ValidationRuleResult;
-import .business.moteurregle.MoteurRegleContext;
-import .business.moteurregle.MoteurRegleResult;
+import .business.moteurregle.RegleContext;
+import .business.moteurregle.RegleResultat;
 import .editique.commons.exception.Hl7MessageReaderException;
-import .model.AffectationMateriel;
-import .model.Constat;
-import .model.ConstatMaterielRealise;
-import .model.ConstatPublie;
-import .model.ConstatRealise;
+import .model.AttributionEquipement;
+import .model.SignalObserve;
+import .model.SignalEquipementValide;
+import .model.SignalDiffuse;
+import .model.SignalObserveValide;
 import .model.Consultant;
 import .model.Dialog3BoutonsParam;
-import .model.DocumentPieceJointe;
-import .model.DonneesRealisees;
-import .model.DossierPrestation;
+import .model.DocumentAnnexe;
+import .model.DonneesFinalisees;
+import .model.DossierTransit;
 import .model.EnumStyleClassBouton;
-import .model.ExamenParacliniqueMaterielUtilise;
-import .model.ExamenParacliniqueRealise;
+import .model.OperationTransitEquipement;
+import .model.OperationTransitFinalisee;
 import .model.FapDataRdv;
-import .model.PieceJointeExamen;
-import .model.PieceJointeExamenParaclinique;
-import .model.Reference;
-import .model.Document;
-import .model.Salle;
-import .model.Utilisateur;
-import .model.builder.ExamenParacliniqueMaterielUtiliseBuilder;
+import .model.AnnexeOperation;
+import .model.AnnexeOperationTransit;
+import .model.ReferenceTransit;
+import .model.RapportTransit;
+import .model.ZoneTransit;
+import .model.Operateur;
+import .model.builder.OperationTransitEquipementBuilder;
 import .model.commons.PrintableObject;
 import .model.commons.exception.ModelTechnicalException;
 import .model.context.ClientContextManager;
-import .model.converter.Sage2DocumentToDocumentExamen;
-import .model.criterias.ExamenParacliniqueRealiseCriterias;
-import .model.criterias.RechercheAffectationMaterielCriterias;
-import .model.ecg.TransmissionEcgSecondeLectureQuery;
-import .model.enumeration.EnumAction;
-import .model.enumeration.EnumConstatCodeLoinc;
-import .model.enumeration.EnumEcran;
-import .model.enumeration.EnumErreurLancementExamen;
-import .model.enumeration.EnumFonction;
-import .model.enumeration.EnumFormatDocument;
+import .model.converter.DocumentVersRapportTransitConverter;
+import .model.criterias.OperationTransitFinaliseeCriteres;
+import .model.criterias.RechercheAttributionEquipementCriteres;
+import .model.ecg.TransmissionSignalSecondaireQuery;
+import .model.enumeration.EnumActionTerminal;
+import .model.enumeration.EnumCodeSignalStandard;
+import .model.enumeration.EnumTerminal;
+import .model.enumeration.EnumErreurLancementOperation;
+import .model.enumeration.EnumRole;
+import .model.enumeration.EnumFormatRapportTransit;
 import .model.enumeration.EnumInteraction;
-import .model.enumeration.EnumListeFormatConstat;
-import .model.enumeration.EnumOuiNonNspEnCours;
+import .model.enumeration.EnumListeFormatSignal;
+import .model.enumeration.EnumOuiNonIndetermineEnCours;
 import .model.enumeration.EnumPrintObject;
-import .model.enumeration.EnumStatutDossierPrestation;
-import .model.enumeration.EnumStatutInteraction;
-import .model.enumeration.EnumTypeDocument;
-import .model.enumeration.EnumTypeElementConstat;
+import .model.enumeration.EnumStatutDossierTransit;
+import .model.enumeration.EnumStatutPhase;
+import .model.enumeration.EnumTypeRapport;
+import .model.enumeration.EnumTypeElementSignal;
 import .model.enumeration.EnumTypeRessource;
 import .model.enumeration.Habilitation;
-import .model.examen.FichePatientCriteria;
-import .model.factory.ConstatMaterielRealiseWithConstatLibelleVoFactory;
-import .model.factory.ConstatRealiseFactory;
-import .model.factory.ConstatRealiseWithOrigineInformationsVoFactory;
-import .model.factory.DocumentFactory;
-import .model.factory.UtilisateurVoFactory;
-import .model.helper.ConstatRealiseHelper;
-import .model.prestation.EnumTypeInteraction;
+import .model.examen.FichePassageCritere;
+import .model.factory.SignalEquipementValideFactory;
+import .model.factory.SignalObserveValideFactory;
+import .model.factory.SignalObserveValideVoFactory;
+import .model.factory.RapportTransitFactory;
+import .model.factory.OperateurVoFactory;
+import .model.helper.SignalObserveValideHelper;
+import .model.prestation.EnumTypePhase;
 import .model.prestation.Interaction;
 import .model.prestation.InteractionRealisee;
-import .model.prestation.configurationbloc.ConfigurationBloc;
-import .model.prestation.configurationbloc.ConstatParacliniqueConfiguration;
-import .model.prestation.configurationbloc.EnumBlocEcranDynamiqueAutres;
-import .model.prestation.configurationbloc.EnumBlocEcranDynamiqueGrilleDynamique;
-import .model.prestation.configurationbloc.GrilleDynamique;
-import .model.prestation.configurationbloc.TemplateConfiguration;
-import .model.prestation.elementgrilledynamique.ElementConstat;
-import .model.prestation.elementgrilledynamique.ElementGrilleDynamique;
-import .model.prestation.elementgrilledynamique.EnumECGIOP;
-import .model.prestation.elementgrilledynamique.EnumSpiroIOP;
-import .model.prestation.elementgrilledynamique.LibelleRegleAffichage;
-import .model.production.conclusion.DonneesEntretienMedicalConclusion;
-import .model.vo.ConfigurationModeleEcranVo;
-import .model.vo.ConstatMaterielRealiseWithConstatLibelleCourtVo;
-import .model.vo.ConstatRealiseWithOrigineInformationsVo;
-import .model.vo.ExamenParacliniqueRealiseVo;
-import .model.vo.ExamenParacliniqueVo;
+import .model.prestation.configurationbloc.BlocTerminal;
+import .model.prestation.configurationbloc.SignalTransitConfiguration;
+import .model.prestation.configurationbloc.EnumBlocTerminalDynamiqueAutres;
+import .model.prestation.configurationbloc.EnumBlocTerminalGrilleDynamique;
+import .model.prestation.configurationbloc.GrilleDynamiqueTerminal;
+import .model.prestation.configurationbloc.ModeleTerminal;
+import .model.prestation.elementgrilledynamique.ElementSignal;
+import .model.prestation.elementgrilledynamique.ElementGrilleTerminal;
+import .model.prestation.elementgrilledynamique.EnumSignalCardiaqueStandard;
+import .model.prestation.elementgrilledynamique.EnumSignalRespiratoireStandard;
+import .model.prestation.elementgrilledynamique.LibelleRegleTerminal;
+import .model.production.conclusion.SyntheseTransitDonnees;
+import .model.vo.ConfigurationTerminalVo;
+import .model.vo.SignalEquipementValideVo;
+import .model.vo.SignalObserveValideVo;
+import .model.vo.OperationTransitFinaliseeVo;
+import .model.vo.OperationTransitVo;
 import .model.vo.TraceVo;
-import .model.vo.UtilisateurVo;
+import .model.vo.OperateurVo;
 import .rest.communication.formdata.ResourceRequest;
-import ui.commons.configuration.UiPropertiesConfig;
+import ui.commons.configuration.TerminalConfig;
 import ui.commons.javafx.controller.ControllerMode;
 import ui.commons.javafx.controller.formfield.FormField;
 import ui.commons.javafx.spinner.Spinner;
 import ui.dialog.DialogConfirmationController;
 import ui.view.interfacegenerale.contentarea.EnumContentArea;
-import ui.view.production.ecrandynamique.ElementConstatComposantProperties;
-import ui.view.production.ecrandynamique.ElementGrilleDynamiqueComposantProperties;
-import ui.view.production.ecrandynamique.ElementRealiseFactory;
-import ui.view.production.ecrandynamique.ElementSaisieGrilleDynamiqueComposantProperties;
-import ui.view.production.ecrandynamique.GrilleDynamiqueUi;
-import ui.view.production.ecrandynamique.ImplementationComposantDynamique;
-import ui.view.production.examen.base.AbstractExamenController;
-import ui.view.production.examen.common.GrilleDynamiqueUtils;
-import ui.view.production.examen.components.ExamensRealisesGridPane;
-import ui.view.production.examen.components.ExamensRealisesTableView;
-import ui.view.production.model.ResultatConstat;
-import fr.cnamts.cpam.bordeaux.utils.DocumentUtils;
+import ui.view.production.ecrandynamique.ElementSignalPropriete;
+import ui.view.production.ecrandynamique.ElementGrilleTerminalPropriete;
+import ui.view.production.ecrandynamique.ElementSignalFactory;
+import ui.view.production.ecrandynamique.ElementSaisieGrillePropriete;
+import ui.view.production.ecrandynamique.GrilleTerminalUi;
+import ui.view.production.ecrandynamique.ModuleDynamiqueImpl;
+import terminal.operation.transit.base.AbstractExamenController;
+import terminal.operation.transit.common.GrilleDynamiqueTerminalUtils;
+import terminal.operation.transit.components.OperationsFinaliseesGridPane;
+import terminal.operation.transit.components.OperationsFinaliseesTableView;
+import ui.view.production.model.ResultatSignalObserve;
+import fr.cnamts.cpam.bordeaux.utils.RapportTransitUtils;
 import fr.cnamts.cpam.bordeaux.utils.FileUtils;
 import fr.cnamts.cpam.bordeaux.utils.JsonUtils;
 
 @Component
 @Scope("prototype")
-public class ExamenParacliniqueController extends AbstractExamenController {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ExamenParacliniqueController.class);
+public class OperationTransitController extends AbstractExamenController {
+    private static final Logger LOGGER = LoggerFactory.getLogger(OperationTransitController.class);
 
-    public static final String FORM_URL = "view/production/examen/ExamenParaclinique.fxml";
-    public static final String MENU_NAME = "Paraclinique";
-    public static final EnumContentArea CONTENT_AREA = EnumContentArea.MAIN_CONTENT_SMALL;
+    public static final String FORM_URL = "texte1";
+    public static final String MENU_NAME = "texte2";
+    public static final EnumContentArea CONTENT_AREA = EnumContentArea.texte3;
     private static final LinkedList<String> LIST_CSS_FILES = new LinkedList<>(Arrays.asList(
-            "production/examen/examen-paraclinique.css", "production/ecrandynamique/ecran-dynamique.css",
-            "production/ecrandynamique/tableau-questions.css"));
+            "texte4", "texte5",
+            "texte6"));
 
-    static final String DELETE_EXAMEN_DIALOGBOX_TITLE = "Suppression Examen Paraclinique";
-    static final String DELETE_EXAMEN_DIALOGBOX_MESSAGE = "Confirmez-vous la demande de suppression de l'examen sélectionné ?";
-    static final String DIALOGBOX_TITRE_MODALE_IMPRIMER_SIMPLE = "Impression du document";
-    static final String DIALOGBOX_TITRE_MODALE_IMPRIMER_AVEC_MAJ_STATUT_INTERACTION = "Options de finalisation du dossier";
-    static final String DIALOGBOX_MESSAGE_ENREGISTRER_DOCUMENT = "Souhaitez-vous enregistrer ce document dans le dossier du consultant ?";
-    static final String DIALOGBOX_MESSAGE_GENERATION_OU_AJOUT_PIECE_DOSSIER = "Pour clôturer le dossier, choisissez la génération d'un document ou l'ajout d'une pièce jointe.";
-    static final String DIALOGBOX_TEXTE_BOUTON1_OUVRIR_SEULEMENT = "Ouvrir seulement";
-    static final String DIALOGBOX_TEXTE_BOUTON2_GENERER_ET_CLOTURER = "Générer et clôturer";
-    static final String DIALOGBOX_TEXTE_BOUTON2_ENREGISTRER_DANS_DOSSIER = "Enregistrer dans le dossier";
-    static final String DIALOGBOX_TEXTE_BOUTON3_AJOUTER_PJ_ET_CLOTURER = "Ajouter une PJ et clôturer";
+    static final String TITRE_BOITE_DIALOGUE_SUPPRESSION_OPERATION = "texte7";
+    static final String MESSAGE_BOITE_DIALOGUE_SUPPRESSION_OPERATION = "texte8";
+    static final String TITRE_MODALE_IMPRESSION_SIMPLE = "texte9";
+    static final String TITRE_MODALE_IMPRESSION_AVEC_MAJ_STATUT_PHASE = "texte10";
+    static final String MESSAGE_ENREGISTREMENT_DOCUMENT = "texte11";
+    static final String MESSAGE_GENERATION_AJOUT_ANNEXE_DOSSIER = "texte12";
+    static final String DIALOGBOX_TEXTE_BOUTON1_OUVRIR_SEULEMENT = "texte13";
+    static final String DIALOGBOX_TEXTE_BOUTON2_GENERER_ET_CLOTURER = "texte14";
+    static final String DIALOGBOX_TEXTE_BOUTON2_ENREGISTRER_DANS_DOSSIER = "texte15";
+    static final String DIALOGBOX_TEXTE_BOUTON3_AJOUTER_PJ_ET_CLOTURER = "texte16";
 
-    static final String OUTPUT_MESSAGE_TITLE = "Abandon d'Opération";
+    static final String OUTPUT_MESSAGE_TITLE = "texte17";
     static final String OUTPUT_MESSAGE = "Des modifications ont été mises en place. Celles-ci n'ont pas été enregistrées.\n Etes-vous sûr de vouloir quitter l'opération actuelle ?";
-    static final String EXAMEN_PARACLINIQUE_REALISE_KEY = "examen_paraclinique_realise";
-    static final String LIBELLE_ANNULER_DEFAUT = "Annuler";
-    private static final String LIBELLE_ANNULER_EXAMEN = "Annuler examen";
-    static final String ERROR_DOSSIER_CONTENEUR_RESULTATS_MSG = "Le dossier spécifié lors de l'affectation du matériel comme conteneur des résultats n'a pas été trouvé.";
-    private static final String ERROR_CONTENEUR_RESULTATS_MSG = "Aucun fichier présent au sein du dossier conteneur des résultats dont le chemin a été spécifié\nlors de l'affectation du matériel.";
-    static final String ERROR_CONTENEUR_RESULTATS_LBL = "Conteneur résultat(s)";
-    static final String ERROR_DOSSIER_FICHIER_PATIENT_MSG = "Le dossier spécifié lors de l'affectation du matériel comme dépôt du Fichier Patient n'a pas été trouvé.";
-    private static final String ERROR_FICHIER_PATIENT_MSG = "Aucun fichier n'est présent au sein du dossier spécifié lors de l'affectation du matériel\ncomme dépôt du Fichier Patient.";
-    static final String ERROR_FICHIER_PATIENT_LBL = "Fichier patient";
-    static final String ERROR_LIGNE_COMMANDE_MSG = "Erreur au niveau du chemin de lancement du logiciel indiqué au sein de la ligne de commande\nentrée lors de l'affectation du matériel.";
-    private static final String ERROR_RECUPERATION_PJ_MSG = "Erreur au niveau du la récupération des pièces jointes.";
-    static final String ERROR_LIGNE_COMMANDE_LBL = "Ligne de commande";
-    private static final String ERROR_PIECES_JOINTES_LBL = "Pièces jointes";
-    private static final String ERROR_PLUSIEURS_TENT_LBL = "Interaction - Plusieurs tentatives";
-    private static final String ERROR_PLUSIEURS_TENT_MSG = "L'interaction n'autorise qu'une seule tentative (\"Plusieurs tentatives\" à non)";
-    private static final String ERROR_AUCUN_CONSTAT = "Aucun constat n'a été mis en place au sein de la grille dynamique";
-    private static final String ERROR_AUCUN_CONSTAT_LBL = "INTERACTION - CONSTATS";
-    private static final String ERROR_SUPPRESSION_EXAMEN_LBL = "Suppression examen";
-    private static final String ERROR_SUPPRESSION_EXAMENT_MSG = "L'interaction n'autorise pas la suppression d'examens (\"Supprimable\" à non)";
-    private static final String ERROR_INTERPRETATION_MSG = "Vous n'avez entré aucune donnée au sein de l'interprétation.";
-    private static final String ERROR_INTERPRETATION_LBL = "Interprétation";
+    static final String CLE_OPERATION_TRANSIT_FINALISEE = "texte19";
+    static final String LIBELLE_ANNULER_PAR_DEFAUT = "texte20";
+    private static final String LIBELLE_ANNULER_OPERATION = "texte21";
+    static final String ERREUR_DOSSIER_CONTENEUR_RESULTATS_MSG = "texte22";
+    private static final String ERREUR_CONTENEUR_RESULTATS_MSG = "Aucun fichier présent au sein du dossier conteneur des résultats dont le chemin a été spécifié\nlors de l'affectation du matériel.";
+    static final String ERREUR_CONTENEUR_RESULTATS_LIBELLE = "texte24";
+    static final String ERREUR_DOSSIER_FICHE_PASSAGE_MSG = "texte25";
+    private static final String ERREUR_FICHE_PASSAGE_MSG = "Aucun fichier n'est présent au sein du dossier spécifié lors de l'affectation du matériel\ncomme dépôt du Fichier Patient.";
+    static final String ERREUR_FICHE_PASSAGE_LIBELLE = "texte27";
+    static final String ERREUR_LIGNE_COMMANDE_MSG = "Erreur au niveau du chemin de lancement du logiciel indiqué au sein de la ligne de commande\nentrée lors de l'affectation du matériel.";
+    private static final String ERREUR_RECUPERATION_ANNEXE_MSG = "texte30";
+    static final String ERROR_LIGNE_COMMANDE_LBL = "texte29";
+    private static final String ERREUR_ANNEXES_LIBELLE = "texte31 jointes";
+    private static final String ERREUR_TENTATIVES_MULTIPLES_LIBELLE = "Interaction - Plusieurs tentatives";
+    private static final String ERREUR_TENTATIVES_MULTIPLES_MSG = "L'interaction n'autorise qu'une seule tentative (\"Plusieurs tentatives\" à non)";
+    private static final String ERREUR_AUCUN_SIGNAL = "Aucun constat n'a été mis en place au sein de la grille dynamique";
+    private static final String ERREUR_AUCUN_SIGNAL_LIBELLE = "INTERACTION - SIGNAL_OBSERVES";
+    private static final String ERREUR_SUPPRESSION_OPERATION_LIBELLE = "Suppression examen";
+    private static final String ERREUR_SUPPRESSION_OPERATION_MSG = "L'interaction n'autorise pas la suppression d'examens (\"Supprimable\" à non)";
+    private static final String ERREUR_SYNTHESE_MSG = "Vous n'avez entré aucune donnée au sein de l'interprétation.";
+    private static final String ERREUR_SYNTHESE_LIBELLE = "Interprétation";
 
-    private static final String CAS_INTERPRETE_EXAMEN = "Interprété par ";
-    private static final String CAS_NON_INTERPRETE_EXAMEN = "Non interprété";
+    private static final String CAS_SYNTHESE_OPERATION = "Interprété par ";
+    private static final String CAS_NON_SYNTHESE_OPERATION = "Non interprété";
 
-    static final String SAISIE_CONSTAT_REQUIRED = "Saisie constat obligatoire.";
-    private static final String ACQUISITION_EXAMEN = "Acquisition examen";
-    private static final String LANCEMENT_EXAMEN = "Lancement examen";
-    private static final String NOT_ALL_RESULT_FILES = "Le compte rendu de l'examen est disponible mais il peut manquer des fichiers de résultats.\nVous pouvez le cas échéant renouveler votre examen.";
-    private static final String LOGICIEL_CIBLE_NON_INSTALLER_MAL_CONFIGURER = "Cet examen ne peut pas être exécuté car le logiciel cible n'est pas installé ou incorrectement configuré";
-    static final String SUPPRIMER_PJ_CSS = "button-supprimer-pj";
+    static final String SAISIE_SIGNAL_OBLIGATOIRE = "Saisie constat obligatoire.";
+    private static final String RECUPERATION_OPERATION = "Acquisition examen";
+    private static final String LANCER_OPERATION = "Lancement examen";
+    private static final String FICHIERS_RESULTAT_INCOMPLETS = "Le compte rendu de l'examen est disponible mais il peut manquer des fichiers de résultats.\nVous pouvez le cas échéant renouveler votre examen.";
+    private static final String MODULE_CIBLE_NON_INSTALLE_MAL_CONFIGURE = "Cet examen ne peut pas être exécuté car le logiciel cible n'est pas installé ou incorrectement configuré";
+    static final String SUPPRIMER_ANNEXE_CSS = "button-supprimer-pj";
 
-    private static final Predicate<AffectationMateriel> PREDICAT_MATERIEL_UTILISABLE = AffectationMateriel::isUtilisable;
+    private static final Predicate<AttributionEquipement> PREDICAT_MATERIEL_UTILISABLE = AttributionEquipement::isUtilisable;
     private static final String PREPARATION_FICHIERS = "PREPARATION DES FICHIERS";
-    private static final String CSS_CLASS_SPINNER_TEXT = "spinner-text_visible";
-    private static final String CONSTAT_MATERIEL_SUFFIXE = " (Donnée d'appareil)";
+    private static final String CLASSE_CSS_INDICATEUR_TEXTE = "spinner-text_visible";
+    private static final String SUFFIXE_SIGNAL_EQUIPEMENT = " (Donnée d'appareil)";
 
     private static final String NOM_FICHIER_IMPRESSION = "impression_%s.pdf";
 
-    static final String CONSOLE_DOMAINE_PJ = "Pièce-jointe";
-    static final String CONSOLE_MESSAGE_PJ_PAYLOADMAXREACHED = "Ajout de fichier impossible. La taille du fichier ne doit pas excéder %s";
-    public static final String CONSTAT = "constat_";
-    public static final String AJOUT_D_UNE_PJ = "Ajout d'une PJ";
-    public static final String MESSAGE_AJOUT_PJ = "Attention: une transmission en seconde lecture est en cours pour cette examen. Si vous ajoutez une pièce jointe, cette transmission ne pourra plus être réceptionnée et l’examen passera au statut 'à interpréter'";
+    static final String DOMAINE_CONSOLE_ANNEXE = "Pièce-jointe";
+    static final String MESSAGE_CONSOLE_ANNEXE_TAILL_MAX = "Ajout de fichier impossible. La taille du fichier ne doit pas excéder %s";
+    public static final String SIGNAL_OBSERVE = "constat_";
+    public static final String AJOUT_ANNEXE = "Ajout d'une PJ";
+    public static final String MESSAGE_AJOUT_ANNEXE = "Attention: une transmission en seconde lecture est en cours pour cette examen. Si vous ajoutez une pièce jointe, cette transmission ne pourra plus être réceptionnée et l’examen passera au statut 'à interpréter'";
 
-    static final String LECTURE_EXAMEN = "Saisir interprétation";
-    private static final String CAS_LU_EXAMEN = "Interprété par ";
-    private static final String CAS_NON_LU_EXAMEN = "Non interprété";
+    static final String LECTURE_OPERATION = "Saisir interprétation";
+    private static final String CAS_OPERATION_LUE = "Interprété par ";
+    private static final String CAS_OPERATION_NON_LUE = "Non interprété";
 
-    private static final String LIBELLE_COURT_INTERACTION_URINES = "Urines";
-    private static final String CHAMP_DATE_RECUEIL_URINES = "Date de recueil des urines";
-    private static final String CHAMP_DATE_RECUEIL_URINES_AFTER_CURRENT_DATE_ERROR_MSG = "la date de recueil est postérieure à la date du jour";
-    private static final String CHAMP_DATE_RECUEIL_URINE_LIBELLE_COURT = "DateReUrine2";
-    private static final String CHAMP_HEURE_RECUEIL_URINES = "Heure de recueil des urines";
-    private static final String CHAMP_HEURE_RECUEIL_URINES_AFTER_ANALYSE_HOUR_ERROR_MSG = "L’heure de recueil est postérieure à l’heure d’analyse";
-    private static final String CHAMP_HEURE_RECUEIL_URINES_LIBELLE_COURT = "HeRecUrine2";
-    private static final String CHAMP_HEURE_ANALYSE_URINES_LIBELLE_COURT = "HeAnaUrines";
+    private static final String LIBELLE_COURT_PHASE_SPECIFIQUE = "Urines";
+    private static final String CHAMP_DATE_RECUEIL = "Date de recueil des urines";
+    private static final String ERREUR_DATE_RECUEIL_APRES_DATE_COURANTE = "la date de recueil est postérieure à la date du jour";
+    private static final String LIBELLE_COURT_DATE_RECUEIL = "DateReUrine2";
+    private static final String CHAMP_HEURE_RECUEIL = "Heure de recueil des urines";
+    private static final String ERREUR_HEURE_RECUEIL_APRES_HEURE_ANALYSE = "L’heure de recueil est postérieure à l’heure d’analyse";
+    private static final String LIBELLE_COURT_HEURE_RECUEIL = "HeRecUrine2";
+    private static final String LIBELLE_COURT_HEURE_ANALYSE = "HeAnaUrines";
 
     // FIXME ModeleMateriel -> type pour affectation de matériel
-    private static final String SPIROMETRE = "Spiromètre";
-    private static final String ECG = "Electrocardiogramme";
-    private static final String AUDIOMETRE = "Audiomètre";
+    private static final String EQUIPEMENT_MESURE_FLUX = "Spiromètre";
+    private static final String EQUIPEMENT_SIGNAL_CARDIQUE = "Electrocardiogramme";
+    private static final String EQUIPEMENT_MESURE_AUDIO = "Audiomètre";
 
     private static final Integer BOUTON_WIDTH_750 = 750;
 
     @Autowired
-    private ExamenParacliniqueRealiseService examenParacliniqueRealiseService;
+    private OperationTransitFinaliseeService operationTransitFinaliseeService;
     @Autowired
-    private ConsultantService consultantService;
+    private PassagerService passagerService;
     @Autowired
-    private AffectationMaterielService affectationMaterielService;
+    private AttributionEquipementService attributionEquipementService;
     @Autowired
-    private LanceurApplicationService lanceurApplicationService;
+    private LanceurModuleService lanceurModuleService;
     @Autowired
-    private EditiqueStorageService editiqueStorageService;
+    private ArchivageDocumentService archivageDocumentService;
     @Autowired
-    private ConstatPublieService constatPublieService;
+    private SignalDiffusionService signalDiffusionService;
     @Autowired
-    private SuiviOrientationService suiviOrientationService;
+    private AcheminementService acheminementService;
     @Autowired
-    ImplementationComposantDynamique implementationComposantDynamique;
+    ModuleDynamiqueImpl moduleDynamiqueImpl;
 
     @Autowired
-    private ConstatRealiseFactory constatRealiseFactory;
+    private SignalObserveValideFactory signalObserveValideFactory;
     @Autowired
-    private ElementRealiseFactory elementRealiseFactory;
+    private ElementSignalFactory elementSignalFactory;
     @Autowired
-    private ConstatMaterielRealiseWithConstatLibelleVoFactory constatMaterielRealiseFac;
+    private SignalEquipementValideFactory signalEquipementValideFactory;
     @Autowired
-    private Sage2DocumentToDocumentExamen converterSage2DocToDocExamen;
+    private DocumentVersRapportTransitConverter converterDocumentVersRapportTransit;
     @Autowired
-    private FapDataRdvService fapDataRdvService;
+    private FichePassageService fichePassageService;
     @Autowired
-    private DonneesEntretienMedicalConclusionService donneesEntretienMedicalConclusionService;
+    private SyntheseTransitService syntheseTransitService;
 
-    private FapDataRdv fapDataRdv;
+    private FapDataRdv fichePassageData;
 
     @Autowired
-    private UiPropertiesConfig uiPropertiesConfig;
+    private TerminalConfig configurationTerminal;
     @Autowired
     private FileUtils fileUtils;
 
     @FXML
-    ExamensRealisesTableView epcListeExamensRealisesTableView;
+    OperationsFinaliseesTableView tableauOperationsFinalisees;
     @FXML
-    TableColumn<ExamenParacliniqueRealise, String> epcExamenCol;
+    TableColumn<OperationTransitFinalisee, String> colonneOperation;
     @FXML
-    Label lblNomSalle;
+    Label libelleZoneTransit;
 
     @FXML
-    Button epcAnnulerExamenBtn;
+    Button boutonAnnulerOperation;
     @FXML
-    Button epcSupprimerExamenBtn;
+    Button boutonSupprimerOperation;
     @FXML
-    Button epcAjoutManuelPJBtn;
+    Button boutonAjouterAnnexeManuelle;
     @FXML
-    Button epcModifierExamenBtn;
+    Button boutonModifierOperation;
     @FXML
-    Button epcEnregistrerExamenBtn;
+    Button boutonEnregistrerOperation;
     @FXML
-    Button epcNouvelExamenBtn;
+    Button boutonNouvelleOperation;
     @FXML
-    Button epcInterpreterBtn;
+    Button boutonSynthese;
     @FXML
-    Button epcAcquisitionResultatsBtn;
+    Button boutonRecupererResultats;
     @FXML
-    Button epcLancerExamenBtn;
+    Button boutonLancerOperation;
     @FXML
-    Button epcImprimerExamenBtn;
+    Button boutonImprimerOperation;
 
     @FXML
-    HBox piecesJointesContainerHBox;
+    HBox conteneurAnnexes;
     @FXML
-    HBox piecesJointesHb;
+    HBox barreAnnexes;
     @FXML
-    ExamensRealisesGridPane examenGridPane;
+    OperationsFinaliseesGridPane grilleOperation;
     @FXML
-    GridPane interpretationGridPane;
+    GridPane grilleSynthese;
 
     @FXML
-    GridPane lecturePrerequiseGridPane;
+    GridPane grillePreRequis;
     @FXML
-    Label lecturePrerequiseLbl;
+    Label libellePreRequis;
     @FXML
-    CheckBox lecturePrerequiseChcbx;
+    CheckBox caseCocherPreRequis;
 
     @FXML
-    VBox mainContentVBox;
+    VBox conteneurPrincipal;
 
-    private Salle salle;
-    private Utilisateur connectedUser;
-    private UtilisateurVo connectedUserVo;
-    private List<ExamenParacliniqueRealise> examensParacliniqueAlreadyExisting;
-    private List<ElementConstat> lsElementsConstat = new ArrayList<>();
-    private final List<LibelleRegleAffichage> lsLibelleRegleAffichage = new ArrayList<>();
-    private List<ElementConstat> lsElementsConstatMateriel = new ArrayList<>();
+    private ZoneTransit zoneTransit;
+    private Operateur operateurConnecte;
+    private OperateurVo operateurConnecteVo;
+    private List<OperationTransitFinalisee> operationsTransitExistantes;
+    private List<ElementSignal> elementsSignal = new ArrayList<>();
+    private final List<LibelleRegleTerminal> libellesRegleAffichage = new ArrayList<>();
+    private List<ElementSignal> elementsSignalEquipement = new ArrayList<>();
 
-    private List<ElementConstat> lsElemCstInterpOuLectureMateriel = new ArrayList<>();
+    private List<ElementSignal> elementsSignalSyntheseEquipement = new ArrayList<>();
 
-    private ControllerMode interpretationControllerMode;
-    private List<AffectationMateriel> lsAllAffectationsMateriel = new ArrayList<>();
-    private List<AffectationMateriel> lsAffectationMaterielUtilisableToExamen = new ArrayList<>();
-    private String idConsultantStr = null;
-    AffectationMateriel affectationMaterielConnecte;
-    boolean isLectureMode = false;
-    private ExamenParacliniqueRealise editedExam;
+    private ControllerMode modeControleurSynthese;
+    private List<AttributionEquipement> attributionsEquipementTotales = new ArrayList<>();
+    private List<AttributionEquipement> attributionsEquipementUtilisables = new ArrayList<>();
+    private String idPassagerStr = null;
+    AttributionEquipement attributionEquipementConnecte;
+    boolean estModeLecture = false;
+    private OperationTransitFinalisee operationEnEdition;
 
-    boolean isSoftwareLaunchOperation = false;
-    SimpleBooleanProperty isConnectedExamen = new SimpleBooleanProperty(false);
-    private boolean areEqualGeneric = true;
+    boolean estLancementModule = false;
+    SimpleBooleanProperty estOperationConnectee = new SimpleBooleanProperty(false);
+    private boolean sontEgauxGenerique = true;
 
-    private final Map<Long, ElementGrilleDynamiqueComposantProperties> reglesAffichageElementComposantPropertiesMap = new HashMap<>();
+    private final Map<Long, ElementGrilleTerminalPropriete> reglesAffichageProprietesComposantMap = new HashMap<>();
 
     private Spinner mainSpinner = null;
-    TemplateConfiguration templateConfiguration;
-    private Document DocumentImpressionMisas;
-    private boolean isPjOpPostRefresh = false;
-    SimpleBooleanProperty isRunningListChangeAffMatProperty = new SimpleBooleanProperty(false);
-    private List<String> lsTypeMaterielBoundToInteraction;
-    private ChangeListener<Boolean> onListChangeAffMatCurrentListener;
+    ModeleTerminal configurationModele;
+    private RapportTransit documentImpression;
+    private boolean estOperationAnnexePostRafraichissement = false;
+    SimpleBooleanProperty estExecutionModificationAttribution = new SimpleBooleanProperty(false);
+    private List<String> typesEquipementLiesPhase;
+    private ChangeListener<Boolean> ecouteurModificationAttributionCourante;
 
     // Configuration constats d'interpretation ou constats de lecture
-    private String interpreteOrLu = CAS_INTERPRETE_EXAMEN;
-    private String nonInterpreteOrNonLu = CAS_NON_INTERPRETE_EXAMEN;
-    private EnumStatutInteraction statutInteractionAInterpreterOrLectureARealiser = EnumStatutInteraction.A_INTERPRETER;
+    private String synthetiseOuLu = CAS_SYNTHESE_OPERATION;
+    private String nonSynthetiseOuNonLu = CAS_NON_SYNTHESE_OPERATION;
+    private EnumStatutPhase statutPhaseASynthetiserOuALire = EnumStatutPhase.A_INTERPRETER;
 
     @Override
-    protected void _initForm(final LinkedList<String> listCssFiles) {
-        super._initForm(LIST_CSS_FILES);
-        activateCharacterSizeChangeOperations(mainContentVBox);
+    protected void initTerminal(final LinkedList<String> fichiersStyle) {
+        super.initTerminal(LIST_CSS_FILES);
+        activateCharacterSizeChangeOperations(conteneurPrincipal);
         setMode(ControllerMode.CONSULTATION);
-        initConnectedUserVo();
-        initListeners();
-        initTableView();
-        initLecturePrerequiseBlocInterpretationOuLectureContent();
+        initOperateurVo();
+        initEcouteurs();
+        initTableauOperations();
+        initBlocPreRequisSynthese();
     }
 
-    private void initConnectedUserVo() {
-        connectedUser = sessionContext.getConnectedUser();
-        connectedUserVo = UtilisateurVoFactory.buildUtilisateurVo(connectedUser);
+    private void initOperateurVo() {
+        operateurConnecte = contexteSession.getConnectedUser();
+        operateurConnecteVo = OperateurVoFactory.buildOperateurVo(operateurConnecte);
     }
 
-    private void initListeners() {
-        piecesJointesContainerHBox.managedProperty().bind(piecesJointesContainerHBox.visibleProperty());
-        lecturePrerequiseChcbx.selectedProperty().addListener(initLecturePrerequiseChcbxListener());
+    private void initEcouteurs() {
+        conteneurAnnexes.managedProperty().bind(conteneurAnnexes.visibleProperty());
+        caseCocherPreRequis.selectedProperty().addListener(initLecturePrerequiseChcbxListener());
     }
 
     private ChangeListener<Boolean> initLecturePrerequiseChcbxListener() {
         return (observable, oldValue, newValue) -> {
             if (Boolean.TRUE.equals(newValue)) {
-                interpreteOrLu = CAS_INTERPRETE_EXAMEN;
-                nonInterpreteOrNonLu = CAS_NON_INTERPRETE_EXAMEN;
-                statutInteractionAInterpreterOrLectureARealiser = EnumStatutInteraction.A_INTERPRETER;
+                synthetiseOuLu = CAS_SYNTHESE_OPERATION;
+                nonSynthetiseOuNonLu = CAS_NON_SYNTHESE_OPERATION;
+                statutPhaseASynthetiserOuALire = EnumStatutPhase.A_INTERPRETER;
             } else {
-                interpreteOrLu = CAS_LU_EXAMEN;
-                nonInterpreteOrNonLu = CAS_NON_LU_EXAMEN;
-                statutInteractionAInterpreterOrLectureARealiser = EnumStatutInteraction.LECTURE_A_REALISER;
+                synthetiseOuLu = CAS_OPERATION_LUE;
+                nonSynthetiseOuNonLu = CAS_OPERATION_NON_LUE;
+                statutPhaseASynthetiserOuALire = EnumStatutPhase.LECTURE_A_REALISER;
 
             }
         };
     }
 
-    private void initTableView() {
-        epcExamenCol.prefWidthProperty().bind(epcListeExamensRealisesTableView.widthProperty());
-        epcExamenCol.setCellValueFactory(cellValue -> new SimpleStringProperty(examenParacliniqueRealiseCellValueConcatenatation(cellValue.getValue())));
-        epcListeExamensRealisesTableView.getSelectionModel().selectedItemProperty()
-                .addListener(initSelectedRowFromTableViewChangeListener());
-        selectedExamenParaclinique.bind(epcListeExamensRealisesTableView.getSelectionModel().selectedItemProperty());
+    private void initTableauOperations() {
+        colonneOperation.prefWidthProperty().bind(tableauOperationsFinalisees.widthProperty());
+        colonneOperation.setCellValueFactory(cellValue -> new SimpleStringProperty(operationFinaliseeValeurCellule(cellValue.getValue())));
+        tableauOperationsFinalisees.getSelectionModel().selectedItemProperty()
+                .addListener(initLigneSelectionneeEcouteur());
+        operationTransitSelectionnee.bind(tableauOperationsFinalisees.getSelectionModel().selectedItemProperty());
     }
 
-    private String examenParacliniqueRealiseCellValueConcatenatation(ExamenParacliniqueRealise examenParacliniqueRealise) {
-        StringBuilder examenParacliniqueStrBuilder = new StringBuilder();
-        examenParacliniqueStrBuilder.append(getDisplayedInteractionRealiseeInteraction().getLibelleLong().toUpperCase());
-        examenParacliniqueService.createRealisateurCellValuePart(examenParacliniqueStrBuilder, examenParacliniqueRealise);
-        examenParacliniqueService.createLieuDateCellValuePart(examenParacliniqueStrBuilder, examenParacliniqueRealise);
-        examenParacliniqueService.createMaterielCellValuePart(examenParacliniqueStrBuilder, examenParacliniqueRealise);
-        examenParacliniqueService.createInterpretationCellValuePart(examenParacliniqueStrBuilder, examenParacliniqueRealise,
-                interpretationGridPane.isVisible(), configurationModeleEcran, isLectureMode, interpreteOrLu, nonInterpreteOrNonLu);
-        return examenParacliniqueStrBuilder.toString();
+    private String operationFinaliseeValeurCellule(OperationTransitFinalisee examentexte2Realise) {
+        StringBuilder operationBuilder = new StringBuilder();
+        operationBuilder.append(getDisplayedInteractionRealiseeInteraction().getLibelleLong().toUpperCase());
+        examentexte2Service.createRealisateurCellValuePart(operationBuilder, examentexte2Realise);
+        examentexte2Service.createLieuDateCellValuePart(operationBuilder, examentexte2Realise);
+        examentexte2Service.createMaterielCellValuePart(operationBuilder, examentexte2Realise);
+        examentexte2Service.createInterpretationCellValuePart(operationBuilder, examentexte2Realise,
+                grilleSynthese.isVisible(), configurationModeleEcran, estModeLecture, synthetiseOuLu, nonSynthetiseOuNonLu);
+        return operationBuilder.toString();
     }
 
-    protected ChangeListener<ExamenParacliniqueRealise> initSelectedRowFromTableViewChangeListener() {
+    protected ChangeListener<OperationTransitFinalisee> initLigneSelectionneeEcouteur() {
         return (obs, oldSelection, newSelection) -> {
-            initPieceJointeHBoxContentFromSpecificExamenParaclinique(selectedExamenParaclinique.get());
-            rowSelectionOperationControllerModeCases(oldSelection, newSelection);
-            if (selectedExamenParaclinique.get() != null) {
-                updateButtonsAccordingToLastExamen(
-                        selectedExamenParaclinique.get().equals(epcListeExamensRealisesTableView.getLastCreatedExamenParacliniqueRealise(null)));
+            initContenuAnnexeOperation(operationTransitSelectionnee.get());
+            gestionSelectionLigneModeOperation(oldSelection, newSelection);
+            if (operationTransitSelectionnee.get() != null) {
+                mettreAJourBoutonsDerniereOperation(
+                        operationTransitSelectionnee.get().equals(tableauOperationsFinalisees.getLastCreatedOperationTransitFinalisee(null)));
             } else {
-                updateButtonsAccordingToLastExamen(false);
+                mettreAJourBoutonsDerniereOperation(false);
             }
         };
     }
 
-    private void initPieceJointeHBoxContentFromSpecificExamenParaclinique(ExamenParacliniqueRealise examenParacliniqueRealise) {
-        piecesJointesHb.getChildren().clear();
-        if (examenParacliniqueRealise != null && CollectionUtils.isNotEmpty(examenParacliniqueRealise.getListePiecesJointes())) {
-            examenParacliniqueRealise.getListePiecesJointes().stream().filter(Doc -> Doc != null && Doc.getNom() != null)
-                    .forEach(this::putDocIntoPJHBox);
+    private void initContenuAnnexeOperation(OperationTransitFinalisee examentexte2Realise) {
+        barreAnnexes.getChildren().clear();
+        if (examentexte2Realise != null && CollectionUtils.isNotEmpty(examentexte2Realise.getListePiecesJointes())) {
+            examentexte2Realise.getListePiecesJointes().stream().filter(Doc -> Doc != null && Doc.getNom() != null)
+                    .forEach(this::ajouterDocumentAnnexe);
         }
     }
 
-    private void putDocIntoPJHBox(Document Doc) {
-        if (Doc.getNom() != null && Doc.getNom().toLowerCase().endsWith(DocumentUtils.PDF_EXTENSION)) {
+    private void ajouterDocumentAnnexe(RapportTransit Doc) {
+        if (Doc.getNom() != null && Doc.getNom().toLowerCase().endsWith(RapportTransitUtils.PDF_EXTENSION)) {
             Hyperlink hl = new Hyperlink(Doc.getNom());
-            hl.setOnAction(pdfPJSelectionActionEvent(Doc));
+            hl.setOnAction(actionSelectionPdfAnnexe(Doc));
             hl.getStyleClass().add("hyperlink-accueil");
 
-            piecesJointesHb.getChildren().add(hl);
+            barreAnnexes.getChildren().add(hl);
         } else {
             Label lab = new Label();
             lab.setText(Doc.getNom());
-            piecesJointesHb.getChildren().add(lab);
+            barreAnnexes.getChildren().add(lab);
         }
 
         if (!ClientContextManager._SYSTEM_USER_ID.equals(Doc.getUserCreationId())) {
-            piecesJointesHb.getChildren().add(initSupprimerPieceJointeManuelle(Doc));
+            barreAnnexes.getChildren().add(initSupprimerPieceJointeManuelle(Doc));
         }
 
     }
 
-    private void tracerExamenParaclinique(EnumAction action, String idRessource) {
-        sessionContext.setTrace(EnumFonction.REALISER_EXAMEN_PARACLINIQUE,
-                getEnumEcranOfExamenParaclinique(), getComplementEnumEcranExamenParaclinique(getEnumEcranOfExamenParaclinique()),
+    private void tracerOperationTransit(EnumActionTerminal action, String idRessource) {
+        contexteSession.setTrace(EnumRole.REALISER_EXAMEN_PARACLINIQUE,
+                getEnumTerminalOfExamentexte2(), getComplementEnumTerminalExamentexte2(getEnumTerminalOfExamentexte2()),
                 action,
                 EnumTypeRessource.FAP,
                 idRessource);
     }
 
-    public void supprimerPieceJointe(HBox pjData, Document pieceJointe) {
-        tracerExamenParaclinique(EnumAction.SUPPRIMER_PJ, idDossierPrestation.toString());
+    public void supprimerAnnexe(HBox pjData, RapportTransit pieceJointe) {
+        tracerOperationTransit(EnumActionTerminal.SUPPRIMER_PJ, idDossierTransit.toString());
 
-        examenParacliniqueService.supprimerPieceJointe(pieceJointe, selectedExamenParaclinique.get(), affectationMaterielConnecte, displayedInteractionRealisee,
-                templateConfiguration, statutInteractionAInterpreterOrLectureARealiser, getInterpretationSaisieUtilisateurStream().findAny().isPresent());
+        examentexte2Service.supprimerAnnexe(pieceJointe, operationTransitSelectionnee.get(), attributionEquipementConnecte, phaseTransitAffichage,
+                configurationModele, statutPhaseASynthetiserOuALire, getInterpretationSaisieOperateurStream().findAny().isPresent());
 
-        piecesJointesHb.getChildren().remove(pjData);
+        barreAnnexes.getChildren().remove(pjData);
         refreshFormData();
     }
 
-    private EventHandler<ActionEvent> pdfPJSelectionActionEvent(Document pdfDoc) {
-        Document archivedPdf = editiqueStorageService.getDocumentById(pdfDoc.getId());
-        if (EnumInteraction.ECG.getLibelleCourt().equals(pdfDoc.getSource())) {
-            TransmissionEcgSecondeLectureQuery transEcgSndLectureQuery = new TransmissionEcgSecondeLectureQuery();
-            transEcgSndLectureQuery.setStatutInteraction(displayedInteractionRealisee.getStatut());
-            transEcgSndLectureQuery.setInteractionRealiseeId(displayedInteractionRealisee.getId());
-            transEcgSndLectureQuery.setDossierPrestationId(displayedDossierPrestationProperty.getValue().getId());
+    private EventHandler<ActionEvent> actionSelectionPdfAnnexe(RapportTransit pdfDoc) {
+        RapportTransit archivedPdf = archivageDocumentService.getRapportTransitById(pdfDoc.getId());
+        if (EnumInteraction.EQUIPEMENT_SIGNAL_CARDIQUE.getLibelleCourt().equals(pdfDoc.getSource())) {
+            TransmissionSignalSecondaireQuery transEcgSndLectureQuery = new TransmissionSignalSecondaireQuery();
+            transEcgSndLectureQuery.setStatutInteraction(phaseTransitAffichage.getStatut());
+            transEcgSndLectureQuery.setInteractionRealiseeId(phaseTransitAffichage.getId());
+            transEcgSndLectureQuery.setDossierTransitId(dossierTransitAffichagePropriete.getValue().getId());
             return actionEvent -> {
-                pdfManager.showDocumentECG(archivedPdf, Habilitation.GERER_EXAMEN_CONSULTER_EXAMEN,
+                gestionnairePdf.showRapportTransitEQUIPEMENT_SIGNAL_CARDIQUE(archivedPdf, Habilitation.GERER_EXAMEN_CONSULTER_EXAMEN,
                         transEcgSndLectureQuery,
                         () -> {
-                            showModaleTransmissionEcgSecondLecture(transEcgSndLectureQuery, this::refreshFromDataTransmissionEcg);
+                            showModaleTransmissionEcgSecondLecture(transEcgSndLectureQuery, this::rafraichirDepuisTransmissionSignal);
                         });
             };
         } else {
-            return actionEvent -> pdfManager.showDocument(archivedPdf, Habilitation.GERER_EXAMEN_CONSULTER_EXAMEN);
+            return actionEvent -> gestionnairePdf.showRapportTransit(archivedPdf, Habilitation.GERER_EXAMEN_CONSULTER_EXAMEN);
         }
     }
 
-    private void refreshFromDataTransmissionEcg() {
-        displayedInteractionRealisee = interactionRealiseeService.getInteractionRealiseeById(displayedInteractionRealisee.getId());
+    private void rafraichirDepuisTransmissionSignal() {
+        phaseTransitAffichage = phaseTransitService.getInteractionRealiseeById(phaseTransitAffichage.getId());
         setMode(ControllerMode.CONSULTATION);
         refreshFormData();
     }
 
-    private void rowSelectionOperationControllerModeCases(ExamenParacliniqueRealise oldSel, ExamenParacliniqueRealise newSel) {
+    private void gestionSelectionLigneModeOperation(OperationTransitFinalisee oldSel, OperationTransitFinalisee newSel) {
         if (ControllerMode.CONSULTATION == getMode()) {
             rowSelectionOperationsInConsultationCase(oldSel, newSel);
         } else {
@@ -535,505 +535,505 @@ public class ExamenParacliniqueController extends AbstractExamenController {
     }
 
     @Override
-    protected void anotherRowSelectedInEditionMode(ExamenParacliniqueRealise oldSelection, ExamenParacliniqueRealise newSelection) {
-        if (isModifIntoGrilleDynamiqueData() && !isPjOpPostRefresh) {
-            dialogService.openDialogConfirmation(getPrimaryStage(), OUTPUT_MESSAGE_TITLE, OUTPUT_MESSAGE,
-                    onSelectionItemTableView(newSelection), onCancelDialogConfirmationBoxOperation(oldSelection));
+    protected void autreLigneSelectionneeModeEdition(OperationTransitFinalisee oldSelection, OperationTransitFinalisee newSelection) {
+        if (modificationDansGrilleDynamique() && !estOperationAnnexePostRafraichissement) {
+            serviceDialogue.openDialogConfirmation(getPrimaryStage(), OUTPUT_MESSAGE_TITLE, OUTPUT_MESSAGE,
+                    surSelectionElementTableau(newSelection), surAnnulationBoiteConfirmation(oldSelection));
         } else {
             rowSelectionOperations(newSelection);
             setMode(ControllerMode.CONSULTATION);
-            isPjOpPostRefresh = false;
+            estOperationAnnexePostRafraichissement = false;
         }
     }
 
     @Override
-    protected void postVerificationOperationsAfterRowSelectionInInterpretationModeCase(ExamenParacliniqueRealise oldSelection,
-            ExamenParacliniqueRealise newSelection) {
-        if (isModifIntoInterpretationDynamiquePartData()) {
-            dialogService.openDialogConfirmation(getPrimaryStage(), OUTPUT_MESSAGE_TITLE, OUTPUT_MESSAGE,
-                    onSelectionItemTableViewInterpretation(newSelection),
-                    onCancelDialogConfirmationBoxOperation(oldSelection));
+    protected void verificationPostSelectionModeSynthese(OperationTransitFinalisee oldSelection,
+            OperationTransitFinalisee newSelection) {
+        if (modificationDansSyntheseDynamique()) {
+            serviceDialogue.openDialogConfirmation(getPrimaryStage(), OUTPUT_MESSAGE_TITLE, OUTPUT_MESSAGE,
+                    selectionElementTableauSynthese(newSelection),
+                    surAnnulationBoiteConfirmation(oldSelection));
         } else {
-            selectionItemTableViewInterpretationCommonOperations(newSelection);
+            operationsSelectionElementSynthese(newSelection);
         }
     }
 
-    private Consumer<DialogConfirmationController> onSelectionItemTableViewInterpretation(final ExamenParacliniqueRealise examenRealise) {
-        return t -> selectionItemTableViewInterpretationCommonOperations(examenRealise);
+    private Consumer<DialogConfirmationController> selectionElementTableauSynthese(final OperationTransitFinalisee examenRealise) {
+        return t -> operationsSelectionElementSynthese(examenRealise);
     }
 
-    private void selectionItemTableViewInterpretationCommonOperations(final ExamenParacliniqueRealise examenRealise) {
-        if (composantInterpretationOuLecturePropertiesByElementId != null && !composantInterpretationOuLecturePropertiesByElementId.isEmpty()) {
+    private void operationsSelectionElementSynthese(final OperationTransitFinalisee examenRealise) {
+        if (composantSyntheseProprietesParIdElement != null && !composantSyntheseProprietesParIdElement.isEmpty()) {
             saisirInterpretationMode(ControllerMode.CONSULTATION);
         }
-        isExamenMode = true;
+        estModeOperation = true;
         rowSelectionOperations(examenRealise);
         setMode(ControllerMode.CONSULTATION);
     }
 
     @Override
-    protected void updateInteractionRealiseeForNewMainExamenParaclinique(ExamenParacliniqueRealise mainExamenRealise) {
-        final EnumStatutInteraction oldStatut = displayedInteractionRealisee.getStatut();
-        EnumStatutInteraction newStatut = EnumStatutInteraction.AFAIRE;
+    protected void mettreAJourPhasePourNouvelleOperation(OperationTransitFinalisee mainExamenRealise) {
+        final EnumStatutPhase oldStatut = phaseTransitAffichage.getStatut();
+        EnumStatutPhase newStatut = EnumStatutPhase.AFAIRE;
         if (mainExamenRealise != null) {
-            if (allConstatObligatoireRenseigne(mainExamenRealise)) {
-                if (examenParacliniqueService.isInteractionExamenConnecte(affectationMaterielConnecte)) {
-                    if (Arrays.asList(EnumStatutInteraction.A_INTERPRETER, EnumStatutInteraction.LECTURE_A_REALISER, EnumStatutInteraction.FAIT)
+            if (signauxObligatoiresRenseignes(mainExamenRealise)) {
+                if (examentexte2Service.isInteractionExamenConnecte(attributionEquipementConnecte)) {
+                    if (Arrays.asList(EnumStatutPhase.A_INTERPRETER, EnumStatutPhase.LECTURE_A_REALISER, EnumStatutPhase.FAIT)
                             .contains(oldStatut)) {
-                        if (!existAnyInterpretationSaisieUtilisateurRenseigne(mainExamenRealise) && isAcquisitionDejaFaite()) {
-                            newStatut = statutInteractionAInterpreterOrLectureARealiser;
+                        if (!existAnyInterpretationSaisieOperateurRenseigne(mainExamenRealise) && estRecuperationEffectuee()) {
+                            newStatut = statutPhaseASynthetiserOuALire;
                         } else {
-                            newStatut = EnumStatutInteraction.FAIT;
+                            newStatut = EnumStatutPhase.FAIT;
                         }
                     }
-                } else if (!existAnyInterpretationSaisieUtilisateurRenseigne(mainExamenRealise) && (!isLectureMode || lecturePrerequiseChcbx.isSelected())) {
-                    newStatut = statutInteractionAInterpreterOrLectureARealiser;
-                } else if (EnumStatutInteraction.FAIT != oldStatut && examenParacliniqueService.isChangementStatutOnlyAfterGeneratePdf(templateConfiguration)) {
+                } else if (!existAnyInterpretationSaisieOperateurRenseigne(mainExamenRealise) && (!estModeLecture || caseCocherPreRequis.isSelected())) {
+                    newStatut = statutPhaseASynthetiserOuALire;
+                } else if (EnumStatutPhase.FAIT != oldStatut && examentexte2Service.isChangementStatutOnlyAfterGeneratePdf(configurationModele)) {
                     newStatut = oldStatut;
                 } else {
-                    newStatut = EnumStatutInteraction.FAIT;
+                    newStatut = EnumStatutPhase.FAIT;
                 }
             }
         }
-        displayedInteractionRealisee.setStatut(
-                (mainExamenRealise != null && EnumStatutInteraction.AFAIRE == newStatut
-                        && isInteractionRealiseAInterpreterOrTransmis2ndLectureOrEnAttenteLectureState(displayedInteractionRealisee))
+        phaseTransitAffichage.setStatut(
+                (mainExamenRealise != null && EnumStatutPhase.AFAIRE == newStatut
+                        && estPhaseEnAttenteSyntheseOuTransmission(phaseTransitAffichage))
                                 ? oldStatut
                                 : newStatut);
-        boolean isRealisateurInteractionRealiseeUpddated = majRealisateurSiStatutAutorise(connectedUserVoSupplier(),
-                EnumStatutInteraction.STATUTS_NECESSITANT_REALISATEUR, displayedInteractionRealisee);
-        if (!oldStatut.equals(newStatut) || isRealisateurInteractionRealiseeUpddated) {
-            displayedInteractionRealisee = updateInteractionRealisee(displayedInteractionRealisee);
+        boolean estOperateurPhaseMisAJour = majRealisateurSiStatutAutorise(operateurConnecteVoSupplier(),
+                EnumStatutPhase.STATUTS_NECESSITANT_REALISATEUR, phaseTransitAffichage);
+        if (!oldStatut.equals(newStatut) || estOperateurPhaseMisAJour) {
+            phaseTransitAffichage = updateInteractionRealisee(phaseTransitAffichage);
         }
 
     }
 
-    private boolean isInteractionRealiseAInterpreterOrTransmis2ndLectureOrEnAttenteLectureState(InteractionRealisee interactionRealisee) {
-        return EnumStatutInteraction.getInteractionStatutTransmis2ndLectureEnAttenteLectureState().contains(interactionRealisee.getStatut());
+    private boolean estPhaseEnAttenteSyntheseOuTransmission(InteractionRealisee phaseTransit) {
+        return EnumStatutPhase.getInteractionStatutTransmis2ndLectureEnAttenteLectureState().contains(phaseTransit.getStatut());
     }
 
-    private boolean isInteractionRealiseTransmis2ndLectureOrEnAttenteLectureState(InteractionRealisee interactionRealisee) {
-        return EnumStatutInteraction.getInteractionStatutTransmis2ndLectureEnAttenteLectureState().contains(interactionRealisee.getStatut());
+    private boolean estPhaseTransmiseOuEnAttente(InteractionRealisee phaseTransit) {
+        return EnumStatutPhase.getInteractionStatutTransmis2ndLectureEnAttenteLectureState().contains(phaseTransit.getStatut());
     }
 
-    private boolean isAcquisitionDejaFaite() {
-        return selectedExamenParaclinique != null && selectedExamenParaclinique.get() != null
-                && CollectionUtils.isNotEmpty(selectedExamenParaclinique.get().getListePiecesJointes());
+    private boolean estRecuperationEffectuee() {
+        return operationTransitSelectionnee != null && operationTransitSelectionnee.get() != null
+                && CollectionUtils.isNotEmpty(operationTransitSelectionnee.get().getListePiecesJointes());
     }
 
-    private boolean allConstatObligatoireRenseigne(ExamenParacliniqueRealise examenRealise) {
-        List<ElementConstat> lsElemsConstatAvailable = getAvailableElementConstatListFromFullList(lsElementsConstat);
-        return lsElemsConstatAvailable.stream().filter(ElementConstat::getIsObligatoire)
-                .allMatch(elementConstat -> examenParacliniqueService.existsValueForElementConstatInExamenParacliniqueRealise(examenRealise, elementConstat));
+    private boolean signauxObligatoiresRenseignes(OperationTransitFinalisee examenRealise) {
+        List<ElementSignal> elementsSignalDisponibles = getAvailableElementSignalListFromFullList(elementsSignal);
+        return elementsSignalDisponibles.stream().filter(ElementSignal::getIsObligatoire)
+                .allMatch(elementSignalObserve -> examentexte2Service.existsValueForElementSignalInOperationTransitFinalisee(examenRealise, elementSignalObserve));
     }
 
-    protected boolean existsValueForElementConstatInterpretationInExamenParacliniqueRealise(ExamenParacliniqueRealise examenRealise,
-            ElementConstat elementConstat) {
-        return examenParacliniqueService.existsValueForElementConstatInterpretationInExamenParacliniqueRealise(examenRealise, elementConstat);
+    protected boolean elementSignalSyntheseExiste(OperationTransitFinalisee examenRealise,
+            ElementSignal elementSignalObserve) {
+        return examentexte2Service.elementSignalSyntheseExiste(examenRealise, elementSignalObserve);
     }
 
-    private void initSalleAndAffectationMaterielChangeListener(Long idDP, long idCons, InteractionRealisee interRea) {
-        isRunningListChangeAffMatProperty.bind(sessionContext.isRunningListChangeAffectationMaterielProperty());
-        onListChangeAffMatCurrentListener = generateOnListChangeAffMatCurrentListener();
-        isRunningListChangeAffMatProperty.addListener(onListChangeAffMatCurrentListener);
+    private void initZoneEtAttributionEquipementEcouteur(Long idDossierTransit, long idPassager, InteractionRealisee phaseRealisee) {
+        estExecutionModificationAttribution.bind(contexteSession.isRunningListChangeAttributionEquipementProperty());
+        ecouteurModificationAttributionCourante = genererEcouteurModificationAttribution();
+        estExecutionModificationAttribution.addListener(ecouteurModificationAttributionCourante);
     }
 
-    private ChangeListener<Boolean> generateOnListChangeAffMatCurrentListener() {
+    private ChangeListener<Boolean> genererEcouteurModificationAttribution() {
         return (obs, oldv, newv) -> {
             if (Boolean.FALSE.equals(newv)) {
-                Platform.runLater(() -> launchVerificationsAndActionAfterListAffectationMaterielChanged());
+                Platform.runLater(() -> lancerVerificationsApresModificationAttribution());
             }
         };
     }
 
-    protected void launchVerificationsAndActionAfterListAffectationMaterielChanged() {
-        List<AffectationMateriel> lsMaterielFromSessionContext = sessionContext.getListeAffectationsMateriel().stream()
-                .filter(am -> lsTypeMaterielBoundToInteraction.contains(am.getModele().getType()))
+    protected void lancerVerificationsApresModificationAttribution() {
+        List<AttributionEquipement> equipementsDepuisContexte = contexteSession.getListeAffectationsMateriel().stream()
+                .filter(am -> typesEquipementLiesPhase.contains(am.getModele().getType()))
                 .filter(PREDICAT_MATERIEL_UTILISABLE)
                 .collect(Collectors.toList());
-        Salle salleFromSessionContext = sessionContext.getSalle();
-        if (!salleFromSessionContext.getNom().equals(salle.getNom())
-                || (lsMaterielFromSessionContext.size() != lsAffectationMaterielUtilisableToExamen.size()
-                        || !lsMaterielFromSessionContext.containsAll(lsAffectationMaterielUtilisableToExamen))) {
-            operateMainDataReloadWhenSalleOrListMaterielWithModifications();
+        ZoneTransit zoneDepuisContexte = contexteSession.getZoneTransit();
+        if (!zoneDepuisContexte.getNom().equals(zoneTransit.getNom())
+                || (equipementsDepuisContexte.size() != attributionsEquipementUtilisables.size()
+                        || !equipementsDepuisContexte.containsAll(attributionsEquipementUtilisables))) {
+            rechargerDonneesApresModificationZoneOuEquipement();
         }
     }
 
-    private void operateMainDataReloadWhenSalleOrListMaterielWithModifications() {
-        if ((ControllerMode.EDITION == getMode() || ControllerMode.EDITION == interpretationControllerMode) && existsModificationsInForm()) {
-            dialogService.openDialogConfirmationAbandonModification(primaryStage,
-                    dialog -> onAcceptAbandonModifications(),
-                    dialog -> onCancelAbandonModifications(),
+    private void rechargerDonneesApresModificationZoneOuEquipement() {
+        if ((ControllerMode.EDITION == getMode() || ControllerMode.EDITION == modeControleurSynthese) && modificationsExistent()) {
+            serviceDialogue.openDialogConfirmationAbandonModification(scenePrincipale,
+                    dialog -> accepterAbandonModifications(),
+                    dialog -> annulerAbandonModifications(),
                     OUTPUT_MESSAGE);
         } else {
             if (ControllerMode.EDITION == getMode()) {
                 setMode(ControllerMode.CONSULTATION);
-            } else if (ControllerMode.EDITION == interpretationControllerMode) {
+            } else if (ControllerMode.EDITION == modeControleurSynthese) {
                 saisirInterpretationMode(ControllerMode.CONSULTATION);
             }
-            operateSalleAndMaterielAndFormDataReload();
+            rechargerZoneEquipementEtDonnees();
         }
     }
 
-    private void onAcceptAbandonModifications() {
+    private void accepterAbandonModifications() {
         if (ControllerMode.EDITION == getMode()) {
-            GrilleDynamiqueUtils.resetAllValues(composantExamenPropertiesByElementId);
+            GrilleDynamiqueTerminalUtils.resetAllValues(composantOperationProprietesParIdElement);
             setMode(ControllerMode.CONSULTATION);
-        } else if (ControllerMode.EDITION == interpretationControllerMode) {
-            GrilleDynamiqueUtils.resetAllValues(composantInterpretationOuLecturePropertiesByElementId);
+        } else if (ControllerMode.EDITION == modeControleurSynthese) {
+            GrilleDynamiqueTerminalUtils.resetAllValues(composantSyntheseProprietesParIdElement);
             saisirInterpretationMode(ControllerMode.CONSULTATION);
         }
-        operateSalleAndMaterielAndFormDataReload();
+        rechargerZoneEquipementEtDonnees();
     }
 
-    private void onCancelAbandonModifications() {
-        isRunningListChangeAffMatProperty.unbind();
-        isRunningListChangeAffMatProperty.removeListener(onListChangeAffMatCurrentListener);
-        sessionContext.setListeAffectationsMateriel(lsAllAffectationsMateriel);
-        sessionContext.setMaterielVerifie(Boolean.TRUE);
-        sessionContext.setSalle(salle);
-        isRunningListChangeAffMatProperty.bind(sessionContext.isRunningListChangeAffectationMaterielProperty());
-        isRunningListChangeAffMatProperty.addListener(onListChangeAffMatCurrentListener);
+    private void annulerAbandonModifications() {
+        estExecutionModificationAttribution.unbind();
+        estExecutionModificationAttribution.removeListener(ecouteurModificationAttributionCourante);
+        contexteSession.setListeAffectationsMateriel(attributionsEquipementTotales);
+        contexteSession.setMaterielVerifie(Boolean.TRUE);
+        contexteSession.setZoneTransit(zoneTransit);
+        estExecutionModificationAttribution.bind(contexteSession.isRunningListChangeAttributionEquipementProperty());
+        estExecutionModificationAttribution.addListener(ecouteurModificationAttributionCourante);
     }
 
-    private void operateSalleAndMaterielAndFormDataReload() {
-        salle = sessionContext.getSalle();
-        lblNomSalle.setText(salle.getNom());
-        lsAllAffectationsMateriel.clear();
-        lsAllAffectationsMateriel.addAll(sessionContext.getListeAffectationsMateriel());
-        lsAffectationMaterielUtilisableToExamen = lsAllAffectationsMateriel.stream()
-                .filter(am -> lsTypeMaterielBoundToInteraction.contains(am.getModele().getType()))
+    private void rechargerZoneEquipementEtDonnees() {
+        zoneTransit = contexteSession.getZoneTransit();
+        libelleZoneTransit.setText(zoneTransit.getNom());
+        attributionsEquipementTotales.clear();
+        attributionsEquipementTotales.addAll(contexteSession.getListeAffectationsMateriel());
+        attributionsEquipementUtilisables = attributionsEquipementTotales.stream()
+                .filter(am -> typesEquipementLiesPhase.contains(am.getModele().getType()))
                 .filter(PREDICAT_MATERIEL_UTILISABLE)
                 .collect(Collectors.toList());
         refreshFormData();
     }
 
-    public void consultExamenParaclinique(Long idDossierPrestation, Long idConsultant,
-            InteractionRealisee interactionRealisee, List<AffectationMateriel> lsAffectationMateriel, List<String> lsTypeMaterielExpected) {
-        salle = sessionContext.getSalle();
-        lblNomSalle.setText(salle.getNom());
-        lsTypeMaterielBoundToInteraction = lsTypeMaterielExpected;
-        lsAllAffectationsMateriel.addAll(sessionContext.getListeAffectationsMateriel());
-        lsAffectationMaterielUtilisableToExamen = lsAffectationMateriel.stream().filter(PREDICAT_MATERIEL_UTILISABLE).collect(Collectors.toList());
-        initSalleAndAffectationMaterielChangeListener(idDossierPrestation, idConsultant, interactionRealisee);
-        setDatas(idDossierPrestation, idConsultant, interactionRealisee);
-        displayedInteractionRealisee = interactionRealisee;
-        isExamenMode = true;
-        interpretationControllerMode = ControllerMode.CONSULTATION;
-        if (!interactionRealisee.getInteraction().getConfigurationEcrans().isEmpty()) {
-            retrieveConfigurationModeleEcran();
+    public void consulterOperationTransit(Long idDossierTransit, Long idPassager,
+            InteractionRealisee phaseTransit, List<AttributionEquipement> attributionsEquipement, List<String> typesEquipementAttendus) {
+        zoneTransit = contexteSession.getZoneTransit();
+        libelleZoneTransit.setText(zoneTransit.getNom());
+        typesEquipementLiesPhase = typesEquipementAttendus;
+        attributionsEquipementTotales.addAll(contexteSession.getListeAffectationsMateriel());
+        attributionsEquipementUtilisables = attributionsEquipement.stream().filter(PREDICAT_MATERIEL_UTILISABLE).collect(Collectors.toList());
+        initZoneEtAttributionEquipementEcouteur(idDossierTransit, idPassager, phaseTransit);
+        setDatas(idDossierTransit, idPassager, phaseTransit);
+        phaseTransitAffichage = phaseTransit;
+        estModeOperation = true;
+        modeControleurSynthese = ControllerMode.CONSULTATION;
+        if (!phaseTransit.getInteraction().getConfigurationEcrans().isEmpty()) {
+            recupererConfigurationTerminal();
         }
-        templateConfiguration = getTemplateConfiguration();
-        if (templateConfiguration != null) {
-            epcImprimerExamenBtn.setVisible(templateConfiguration.getModeleDocumentId() != null);
-            if (templateConfiguration.getLibelleBouton() != null && StringUtils.isNotBlank(templateConfiguration.getLibelleBouton().getIntitule())) {
-                epcImprimerExamenBtn.setText(templateConfiguration.getLibelleBouton().getIntitule());
+        configurationModele = getModeleTerminal();
+        if (configurationModele != null) {
+            boutonImprimerOperation.setVisible(configurationModele.getModeleRapportTransitId() != null);
+            if (configurationModele.getLibelleBouton() != null && StringUtils.isNotBlank(configurationModele.getLibelleBouton().getIntitule())) {
+                boutonImprimerOperation.setText(configurationModele.getLibelleBouton().getIntitule());
             }
         }
 
-        if (isLectureMode) {
-            lecturePrerequiseGridPane.setVisible(true);
-            epcInterpreterBtn.setText(LECTURE_EXAMEN);
+        if (estModeLecture) {
+            grillePreRequis.setVisible(true);
+            boutonSynthese.setText(LECTURE_OPERATION);
         }
 
         setMode(ControllerMode.CONSULTATION);
         refreshFormData();
 
-        fapDataRdv = fapDataRdvService.getDataRdvByIdFap(idDossierPrestation);
+        fichePassageData = fichePassageService.getDataRdvByIdFap(idDossierTransit);
 
         // Tracabilité
-        Interaction displayedInteractionRealiseeInteraction = getInteractionFromPrestationConfigurationById(
-                displayedInteractionRealisee.getInteraction().getId());
-        EnumEcran enumEcran = EnumEcran.UNKNOW;
+        Interaction phaseTransitAffichageInteraction = getInteractionFromPrestationConfigurationById(
+                phaseTransitAffichage.getInteraction().getId());
+        EnumTerminal enumEcran = EnumTerminal.UNKNOW;
         String complement = StringUtils.EMPTY;
-        if (displayedInteractionRealiseeInteraction != null && EnumTypeInteraction.EXAMEN == displayedInteractionRealiseeInteraction.getTypeInteraction()) {
-            enumEcran = EnumEcran.EXAMEN_PARACLINIQUE;
-            if (displayedInteractionRealiseeInteraction.getLibelleCourt() != null) {
-                complement = fr.cnamts.cpam.bordeaux.utils.StringUtils.stripAccents(displayedInteractionRealiseeInteraction.getLibelleCourt().toUpperCase());
+        if (phaseTransitAffichageInteraction != null && EnumTypePhase.EXAMEN == phaseTransitAffichageInteraction.getTypeInteraction()) {
+            enumEcran = EnumTerminal.EXAMEN_PARACLINIQUE;
+            if (phaseTransitAffichageInteraction.getLibelleCourt() != null) {
+                complement = fr.cnamts.cpam.bordeaux.utils.StringUtils.stripAccents(phaseTransitAffichageInteraction.getLibelleCourt().toUpperCase());
             }
         }
         TraceVo traceVo = new TraceVo();
-        traceVo.setTrace(EnumFonction.REALISER_EXAMEN_PARACLINIQUE,
+        traceVo.setTrace(EnumRole.REALISER_EXAMEN_PARACLINIQUE,
                 enumEcran, complement,
-                EnumAction.CONSULTER,
+                EnumActionTerminal.CONSULTER,
                 EnumTypeRessource.FAP,
-                idDossierPrestation.toString());
-        traceService.create(traceVo);
+                idDossierTransit.toString());
+        serviceTrace.create(traceVo);
         // *********
 
     }
 
-    private void initLecturePrerequiseBlocInterpretationOuLectureContent() {
-        lecturePrerequiseGridPane.managedProperty().bind(lecturePrerequiseGridPane.visibleProperty());
-        interpretationGridPane.managedProperty().bind(interpretationGridPane.visibleProperty());
+    private void initBlocPreRequisSynthese() {
+        grillePreRequis.managedProperty().bind(grillePreRequis.visibleProperty());
+        grilleSynthese.managedProperty().bind(grilleSynthese.visibleProperty());
     }
 
-    private void setLecturePrerequiseChildrenDisableValue() {
-        if (isExamenMode) {
-            lecturePrerequiseGridPane.setDisable(getMode().equals(ControllerMode.CONSULTATION));
+    private void definirEtatEnfantsPreRequis() {
+        if (estModeOperation) {
+            grillePreRequis.definirDesactive(getMode().equals(ControllerMode.CONSULTATION));
         } else {
-            lecturePrerequiseGridPane.setDisable(true);
+            grillePreRequis.definirDesactive(true);
         }
     }
 
     @Override
-    protected Map<String, ResourceRequest> getFormResourceRequests() {
-        Map<String, ResourceRequest> resources = super.getFormResourceRequests();
-        if (displayedInteractionRealisee != null) {
-            ExamenParacliniqueRealiseCriterias examenParacliniqueRealiseCriterias = new ExamenParacliniqueRealiseCriterias();
-            examenParacliniqueRealiseCriterias.setIdInteractionRealise(displayedInteractionRealisee.getId());
-            examenParacliniqueRealiseCriterias.setLastVersionExamen(false);
-            resources.put(EXAMEN_PARACLINIQUE_REALISE_KEY, new ResourceRequest(ExamenParacliniqueRealise[].class, examenParacliniqueRealiseCriterias));
+    protected Map<String, ResourceRequest> obtenirRequetesRessourcesTerminal() {
+        Map<String, ResourceRequest> resources = super.obtenirRequetesRessourcesTerminal();
+        if (phaseTransitAffichage != null) {
+            OperationTransitFinaliseeCriteres examentexte2RealiseCriterias = new OperationTransitFinaliseeCriteres();
+            examentexte2RealiseCriterias.setIdInteractionRealise(phaseTransitAffichage.getId());
+            examentexte2RealiseCriterias.setLastVersionExamen(false);
+            resources.put(CLE_OPERATION_TRANSIT_FINALISEE, new ResourceRequest(OperationTransitFinalisee[].class, examentexte2RealiseCriterias));
         }
         return resources;
     }
 
     @Override
-    protected void setFormData(Map<String, Object> resources) {
-        super.setFormData(resources);
-        piecesJointesContainerHBox.setVisible(true);
-        if (resources.containsKey(EXAMEN_PARACLINIQUE_REALISE_KEY)) {
-            examensParacliniqueAlreadyExisting = Arrays.asList((ExamenParacliniqueRealise[]) resources.get(EXAMEN_PARACLINIQUE_REALISE_KEY));
+    protected void definirDonneesTerminal(Map<String, Object> resources) {
+        super.definirDonneesTerminal(resources);
+        conteneurAnnexes.setVisible(true);
+        if (resources.containsKey(CLE_OPERATION_TRANSIT_FINALISEE)) {
+            operationsTransitExistantes = Arrays.asList((OperationTransitFinalisee[]) resources.get(CLE_OPERATION_TRANSIT_FINALISEE));
         }
-        if (!epcListeExamensRealisesTableView.getItems().isEmpty()) {
-            epcListeExamensRealisesTableView.getItems().clear();
+        if (!tableauOperationsFinalisees.getItems().isEmpty()) {
+            tableauOperationsFinalisees.getItems().clear();
         }
-        if (displayedInteractionRealisee != null) {
-            retrieveAndVerifyIfAffectationMaterielIsConnected();
+        if (phaseTransitAffichage != null) {
+            verifierAttributionEquipementConnecte();
         }
-        if (!examensParacliniqueAlreadyExisting.isEmpty()) {
-            epcListeExamensRealisesTableView.getItems().addAll(FXCollections.observableArrayList(examensParacliniqueAlreadyExisting));
-            selectRowAfterTableViewRefreshUsingFormData();
+        if (!operationsTransitExistantes.isEmpty()) {
+            tableauOperationsFinalisees.getItems().addAll(FXCollections.observableArrayList(operationsTransitExistantes));
+            selectionnerLigneApresRafraichissement();
         } else {
-            Stream.of(composantExamenPropertiesByElementId, composantInterpretationOuLecturePropertiesByElementId)
-                    .forEach(GrilleDynamiqueUtils::resetAllValues);
+            Stream.of(composantOperationProprietesParIdElement, composantSyntheseProprietesParIdElement)
+                    .forEach(GrilleDynamiqueTerminalUtils::resetAllValues);
         }
 
-        if (isLectureMode) {
-            interpretationGridPane.setVisible(lecturePrerequiseChcbx.isSelected());
+        if (estModeLecture) {
+            grilleSynthese.setVisible(caseCocherPreRequis.isSelected());
         } else {
-            interpretationGridPane.setVisible(true);
+            grilleSynthese.setVisible(true);
         }
     }
 
-    private void selectRowAfterTableViewRefreshUsingFormData() {
-        if (idExamenToSelect == null) {
-            selectRowCorrespondingToLastExamenParacliniqueRealised();
+    private void selectionnerLigneApresRafraichissement() {
+        if (idOperationASelectionner == null) {
+            selectionnerLigneDerniereOperationFinalisee();
         } else {
-            epcListeExamensRealisesTableView.selectExamenByIdInTableView(idExamenToSelect);
+            tableauOperationsFinalisees.selectExamenByIdInTableView(idOperationASelectionner);
         }
     }
 
-    private void selectRowCorrespondingToLastExamenParacliniqueRealised() {
-        ExamenParacliniqueRealise examenToSelect = examensParacliniqueAlreadyExisting.stream()
-                .max(Comparator.comparing(ExamenParacliniqueRealise::getDateCreation)).orElse(null);
+    private void selectionnerLigneDerniereOperationFinalisee() {
+        OperationTransitFinalisee examenToSelect = operationsTransitExistantes.stream()
+                .max(Comparator.comparing(OperationTransitFinalisee::getDateCreation)).orElse(null);
         Objects.requireNonNull(examenToSelect);
-        epcListeExamensRealisesTableView.getSelectionModel().clearSelection();
-        epcListeExamensRealisesTableView.getSelectionModel().select(examenToSelect);
-        epcListeExamensRealisesTableView.scrollTo(examenToSelect);
+        tableauOperationsFinalisees.getSelectionModel().clearSelection();
+        tableauOperationsFinalisees.getSelectionModel().select(examenToSelect);
+        tableauOperationsFinalisees.scrollTo(examenToSelect);
     }
 
-    private void retrieveAndVerifyIfAffectationMaterielIsConnected() {
+    private void verifierAttributionEquipementConnecte() {
         Interaction interaction = getDisplayedInteractionRealiseeInteraction();
-        if (interaction.getReferencesTypeMateriel() != null && !interaction.getReferencesTypeMateriel().isEmpty()) {
-            RechercheAffectationMaterielCriterias criteria = new RechercheAffectationMaterielCriterias();
-            criteria.setSalle(salle.getNom());
-            List<Reference> lsTypeMateriel = interaction.getReferencesTypeMateriel();
-            List<String> lsLibelleTypeMateriel = lsTypeMateriel.stream().map(Reference::getIntitule)
+        if (interaction.getReferenceTransitsTypeMateriel() != null && !interaction.getReferenceTransitsTypeMateriel().isEmpty()) {
+            RechercheAttributionEquipementCriteres criteria = new RechercheAttributionEquipementCriteres();
+            criteria.setZoneTransit(zoneTransit.getNom());
+            List<ReferenceTransit> lsTypeMateriel = interaction.getReferenceTransitsTypeMateriel();
+            List<String> libellesTypeEquipement = lsTypeMateriel.stream().map(ReferenceTransit::getIntitule)
                     .collect(Collectors.toList());
-            List<AffectationMateriel> affectationMaterielFromSalle = affectationMaterielService.getAffectationsMaterielByCriterias(criteria);
-            affectationMaterielConnecte = affectationMaterielFromSalle.stream()
-                    .filter(AffectationMateriel::isConnected)
-                    .filter(afm -> lsLibelleTypeMateriel.contains(afm.getModele().getType())).findFirst().orElse(null);
-            isConnectedExamen.set(affectationMaterielConnecte != null);
+            List<AttributionEquipement> affectationMaterielFromZoneTransit = attributionEquipementService.getAffectationsMaterielByCriterias(criteria);
+            attributionEquipementConnecte = affectationMaterielFromZoneTransit.stream()
+                    .filter(AttributionEquipement::isConnected)
+                    .filter(afm -> libellesTypeEquipement.contains(afm.getModele().getType())).findFirst().orElse(null);
+            estOperationConnectee.set(attributionEquipementConnecte != null);
         }
     }
 
     @Override
-    protected Map<Region, FormField> getFormFields() {
+    protected Map<Region, FormField> obtenirChampsTerminal() {
         final Map<Region, FormField> fields = new HashMap<>();
-        fields.put(epcListeExamensRealisesTableView, new FormField(new ArrayList<>(), epcListeExamensRealisesTableView));
+        fields.put(tableauOperationsFinalisees, new FormField(new ArrayList<>(), tableauOperationsFinalisees));
         return fields;
     }
 
     @Override
-    protected void _setMode(ControllerMode mode) {
+    protected void definirMode(ControllerMode mode) {
         if (ControllerMode.CONSULTATION == mode) {
-            setExamenInConsultationMode();
+            definirModeConsultationOperation();
         } else {
-            setExamenInEditionMode();
+            definirModeEditionOperation();
         }
-        setLecturePrerequiseChildrenDisableValue();
+        definirEtatEnfantsPreRequis();
     }
 
-    private void updateButtonsAccordingToLastExamen(Boolean isLastExamen) {
+    private void mettreAJourBoutonsDerniereOperation(Boolean isLastExamen) {
         if (Boolean.TRUE.equals(isLastExamen)) {
-            epcInterpreterBtn.disableProperty().bind(interpreterBtnBinding().not());
-            boolean isModifiyingAllowed = interactionHabilitationHandler
+            boutonSynthese.disableProperty().bind(interpreterBtnBinding().not());
+            boolean estModificationAutorisee = gestionnaireAutorisationPhase
                     .checkHabilitationModifierExamen(getDisplayedInteractionRealiseeInteraction());
 
-            if (displayedDossierPrestationProperty.getValue() != null && displayedDossierPrestationProperty.getValue().isUnmodifiable()) {
-                isModifiyingAllowed = isModifiyingAllowed
-                        && actionManager.hasHabilitation(Habilitation.GERER_PRESTATION_REALISEE_MODIFIER_DOSSIER_CLOTURE);
+            if (dossierTransitAffichagePropriete.getValue() != null && dossierTransitAffichagePropriete.getValue().isUnmodifiable()) {
+                estModificationAutorisee = estModificationAutorisee
+                        && gestionnaireAction.hasHabilitation(Habilitation.GERER_PRESTATION_REALISEE_MODIFIER_DOSSIER_CLOTURE);
             }
-            setDisable(epcModifierExamenBtn, !isModifiyingAllowed);
+            definirDesactive(boutonModifierOperation, !estModificationAutorisee);
         } else {
-            Stream.of(epcInterpreterBtn, epcModifierExamenBtn).forEach(btn -> setDisable(btn, true));
+            Stream.of(boutonSynthese, boutonModifierOperation).forEach(btn -> definirDesactive(btn, true));
         }
     }
 
-    private void setExamenInConsultationMode() {
-        BooleanBinding isModifyingAllowedBinding = Bindings.createBooleanBinding(isModifiyingAllowedBinding(), displayedDossierPrestationProperty);
-        Stream.of(epcAnnulerExamenBtn, epcEnregistrerExamenBtn, epcAcquisitionResultatsBtn, epcAjoutManuelPJBtn).forEach(btn -> setDisable(btn, true));
-        Stream.of(epcModifierExamenBtn, epcSupprimerExamenBtn)
-                .forEach(btn -> btn.disableProperty().bind(epcListeExamensRealisesTableView.getSelectionModel()
+    private void definirModeConsultationOperation() {
+        BooleanBinding isModifyingAllowedBinding = Bindings.createBooleanBinding(estModificationAutoriseeBinding(), dossierTransitAffichagePropriete);
+        Stream.of(boutonAnnulerOperation, boutonEnregistrerOperation, boutonRecupererResultats, boutonAjouterAnnexeManuelle).forEach(btn -> definirDesactive(btn, true));
+        Stream.of(boutonModifierOperation, boutonSupprimerOperation)
+                .forEach(btn -> btn.disableProperty().bind(tableauOperationsFinalisees.getSelectionModel()
                         .selectedItemProperty().isNull().or(isModifyingAllowedBinding.not())));
-        epcInterpreterBtn.disableProperty().bind(interpreterBtnBinding().not().or(isModifyingAllowedBinding.not()));
+        boutonSynthese.disableProperty().bind(interpreterBtnBinding().not().or(isModifyingAllowedBinding.not()));
 
         habilitationEpcSupprimerExamenBtn();
         habilitationEpcNouvelExamenBtn();
 
-        BooleanBinding canLancerExamenBeLaunched = Bindings.createBooleanBinding(canLancerExamenOperationBeLaunched(),
-                epcListeExamensRealisesTableView.getSelectionModel().selectedItemProperty());
-        epcLancerExamenBtn.disableProperty().bind(canLancerExamenBeLaunched.not().or(isModifyingAllowedBinding.not()));
+        BooleanBinding canLancerExamenBeLaunched = Bindings.createBooleanBinding(peutLancerOperation(),
+                tableauOperationsFinalisees.getSelectionModel().selectedItemProperty());
+        boutonLancerOperation.disableProperty().bind(canLancerExamenBeLaunched.not().or(isModifyingAllowedBinding.not()));
 
-        implementationComposantDynamique.switchModeTo(ControllerMode.CONSULTATION, composantExamenPropertiesByElementId);
+        moduleDynamiqueImpl.switchModeTo(ControllerMode.CONSULTATION, composantOperationProprietesParIdElement);
 
-        BooleanBinding isImprimerAllowedBinding = Bindings.createBooleanBinding(isImprimerAllowed(), displayedDossierPrestationProperty);
-        epcImprimerExamenBtn.disableProperty().bind(epcListeExamensRealisesTableView.getSelectionModel()
+        BooleanBinding isImprimerAllowedBinding = Bindings.createBooleanBinding(isImprimerAllowed(), dossierTransitAffichagePropriete);
+        boutonImprimerOperation.disableProperty().bind(tableauOperationsFinalisees.getSelectionModel()
                 .selectedItemProperty().isNull().or(isImprimerAllowedBinding.not()));
     }
 
     private void habilitationEpcSupprimerExamenBtn() {
-        if (displayedInteractionRealisee != null && isSupprimerExamenNotAllowed(getInteractionFromPrestationConfigurationById(
-                displayedInteractionRealisee.getInteraction().getId()))) {
-            setDisable(epcSupprimerExamenBtn, true);
+        if (phaseTransitAffichage != null && isSupprimerExamenNotAllowed(getInteractionFromPrestationConfigurationById(
+                phaseTransitAffichage.getInteraction().getId()))) {
+            definirDesactive(boutonSupprimerOperation, true);
         }
     }
 
     private void habilitationEpcNouvelExamenBtn() {
-        setDisable(epcNouvelExamenBtn, !isNouvelExamenBtnAllowed());
+        definirDesactive(boutonNouvelleOperation, !isNouvelExamenBtnAllowed());
     }
 
-    private void setDisable(Button button, boolean disable) {
+    private void definirDesactive(Button button, boolean disable) {
         button.disableProperty().unbind();
-        button.setDisable(disable);
+        button.definirDesactive(disable);
     }
 
     private Callable<Boolean> isImprimerAllowed() {
-        return () -> (displayedDossierPrestationProperty.getValue() != null
-                && actionManager.hasHabilitation(Habilitation.GERER_EXAMEN_REALISER_EXAMEN_IMPRIMER));
+        return () -> (dossierTransitAffichagePropriete.getValue() != null
+                && gestionnaireAction.hasHabilitation(Habilitation.GERER_EXAMEN_REALISER_EXAMEN_IMPRIMER));
     }
 
-    private Callable<Boolean> isModifiyingAllowedBinding() {
-        return this::isModifiyingAllowed;
+    private Callable<Boolean> estModificationAutoriseeBinding() {
+        return this::estModificationAutorisee;
     }
 
-    private boolean isModifiyingAllowed() {
-        return displayedDossierPrestationProperty.getValue() == null
-                || !displayedDossierPrestationProperty.getValue().isUnmodifiable()
-                || actionManager.hasHabilitation(Habilitation.GERER_PRESTATION_REALISEE_MODIFIER_DOSSIER_CLOTURE);
+    private boolean estModificationAutorisee() {
+        return dossierTransitAffichagePropriete.getValue() == null
+                || !dossierTransitAffichagePropriete.getValue().isUnmodifiable()
+                || gestionnaireAction.hasHabilitation(Habilitation.GERER_PRESTATION_REALISEE_MODIFIER_DOSSIER_CLOTURE);
     }
 
-    private Callable<Boolean> canLancerExamenOperationBeLaunched() {
+    private Callable<Boolean> peutLancerOperation() {
         return () -> {
-            boolean isConnected = isConnectedExamen.get();
-            ReadOnlyObjectProperty<ExamenParacliniqueRealise> examen = epcListeExamensRealisesTableView
+            boolean isConnected = estOperationConnectee.get();
+            ReadOnlyObjectProperty<OperationTransitFinalisee> examen = tableauOperationsFinalisees
                     .getSelectionModel().selectedItemProperty();
             boolean isValueSelected = examen.isNotNull().get();
             boolean hasNotAlreadyBeenLaunched = true;
             boolean isLastOneCreated = true;
             if (isValueSelected && isConnected) {
-                List<ConstatMaterielRealise> lsCMR = epcListeExamensRealisesTableView.getSelectionModel().getSelectedItem().getListeConstatMaterielRealise();
+                List<SignalEquipementValide> lsCMR = tableauOperationsFinalisees.getSelectionModel().getSelectedItem().getListeSignalEquipementValide();
                 hasNotAlreadyBeenLaunched = !(lsCMR != null && !lsCMR.isEmpty());
-                ExamenParacliniqueRealise lastCreatedExamen = epcListeExamensRealisesTableView.getLastCreatedExamenParacliniqueRealise(null);
+                OperationTransitFinalisee lastCreatedExamen = tableauOperationsFinalisees.getLastCreatedOperationTransitFinalisee(null);
                 isLastOneCreated = lastCreatedExamen.equals(examen.getValue());
             }
-            return isConnected && isValueSelected && hasNotAlreadyBeenLaunched && isLastOneCreated && interactionHabilitationHandler
+            return isConnected && isValueSelected && hasNotAlreadyBeenLaunched && isLastOneCreated && gestionnaireAutorisationPhase
                     .checkHabilitationRealiserExamen(getDisplayedInteractionRealiseeInteraction());
         };
     }
 
-    private void setExamenInEditionMode() {
-        epcEnregistrerExamenBtn.setDisable(!interactionHabilitationHandler.checkHabilitationRealiserExamen(getDisplayedInteractionRealiseeInteraction()));
+    private void definirModeEditionOperation() {
+        boutonEnregistrerOperation.definirDesactive(!gestionnaireAutorisationPhase.checkHabilitationRealiserExamen(getDisplayedInteractionRealiseeInteraction()));
 
-        Stream.of(epcAnnulerExamenBtn, epcAjoutManuelPJBtn).forEach(btn -> setDisable(btn, false));
-        Stream.of(epcModifierExamenBtn, epcSupprimerExamenBtn, epcImprimerExamenBtn, epcInterpreterBtn, epcAcquisitionResultatsBtn,
-                epcLancerExamenBtn).forEach(this::editionButtonBindedOperations);
-        setDisable(epcNouvelExamenBtn, true);
-        if (selectedExamenParaclinique.get() == null || !actionManager.hasHabilitation(Habilitation.GERER_PJ_EXAMEN_PARACLINIQUE_AJOUTER)) {
-            setDisable(epcAjoutManuelPJBtn, true);
+        Stream.of(boutonAnnulerOperation, boutonAjouterAnnexeManuelle).forEach(btn -> definirDesactive(btn, false));
+        Stream.of(boutonModifierOperation, boutonSupprimerOperation, boutonImprimerOperation, boutonSynthese, boutonRecupererResultats,
+                boutonLancerOperation).forEach(this::operationsBoutonEdition);
+        definirDesactive(boutonNouvelleOperation, true);
+        if (operationTransitSelectionnee.get() == null || !gestionnaireAction.hasHabilitation(Habilitation.GERER_PJ_EXAMEN_PARACLINIQUE_AJOUTER)) {
+            definirDesactive(boutonAjouterAnnexeManuelle, true);
         }
-        implementationComposantDynamique.switchModeTo(ControllerMode.EDITION, composantExamenPropertiesByElementId);
+        moduleDynamiqueImpl.switchModeTo(ControllerMode.EDITION, composantOperationProprietesParIdElement);
 
-        lecturePrerequiseChcbx.setDisable(displayedInteractionRealisee.getStatut() == EnumStatutInteraction.FAIT && lecturePrerequiseChcbx.isSelected());
+        caseCocherPreRequis.definirDesactive(phaseTransitAffichage.getStatut() == EnumStatutPhase.FAIT && caseCocherPreRequis.isSelected());
 
     }
 
-    private void editionButtonBindedOperations(Button btn) {
+    private void operationsBoutonEdition(Button btn) {
         btn.disableProperty().unbind();
-        btn.setDisable(true);
+        btn.definirDesactive(true);
     }
 
     @Override
-    public boolean existsModificationsInForm() {
-        if ((isExamenMode && getMode().equals(ControllerMode.EDITION)) || isSoftwareLaunchOperation) {
-            return (isModifIntoGrilleDynamiqueData() || isNotDisabledAcquisitionButton());
-        } else if (interpretationControllerMode.equals(ControllerMode.EDITION)) {
-            return isModifIntoInterpretationDynamiquePartData();
+    public boolean modificationsExistent() {
+        if ((estModeOperation && getMode().equals(ControllerMode.EDITION)) || estLancementModule) {
+            return (modificationDansGrilleDynamique() || boutonRecuperationActive());
+        } else if (modeControleurSynthese.equals(ControllerMode.EDITION)) {
+            return modificationDansSyntheseDynamique();
         } else {
             return false;
         }
     }
 
-    public ValidationRule createElementConstatDateRecueilUrineValidationRule(List<ElementConstat> lsElementsConstat) {
-        return new AbstractValidationRule(CHAMP_DATE_RECUEIL_URINES) {
+    public ValidationRule creerRegleValidationDateRecueil(List<ElementSignal> elementsSignal) {
+        return new AbstractValidationRule(CHAMP_DATE_RECUEIL) {
             @Override
             public ValidationRuleResult isValid() {
                 final ValidationRuleResult vrr = new ValidationRuleResult();
                 boolean hasSucceed = true;
 
-                ElementConstat elemCstDateRecueilUrine = lsElementsConstat.stream()
-                        .filter(elem -> null != elem.getConstat()
-                                && CHAMP_DATE_RECUEIL_URINE_LIBELLE_COURT.equalsIgnoreCase(elem.getConstat().getLibelleCourt()))
+                ElementSignal elemCstDateRecueilUrine = elementsSignal.stream()
+                        .filter(elem -> null != elem.getSignalObserve()
+                                && LIBELLE_COURT_DATE_RECUEIL.equalsIgnoreCase(elem.getSignalObserve().getLibelleCourt()))
                         .findFirst().orElse(null);
                 if (elemCstDateRecueilUrine != null) {
-                    ConstatRealise cstReaDateRecueilUrine = retrieveConstatRealiseFromElementConstat(elemCstDateRecueilUrine, null,
-                            composantExamenPropertiesByElementId);
+                    SignalObserveValide cstReaDateRecueilUrine = retrieveSignalObserveValideFromElementSignal(elemCstDateRecueilUrine, null,
+                            composantOperationProprietesParIdElement);
                     if (cstReaDateRecueilUrine.getLocalDateValue() != null) {
                         hasSucceed = !cstReaDateRecueilUrine.getLocalDateValue().isAfter(LocalDate.now());
                     }
                 }
                 vrr.setHasSucceed(hasSucceed);
 
-                final ValidationError ve = new ValidationError(ErrorLevel.ERROR, CHAMP_DATE_RECUEIL_URINES,
-                        CHAMP_DATE_RECUEIL_URINES_AFTER_CURRENT_DATE_ERROR_MSG);
+                final ValidationError ve = new ValidationError(ErrorLevel.ERROR, CHAMP_DATE_RECUEIL,
+                        ERREUR_DATE_RECUEIL_APRES_DATE_COURANTE);
                 vrr.setValidationError(ve);
                 return vrr;
             }
         };
     }
 
-    public ValidationRule createElementConstatHeureRecueilUrineValidationRule(List<ElementConstat> lsElementsConstat) {
-        return new AbstractValidationRule(CHAMP_HEURE_RECUEIL_URINES) {
+    public ValidationRule creerRegleValidationHeureRecueil(List<ElementSignal> elementsSignal) {
+        return new AbstractValidationRule(CHAMP_HEURE_RECUEIL) {
             @Override
             public ValidationRuleResult isValid() {
                 final ValidationRuleResult vrr = new ValidationRuleResult();
                 boolean hasSucceed = true;
 
-                ElementConstat elemCstHeureRecueilUrine = lsElementsConstat.stream()
-                        .filter(elem -> null != elem.getConstat()
-                                && CHAMP_HEURE_RECUEIL_URINES_LIBELLE_COURT.equalsIgnoreCase(elem.getConstat().getLibelleCourt()))
+                ElementSignal elemCstHeureRecueilUrine = elementsSignal.stream()
+                        .filter(elem -> null != elem.getSignalObserve()
+                                && LIBELLE_COURT_HEURE_RECUEIL.equalsIgnoreCase(elem.getSignalObserve().getLibelleCourt()))
                         .findFirst().orElse(null);
-                ElementConstat elemCstHeureAnalyseUrine = lsElementsConstat.stream()
-                        .filter(elem -> null != elem.getConstat()
-                                && CHAMP_HEURE_ANALYSE_URINES_LIBELLE_COURT.equalsIgnoreCase(elem.getConstat().getLibelleCourt()))
+                ElementSignal elemCstHeureAnalyseUrine = elementsSignal.stream()
+                        .filter(elem -> null != elem.getSignalObserve()
+                                && LIBELLE_COURT_HEURE_ANALYSE.equalsIgnoreCase(elem.getSignalObserve().getLibelleCourt()))
                         .findFirst().orElse(null);
                 if (elemCstHeureRecueilUrine != null && elemCstHeureAnalyseUrine != null) {
-                    ConstatRealise cstReaHeureRecueilUrine = retrieveConstatRealiseFromElementConstat(elemCstHeureRecueilUrine, null,
-                            composantExamenPropertiesByElementId);
-                    ConstatRealise cstReaHeureAnalyseUrine = retrieveConstatRealiseFromElementConstat(elemCstHeureAnalyseUrine, null,
-                            composantExamenPropertiesByElementId);
+                    SignalObserveValide cstReaHeureRecueilUrine = retrieveSignalObserveValideFromElementSignal(elemCstHeureRecueilUrine, null,
+                            composantOperationProprietesParIdElement);
+                    SignalObserveValide cstReaHeureAnalyseUrine = retrieveSignalObserveValideFromElementSignal(elemCstHeureAnalyseUrine, null,
+                            composantOperationProprietesParIdElement);
                     if (cstReaHeureRecueilUrine != null && cstReaHeureRecueilUrine.getLocalTimeValue() != null
                             && cstReaHeureAnalyseUrine != null && cstReaHeureAnalyseUrine.getLocalTimeValue() != null) {
                         hasSucceed = !cstReaHeureRecueilUrine.getLocalTimeValue().isAfter(cstReaHeureAnalyseUrine.getLocalTimeValue());
@@ -1041,8 +1041,8 @@ public class ExamenParacliniqueController extends AbstractExamenController {
                 }
                 vrr.setHasSucceed(hasSucceed);
 
-                final ValidationError ve = new ValidationError(ErrorLevel.ERROR, CHAMP_HEURE_RECUEIL_URINES,
-                        CHAMP_HEURE_RECUEIL_URINES_AFTER_ANALYSE_HOUR_ERROR_MSG);
+                final ValidationError ve = new ValidationError(ErrorLevel.ERROR, CHAMP_HEURE_RECUEIL,
+                        ERREUR_HEURE_RECUEIL_APRES_HEURE_ANALYSE);
                 vrr.setValidationError(ve);
                 return vrr;
             }
@@ -1050,54 +1050,54 @@ public class ExamenParacliniqueController extends AbstractExamenController {
     }
 
     @Override
-    protected ValidationRule buildRequiredRule(ElementConstat elemConstat) {
-        return createConstatRealiseValidationRule(elemConstat, false);
+    protected ValidationRule construireRegleObligatoire(ElementSignal elemSignalObserve) {
+        return creerRegleValidationSignalObserve(elemSignalObserve, false);
     }
 
     @Override
-    protected boolean isElementConstatQuantitatif(ElementConstat elemConstat) {
-        return elemConstat.isElementConstatQuantitatif();
+    protected boolean estElementSignalQuantitatif(ElementSignal elemSignalObserve) {
+        return elemSignalObserve.estElementSignalQuantitatif();
     }
 
     @Override
-    protected boolean isElementConstatWithVraisemblance(ElementConstat elemConstat) {
-        return elemConstat.isElementConstatWithVraisemblance();
+    protected boolean estElementSignalPlausible(ElementSignal elemSignalObserve) {
+        return elemSignalObserve.estElementSignalPlausible();
     }
 
     @Override
-    protected Object getListeExamensRealisesFormFieldKey() {
-        return epcListeExamensRealisesTableView;
+    protected Object obtenirCleChampOperationsFinalisees() {
+        return tableauOperationsFinalisees;
     }
 
     @Override
-    protected void updateValidationRulesIfInteractionUrines(List<ElementConstat> lsElemConstat, List<ValidationRule> validationRules) {
+    protected void mettreAJourReglesValidationSiPhaseSpecifique(List<ElementSignal> lsElemSignalObserve, List<ValidationRule> validationRules) {
         Interaction interaction = getInteraction();
-        if (interaction != null && interaction.getLibelleCourt() != null && LIBELLE_COURT_INTERACTION_URINES.equals(interaction.getLibelleCourt())) {
-            validationRules.add(createElementConstatDateRecueilUrineValidationRule(lsElemConstat));
-            validationRules.add(createElementConstatHeureRecueilUrineValidationRule(lsElemConstat));
+        if (interaction != null && interaction.getLibelleCourt() != null && LIBELLE_COURT_PHASE_SPECIFIQUE.equals(interaction.getLibelleCourt())) {
+            validationRules.add(creerRegleValidationDateRecueil(lsElemSignalObserve));
+            validationRules.add(creerRegleValidationHeureRecueil(lsElemSignalObserve));
         }
     }
 
-    public List<ValidationRule> constructValidationRules() {
-        final List<ElementConstat> lsElemConstat = isExamenMode ? lsElementsConstatExamen : lsElementsConstatInterpretation;
-        return constructValidationRulesFromElementConstatList(lsElemConstat);
+    public List<ValidationRule> construireReglesValidation() {
+        final List<ElementSignal> lsElemSignalObserve = estModeOperation ? elementsSignalExamen : elementsSignalInterpretation;
+        return construireReglesValidationFromElementSignalList(lsElemSignalObserve);
     }
 
-    private boolean isControleOkElementConstatRequiredAndNotAnswered(ElementConstat elemConstat, boolean isAvantAcquisition) {
-        ConstatRealise constatRealise = retrieveConstatRealiseFromElementConstat(elemConstat, null,
-                isExamenMode ? composantExamenPropertiesByElementId : composantInterpretationOuLecturePropertiesByElementId);
-        return !elemConstat.getIsObligatoire() || (Boolean.TRUE.equals(elemConstat.getIsObligatoireAvantAcquisition()) && !isAvantAcquisition)
-                || !constatRealise.isEmptyConstatRealiseValue();
+    private boolean estValidationOkElementObligatoireNonRenseigne(ElementSignal elemSignalObserve, boolean isAvantAcquisition) {
+        SignalObserveValide constatRealise = retrieveSignalObserveValideFromElementSignal(elemSignalObserve, null,
+                estModeOperation ? composantOperationProprietesParIdElement : composantSyntheseProprietesParIdElement);
+        return !elemSignalObserve.getIsObligatoire() || (Boolean.TRUE.equals(elemSignalObserve.getIsObligatoireAvantAcquisition()) && !isAvantAcquisition)
+                || !constatRealise.isEmptySignalObserveValideValue();
     }
 
-    private AbstractValidationRule createConstatRealiseValidationRule(final ElementConstat elemConstat, final boolean isAvantAcquisition) {
-        return new AbstractValidationRule(elemConstat.getConstat().getLibelle(),
-                vr -> getFormFields().get(epcListeExamensRealisesTableView).setInError(true)) {
+    private AbstractValidationRule creerRegleValidationSignalObserve(final ElementSignal elemSignalObserve, final boolean isAvantAcquisition) {
+        return new AbstractValidationRule(elemSignalObserve.getSignalObserve().getLibelle(),
+                vr -> obtenirChampsTerminal().get(tableauOperationsFinalisees).setInError(true)) {
             @Override
             public ValidationRuleResult isValid() {
                 final ValidationRuleResult vrr = new ValidationRuleResult();
-                vrr.setHasSucceed(isControleOkElementConstatRequiredAndNotAnswered(elemConstat, isAvantAcquisition));
-                final ValidationError ve = new ValidationError(ErrorLevel.ERROR, widgetLabel, SAISIE_CONSTAT_REQUIRED);
+                vrr.setHasSucceed(estValidationOkElementObligatoireNonRenseigne(elemSignalObserve, isAvantAcquisition));
+                final ValidationError ve = new ValidationError(ErrorLevel.ERROR, widgetLabel, SAISIE_SIGNAL_OBLIGATOIRE);
                 vrr.setValidationError(ve);
                 return vrr;
             }
@@ -1105,41 +1105,41 @@ public class ExamenParacliniqueController extends AbstractExamenController {
     }
 
     @FXML
-    public void ajoutManuelPj() {
-        if (displayedInteractionRealisee.getStatut() == EnumStatutInteraction.EN_ATTENTE_LECTURE
-                || displayedInteractionRealisee.getStatut() == EnumStatutInteraction.TRANSMIS_2ND_LECTURE) {
-            dialogService.openDialogConfirmation(getPrimaryStage(), AJOUT_D_UNE_PJ, MESSAGE_AJOUT_PJ,
-                    dialog -> callAjoutManuelPj(), null);
+    public void ajouterAnnexeManuelle() {
+        if (phaseTransitAffichage.getStatut() == EnumStatutPhase.EN_ATTENTE_LECTURE
+                || phaseTransitAffichage.getStatut() == EnumStatutPhase.TRANSMIS_2ND_LECTURE) {
+            serviceDialogue.openDialogConfirmation(getPrimaryStage(), AJOUT_ANNEXE, MESSAGE_AJOUT_ANNEXE,
+                    dialog -> appelerAjoutAnnexeManuelle(), null);
         } else {
-            callAjoutManuelPj();
+            appelerAjoutAnnexeManuelle();
         }
     }
 
-    private void callAjoutManuelPj() {
+    private void appelerAjoutAnnexeManuelle() {
         File file = launchFileChooserOperations();
-        if (file != null && selectedExamenParaclinique.get() != null) {
-            if (file.length() > uiPropertiesConfig.getHttpPayloadMax()) {
-                consoleController.clearConsoleAndAddMessage(
-                        CONSOLE_DOMAINE_PJ,
-                        String.format(CONSOLE_MESSAGE_PJ_PAYLOADMAXREACHED, fileUtils.byteCountToDisplaySize(uiPropertiesConfig.getHttpPayloadMax())));
+        if (file != null && operationTransitSelectionnee.get() != null) {
+            if (file.length() > configurationTerminal.getHttpPayloadMax()) {
+                controleurConsole.clearConsoleAndAddMessage(
+                        DOMAINE_CONSOLE_ANNEXE,
+                        String.format(MESSAGE_CONSOLE_ANNEXE_TAILL_MAX, fileUtils.byteCountToDisplaySize(configurationTerminal.getHttpPayloadMax())));
             } else {
-                sessionContext.setTrace(EnumFonction.REALISER_EXAMEN_PARACLINIQUE,
-                        getEnumEcranOfExamenParaclinique(), getComplementEnumEcranExamenParaclinique(getEnumEcranOfExamenParaclinique()),
-                        EnumAction.AJOUTER_PJ,
+                contexteSession.setTrace(EnumRole.REALISER_EXAMEN_PARACLINIQUE,
+                        getEnumTerminalOfExamentexte2(), getComplementEnumTerminalExamentexte2(getEnumTerminalOfExamentexte2()),
+                        EnumActionTerminal.AJOUTER_PJ,
                         EnumTypeRessource.FAP,
-                        idDossierPrestation.toString());
+                        idDossierTransit.toString());
 
-                Long idExamenParaclinique = selectedExamenParaclinique.get().getId();
-                Document Document = DocumentFactory.buildDocument(file, EnumTypeDocument.PARACLINIQUE, "_" + idDossierPrestation);
-                ajouterAttributsDocumentForDP(Document, getDisplayedDossierPrestationPropertyValue());
-                PieceJointeExamenParaclinique pieceJointeExamenParaclinique = new PieceJointeExamenParaclinique(Document, idExamenParaclinique);
-                examenParacliniqueRealiseService.ajouterPieceJointeExamenManuellement(pieceJointeExamenParaclinique);
-                if (examenParacliniqueService.isInteractionExamenConnecte(affectationMaterielConnecte)) {
-                    displayedInteractionRealisee.setStatut(statutInteractionAInterpreterOrLectureARealiser);
-                    if (displayedInteractionRealisee.getRealisateur() == null && selectedExamenParaclinique.get().getRealisateur() != null) {
-                        displayedInteractionRealisee.setRealisateur(selectedExamenParaclinique.get().getRealisateur());
+                Long idExamentexte2 = operationTransitSelectionnee.get().getId();
+                RapportTransit RapportTransit = RapportTransitFactory.buildRapportTransit(file, EnumTypeRapport.PARACLINIQUE, "_" + idDossierTransit);
+                ajouterAttributsRapportTransitForDP(RapportTransit, getDisplayedDossierTransitPropertyValue());
+                AnnexeOperationTransit pieceJointeExamentexte2 = new AnnexeOperationTransit(RapportTransit, idExamentexte2);
+                operationTransitFinaliseeService.ajouterAnnexeOperationManuellement(pieceJointeExamentexte2);
+                if (examentexte2Service.isInteractionExamenConnecte(attributionEquipementConnecte)) {
+                    phaseTransitAffichage.setStatut(statutPhaseASynthetiserOuALire);
+                    if (phaseTransitAffichage.getRealisateur() == null && operationTransitSelectionnee.get().getRealisateur() != null) {
+                        phaseTransitAffichage.setRealisateur(operationTransitSelectionnee.get().getRealisateur());
                     }
-                    interactionRealiseeService.updateInteractionRealisee(displayedInteractionRealisee);
+                    phaseTransitService.updateInteractionRealisee(phaseTransitAffichage);
                 }
                 operateRefreshOnAllDataFromSelectedExamOrOnPJItemsAccordingToExistModifInForm();
             }
@@ -1147,8 +1147,8 @@ public class ExamenParacliniqueController extends AbstractExamenController {
     }
 
     private void operateRefreshOnAllDataFromSelectedExamOrOnPJItemsAccordingToExistModifInForm() {
-        if (ControllerMode.EDITION == getMode() && existsModificationsInForm()) {
-            dialogService.openDialogConfirmation(getPrimaryStage(), OUTPUT_MESSAGE_TITLE, OUTPUT_MESSAGE, onConfirmAfterPJActionWithExistingModifsInForm(),
+        if (ControllerMode.EDITION == getMode() && modificationsExistent()) {
+            serviceDialogue.openDialogConfirmation(getPrimaryStage(), OUTPUT_MESSAGE_TITLE, OUTPUT_MESSAGE, onConfirmAfterPJActionWithExistingModifsInForm(),
                     onCancelActionWithExistingModifsInForm());
         } else {
             refreshFormData();
@@ -1157,118 +1157,118 @@ public class ExamenParacliniqueController extends AbstractExamenController {
 
     private Consumer<DialogConfirmationController> onConfirmAfterPJActionWithExistingModifsInForm() {
         return t -> {
-            isPjOpPostRefresh = true;
+            estOperationAnnexePostRafraichissement = true;
             refreshFormData();
         };
     }
 
     private Consumer<DialogConfirmationController> onCancelActionWithExistingModifsInForm() {
         return t -> {
-            final Long idSelectedExamen = selectedExamenParaclinique.get().getId();
-            ExamenParacliniqueRealise examenPara = examenParacliniqueRealiseService.getExamenParacliniqueParacliniqueRealiseById(idSelectedExamen);
-            initPieceJointeHBoxContentFromSpecificExamenParaclinique(examenPara);
+            final Long idSelectedExamen = operationTransitSelectionnee.get().getId();
+            OperationTransitFinalisee examenPara = operationTransitFinaliseeService.getExamentexte2texte2RealiseById(idSelectedExamen);
+            initContenuAnnexeOperation(examenPara);
         };
     }
 
     @FXML
-    public void epcAnnulerExamen() {
-        if (isExamenMode) {
-            annulerExamenMode();
+    public void annulerOperationTransit() {
+        if (estModeOperation) {
+            annulerOperationMode();
         } else {
-            annulerInterpretationMode();
+            annulerModeSynthese();
         }
     }
 
-    private void annulerExamenMode() {
-        if (isSoftwareLaunchOperation) {
-            annulerLancementExamen();
+    private void annulerOperationMode() {
+        if (estLancementModule) {
+            annulerLancementOperation();
         } else {
-            annulerExamenBasicOperation();
+            annulerOperationBase();
         }
     }
 
-    private void doAnnulerExamenPersisted() {
-        GrilleDynamiqueUi composantsNonLiesAuLogiciel = retrieveNotBindedToSoftwareComponents();
-        selectedExamenParaclinique.getValue().getListeConstatRealiseExamen().stream()
-                .filter(cstRea -> composantsNonLiesAuLogiciel.containsKey(cstRea.getElementConstat().getId()))
-                .forEach(cstRea -> composantsNonLiesAuLogiciel.putConstatRealiseValueInGrilleDynamique(cstRea));
-        lecturePrerequiseChcbx.setSelected(Boolean.TRUE.equals(selectedExamenParaclinique.getValue().getIsLecturePrerequise()));
+    private void annulerOperationPersistee() {
+        GrilleTerminalUi composantsNonLiesAuLogiciel = retrieveNotBindedToSoftwareComponents();
+        operationTransitSelectionnee.getValue().getListeSignalObserveValideExamen().stream()
+                .filter(cstRea -> composantsNonLiesAuLogiciel.containsKey(cstRea.getElementSignal().getId()))
+                .forEach(cstRea -> composantsNonLiesAuLogiciel.putSignalObserveValideValueInGrilleDynamiqueTerminal(cstRea));
+        caseCocherPreRequis.setSelected(Boolean.TRUE.equals(operationTransitSelectionnee.getValue().getIsLecturePrerequise()));
     }
 
-    private void annulerExamenBasicOperation() {
-        if (selectedExamenParaclinique.isNotNull().get()) {
-            doAnnulerExamenPersisted();
+    private void annulerOperationBase() {
+        if (operationTransitSelectionnee.isNotNull().get()) {
+            annulerOperationPersistee();
         } else {
-            GrilleDynamiqueUtils.resetAllValues(composantExamenPropertiesByElementId);
-            lecturePrerequiseChcbx.setSelected(false);
+            GrilleDynamiqueTerminalUtils.resetAllValues(composantOperationProprietesParIdElement);
+            caseCocherPreRequis.setSelected(false);
         }
         setMode(ControllerMode.CONSULTATION);
     }
 
-    private GrilleDynamiqueUi retrieveNotBindedToSoftwareComponents() {
-        if (lsElementsConstatMateriel != null && !lsElementsConstatMateriel.isEmpty()) {
-            GrilleDynamiqueUi composantsNonLiesAuLogiciel = new GrilleDynamiqueUi();
-            List<Long> lsIdElementConstatMateriel = lsElementsConstatMateriel.stream().map(ElementGrilleDynamique::getId)
+    private GrilleTerminalUi retrieveNotBindedToSoftwareComponents() {
+        if (elementsSignalEquipement != null && !elementsSignalEquipement.isEmpty()) {
+            GrilleTerminalUi composantsNonLiesAuLogiciel = new GrilleTerminalUi();
+            List<Long> idsElementSignalEquipement = elementsSignalEquipement.stream().map(ElementGrilleTerminal::getId)
                     .collect(Collectors.toList());
-            List<Long> lsNotElementConstatMateriel = composantExamenPropertiesByElementId.keySet().stream()
-                    .filter(key -> !lsIdElementConstatMateriel.contains(key)).collect(Collectors.toList());
-            lsNotElementConstatMateriel
-                    .forEach(id -> composantsNonLiesAuLogiciel.put(id, composantExamenPropertiesByElementId.get(id)));
+            List<Long> elementsNonSignalEquipement = composantOperationProprietesParIdElement.keySet().stream()
+                    .filter(key -> !idsElementSignalEquipement.contains(key)).collect(Collectors.toList());
+            elementsNonSignalEquipement
+                    .forEach(id -> composantsNonLiesAuLogiciel.put(id, composantOperationProprietesParIdElement.get(id)));
             return composantsNonLiesAuLogiciel;
         } else {
-            return composantExamenPropertiesByElementId;
+            return composantOperationProprietesParIdElement;
         }
     }
 
-    private void annulerInterpretationMode() {
-        List<ConstatRealise> lsConstatRealiseInterpretation = selectedExamenParaclinique.getValue().getListeConstatRealiseInterpretation();
-        if (CollectionUtils.isNotEmpty(lsConstatRealiseInterpretation)) {
-            lsConstatRealiseInterpretation
-                    .forEach(cstRea -> composantInterpretationOuLecturePropertiesByElementId.putConstatRealiseValueInGrilleDynamique(cstRea));
+    private void annulerModeSynthese() {
+        List<SignalObserveValide> signauxObservesSynthese = operationTransitSelectionnee.getValue().getListeSignalObserveValideInterpretation();
+        if (CollectionUtils.isNotEmpty(signauxObservesSynthese)) {
+            signauxObservesSynthese
+                    .forEach(cstRea -> composantSyntheseProprietesParIdElement.putSignalObserveValideValueInGrilleDynamiqueTerminal(cstRea));
             saisirInterpretationMode(ControllerMode.CONSULTATION);
         } else {
-            GrilleDynamiqueUtils.resetAllValues(composantInterpretationOuLecturePropertiesByElementId);
+            GrilleDynamiqueTerminalUtils.resetAllValues(composantSyntheseProprietesParIdElement);
             saisirInterpretationMode(ControllerMode.CONSULTATION);
         }
-        showOrHideConstatMaterielValue();
+        afficherMasquerValeurSignalEquipement();
     }
 
-    private void showOrHideConstatMaterielValue() {
-        if (selectedExamenParaclinique.getValue().getAnalyste() == null) {
-            List<ConstatMaterielRealise> lsConstatMaterielRealiseExamen = selectedExamenParaclinique.getValue()
-                    .getListeConstatMaterielRealise();
-            if (lsConstatMaterielRealiseExamen != null && !lsConstatMaterielRealiseExamen.isEmpty()
-                    && !lsElemCstInterpOuLectureMateriel.isEmpty()) {
-                putConstatMaterielValuesIntoInterpretationGrille(selectedExamenParaclinique.getValue());
+    private void afficherMasquerValeurSignalEquipement() {
+        if (operationTransitSelectionnee.getValue().getAnalyste() == null) {
+            List<SignalEquipementValide> lsSignalEquipementValideExamen = operationTransitSelectionnee.getValue()
+                    .getListeSignalEquipementValide();
+            if (lsSignalEquipementValideExamen != null && !lsSignalEquipementValideExamen.isEmpty()
+                    && !elementsSignalSyntheseEquipement.isEmpty()) {
+                placerValeursSignalEquipementDansGrilleSynthese(operationTransitSelectionnee.getValue());
             }
         }
     }
 
-    void annulerLancementExamen() {
-        doAnnulerExamenPersisted();
-        epcAnnulerExamenBtn.setText(LIBELLE_ANNULER_DEFAUT);
-        isSoftwareLaunchOperation = false;
-        implementationComposantDynamique.changeAsterixToShowValue(false);
+    void annulerLancementOperation() {
+        annulerOperationPersistee();
+        boutonAnnulerOperation.setText(LIBELLE_ANNULER_PAR_DEFAUT);
+        estLancementModule = false;
+        moduleDynamiqueImpl.changeAsterixToShowValue(false);
 
         setMode(ControllerMode.CONSULTATION);
     }
 
-    private void reinitialiserLancementExamenMainOperation() throws MaterielConnectedAquisitionFileNotFoundException {
-        String resultFilesFolderPath = affectationMaterielConnecte.getResultFilesFolderPath();
-        String typeMateriel = affectationMaterielConnecte.getModele().getType();
-        examenParacliniqueService.removeFilesFromPath(resultFilesFolderPath, typeMateriel);
+    private void reinitialiserLancementOperation() throws MaterielConnectedAquisitionFileNotFoundException {
+        String resultFilesFolderPath = attributionEquipementConnecte.getResultFilesFolderPath();
+        String typeMateriel = attributionEquipementConnecte.getModele().getType();
+        examentexte2Service.removeFilesFromPath(resultFilesFolderPath, typeMateriel);
 
     }
 
     @FXML
-    public void epcImprimerExamen() {
-        boolean isChangementStatutOnlyAfterGeneratePdf = !examenParacliniqueService.isInteractionExamenConnecte(affectationMaterielConnecte)
-                && examenParacliniqueService.isChangementStatutOnlyAfterGeneratePdf(templateConfiguration);
+    public void imprimerOperationTransit() {
+        boolean isChangementStatutOnlyAfterGeneratePdf = !examentexte2Service.isInteractionExamenConnecte(attributionEquipementConnecte)
+                && examentexte2Service.isChangementStatutOnlyAfterGeneratePdf(configurationModele);
 
         if (isChangementStatutOnlyAfterGeneratePdf) {
             Dialog3BoutonsParam dialog3BoutonsParam = new Dialog3BoutonsParam();
-            dialog3BoutonsParam.setTitre(DIALOGBOX_TITRE_MODALE_IMPRIMER_AVEC_MAJ_STATUT_INTERACTION);
-            dialog3BoutonsParam.setMessage(DIALOGBOX_MESSAGE_GENERATION_OU_AJOUT_PIECE_DOSSIER);
+            dialog3BoutonsParam.setTitre(TITRE_MODALE_IMPRESSION_AVEC_MAJ_STATUT_PHASE);
+            dialog3BoutonsParam.setMessage(MESSAGE_GENERATION_AJOUT_ANNEXE_DOSSIER);
             dialog3BoutonsParam.setLibelleBoutons1(DIALOGBOX_TEXTE_BOUTON1_OUVRIR_SEULEMENT);
             dialog3BoutonsParam.setLibelleBoutons2(DIALOGBOX_TEXTE_BOUTON2_GENERER_ET_CLOTURER);
             dialog3BoutonsParam.setLibelleBoutons3(DIALOGBOX_TEXTE_BOUTON3_AJOUTER_PJ_ET_CLOTURER);
@@ -1278,67 +1278,67 @@ public class ExamenParacliniqueController extends AbstractExamenController {
             dialog3BoutonsParam.setMinWidthDialog(BOUTON_WIDTH_750);
             dialog3BoutonsParam.setPrefWidthDialog(BOUTON_WIDTH_750);
 
-            dialogService.openDialog3BoutonsController(primaryStage, dialog3BoutonsParam,
-                    ouvrir -> ouvrirImpressionSeulement(), generer -> ouvrirEtAjouterImpressionInListePJ(), ajouterPJ -> ajouterPJEtCloturer());
+            serviceDialogue.openDialog3BoutonsController(scenePrincipale, dialog3BoutonsParam,
+                    ouvrir -> ouvrirImpression(), generer -> ouvrirEtAjouterImpressionAnnexe(), ajouterPJ -> ajouterAnnexeEtCloturer());
         } else {
-            dialogService.openDialog2BoutonsController(primaryStage, DIALOGBOX_TITRE_MODALE_IMPRIMER_SIMPLE, DIALOGBOX_MESSAGE_ENREGISTRER_DOCUMENT,
+            serviceDialogue.openDialog2BoutonsController(scenePrincipale, TITRE_MODALE_IMPRESSION_SIMPLE, MESSAGE_ENREGISTREMENT_DOCUMENT,
                     DIALOGBOX_TEXTE_BOUTON1_OUVRIR_SEULEMENT, DIALOGBOX_TEXTE_BOUTON2_ENREGISTRER_DANS_DOSSIER,
-                    ouvrir -> ouvrirImpressionSeulement(), ajouter -> ouvrirEtAjouterImpressionInListePJ());
+                    ouvrir -> ouvrirImpression(), ajouter -> ouvrirEtAjouterImpressionAnnexe());
         }
     }
 
-    private void ouvrirImpressionSeulement() {
-        PrintableObject<ExamenParacliniqueVo> examenParacliniqueVo = getExamenParacliniqueVoAsPrintableObject(selectedExamenParaclinique.get());
-        DocumentImpressionMisas = editiqueTemplatingService.generateDocumentFromTemplateHtml(examenParacliniqueVo);
+    private void ouvrirImpression() {
+        PrintableObject<OperationTransitVo> examentexte2Vo = obtenirOperationTransitVoImprimable(operationTransitSelectionnee.get());
+        documentImpression = serviceModeleDocument.generateRapportTransitFromTemplateHtml(examentexte2Vo);
 
-        if (DocumentImpressionMisas != null) {
+        if (documentImpression != null) {
             TraceVo traceVo = new TraceVo();
-            final EnumEcran ecran = getEnumEcranOfExamenParaclinique();
-            traceVo.setTrace(EnumFonction.REALISER_EXAMEN_PARACLINIQUE,
+            final EnumTerminal ecran = getEnumTerminalOfExamentexte2();
+            traceVo.setTrace(EnumRole.REALISER_EXAMEN_PARACLINIQUE,
                     ecran,
-                    getComplementEnumEcranExamenParaclinique(ecran),
-                    EnumAction.IMPRIMER,
+                    getComplementEnumTerminalExamentexte2(ecran),
+                    EnumActionTerminal.IMPRIMER,
                     EnumTypeRessource.FAP,
-                    idDossierPrestation.toString());
-            traceService.create(traceVo);
+                    idDossierTransit.toString());
+            serviceTrace.create(traceVo);
 
-            pdfManager.showDocument(DocumentImpressionMisas, Habilitation.GERER_EXAMEN_CONSULTER_EXAMEN);
+            gestionnairePdf.showRapportTransit(documentImpression, Habilitation.GERER_EXAMEN_CONSULTER_EXAMEN);
         }
     }
 
-    private void ouvrirEtAjouterImpressionInListePJ() {
-        ouvrirImpressionSeulement();
-        if (selectedExamenParaclinique.get() != null && DocumentImpressionMisas != null) {
+    private void ouvrirEtAjouterImpressionAnnexe() {
+        ouvrirImpression();
+        if (operationTransitSelectionnee.get() != null && documentImpression != null) {
 
-            sessionContext.setTrace(EnumFonction.REALISER_EXAMEN_PARACLINIQUE,
-                    getEnumEcranOfExamenParaclinique(), getComplementEnumEcranExamenParaclinique(getEnumEcranOfExamenParaclinique()),
-                    EnumAction.AJOUTER_PJ,
+            contexteSession.setTrace(EnumRole.REALISER_EXAMEN_PARACLINIQUE,
+                    getEnumTerminalOfExamentexte2(), getComplementEnumTerminalExamentexte2(getEnumTerminalOfExamentexte2()),
+                    EnumActionTerminal.AJOUTER_PJ,
                     EnumTypeRessource.FAP,
-                    idDossierPrestation.toString());
+                    idDossierTransit.toString());
 
-            DocumentImpressionMisas
+            documentImpression
                     .setNom(FileUtils.getFilenameWithSuffix(
                             String.format(NOM_FICHIER_IMPRESSION, getInteraction() == null ? StringUtils.EMPTY : getInteraction().getLibelleCourt()),
-                            "_" + idDossierPrestation));
-            ajouterAttributsDocumentForDP(DocumentImpressionMisas, getDisplayedDossierPrestationPropertyValue());
+                            "_" + idDossierTransit));
+            ajouterAttributsRapportTransitForDP(documentImpression, getDisplayedDossierTransitPropertyValue());
 
-            PieceJointeExamenParaclinique pieceJointeExamenParaclinique = new PieceJointeExamenParaclinique(DocumentImpressionMisas,
-                    selectedExamenParaclinique.get().getId());
+            AnnexeOperationTransit pieceJointeExamentexte2 = new AnnexeOperationTransit(documentImpression,
+                    operationTransitSelectionnee.get().getId());
 
-            examenParacliniqueRealiseService.ajouterPieceJointeExamenManuellement(pieceJointeExamenParaclinique);
+            operationTransitFinaliseeService.ajouterAnnexeOperationManuellement(pieceJointeExamentexte2);
 
-            if (!examenParacliniqueService.isInteractionExamenConnecte(affectationMaterielConnecte)
-                    && examenParacliniqueService.isChangementStatutOnlyAfterGeneratePdf(templateConfiguration)) {
-                if (null != displayedInteractionRealisee.getStatut() && displayedInteractionRealisee.getStatut().isAInterpreterOrLectureARealiser()) {
-                    if (existAnyInterpretationSaisieUtilisateurRenseigne(epcListeExamensRealisesTableView.getLastCreatedExamenParacliniqueRealise(null))) {
-                        displayedInteractionRealisee.setStatut(EnumStatutInteraction.FAIT);
-                        interactionRealiseeService.updateInteractionRealisee(displayedInteractionRealisee);
+            if (!examentexte2Service.isInteractionExamenConnecte(attributionEquipementConnecte)
+                    && examentexte2Service.isChangementStatutOnlyAfterGeneratePdf(configurationModele)) {
+                if (null != phaseTransitAffichage.getStatut() && phaseTransitAffichage.getStatut().isAInterpreterOrLectureARealiser()) {
+                    if (existAnyInterpretationSaisieOperateurRenseigne(tableauOperationsFinalisees.getLastCreatedOperationTransitFinalisee(null))) {
+                        phaseTransitAffichage.setStatut(EnumStatutPhase.FAIT);
+                        phaseTransitService.updateInteractionRealisee(phaseTransitAffichage);
                     }
-                } else if (EnumStatutInteraction.AFAIRE == displayedInteractionRealisee.getStatut()) {
-                    displayedInteractionRealisee.setStatut(EnumStatutInteraction.FAIT);
-                    displayedInteractionRealisee.setRealisateur(connectedUserVo);
-                    suiviOrientationService.updateStatutSuivisOnSynthValidation(displayedDossierPrestationProperty.getValue().getFap().getId());
-                    interactionRealiseeService.updateInteractionRealisee(displayedInteractionRealisee);
+                } else if (EnumStatutPhase.AFAIRE == phaseTransitAffichage.getStatut()) {
+                    phaseTransitAffichage.setStatut(EnumStatutPhase.FAIT);
+                    phaseTransitAffichage.setRealisateur(operateurConnecteVo);
+                    acheminementService.updateStatutSuivisOnSynthValidation(dossierTransitAffichagePropriete.getValue().getFap().getId());
+                    phaseTransitService.updateInteractionRealisee(phaseTransitAffichage);
                 }
             }
 
@@ -1346,39 +1346,39 @@ public class ExamenParacliniqueController extends AbstractExamenController {
         }
     }
 
-    private void ajouterPJEtCloturer() {
+    private void ajouterAnnexeEtCloturer() {
         File file = launchFileChooserOperations();
         if (file != null) {
-            if (file.length() > uiPropertiesConfig.getHttpPayloadMax()) {
-                consoleController.clearConsoleAndAddMessage(
-                        CONSOLE_DOMAINE_PJ,
-                        String.format(CONSOLE_MESSAGE_PJ_PAYLOADMAXREACHED, fileUtils.byteCountToDisplaySize(uiPropertiesConfig.getHttpPayloadMax())));
+            if (file.length() > configurationTerminal.getHttpPayloadMax()) {
+                controleurConsole.clearConsoleAndAddMessage(
+                        DOMAINE_CONSOLE_ANNEXE,
+                        String.format(MESSAGE_CONSOLE_ANNEXE_TAILL_MAX, fileUtils.byteCountToDisplaySize(configurationTerminal.getHttpPayloadMax())));
             } else {
-                Long idExamenParaclinique = selectedExamenParaclinique.get().getId();
-                Document document = DocumentFactory.buildDocument(file, EnumTypeDocument.PARACLINIQUE, "_" + idDossierPrestation);
+                Long idExamentexte2 = operationTransitSelectionnee.get().getId();
+                RapportTransit document = RapportTransitFactory.buildRapportTransit(file, EnumTypeRapport.PARACLINIQUE, "_" + idDossierTransit);
 
-                ajouterAttributsDocumentForDP(document, getDisplayedDossierPrestationPropertyValue());
+                ajouterAttributsRapportTransitForDP(document, getDisplayedDossierTransitPropertyValue());
 
-                examenParacliniqueRealiseService.ajouterPieceJointeExamenManuellement(new PieceJointeExamenParaclinique(document, idExamenParaclinique));
+                operationTransitFinaliseeService.ajouterAnnexeOperationManuellement(new AnnexeOperationTransit(document, idExamentexte2));
 
-                if (doitMettreAJourStatutInteraction()) {
-                    EnumStatutInteraction statut = displayedInteractionRealisee.getStatut();
+                if (doitMettreAJourStatutPhase()) {
+                    EnumStatutPhase statut = phaseTransitAffichage.getStatut();
 
                     if (statut != null && statut.isAInterpreterOrLectureARealiser()
-                            && existAnyInterpretationSaisieUtilisateurRenseigne(
-                                    epcListeExamensRealisesTableView.getLastCreatedExamenParacliniqueRealise(null))) {
+                            && existAnyInterpretationSaisieOperateurRenseigne(
+                                    tableauOperationsFinalisees.getLastCreatedOperationTransitFinalisee(null))) {
 
-                        displayedInteractionRealisee.setStatut(EnumStatutInteraction.FAIT);
-                        interactionRealiseeService.updateInteractionRealisee(displayedInteractionRealisee);
+                        phaseTransitAffichage.setStatut(EnumStatutPhase.FAIT);
+                        phaseTransitService.updateInteractionRealisee(phaseTransitAffichage);
 
-                    } else if (EnumStatutInteraction.AFAIRE == statut) {
+                    } else if (EnumStatutPhase.AFAIRE == statut) {
 
-                        displayedInteractionRealisee.setStatut(EnumStatutInteraction.FAIT);
-                        displayedInteractionRealisee.setRealisateur(connectedUserVo);
+                        phaseTransitAffichage.setStatut(EnumStatutPhase.FAIT);
+                        phaseTransitAffichage.setRealisateur(operateurConnecteVo);
 
-                        suiviOrientationService.updateStatutSuivisOnSynthValidation(displayedDossierPrestationProperty.getValue().getFap().getId());
+                        acheminementService.updateStatutSuivisOnSynthValidation(dossierTransitAffichagePropriete.getValue().getFap().getId());
 
-                        interactionRealiseeService.updateInteractionRealisee(displayedInteractionRealisee);
+                        phaseTransitService.updateInteractionRealisee(phaseTransitAffichage);
                     }
                 }
                 refreshFormData();
@@ -1386,487 +1386,487 @@ public class ExamenParacliniqueController extends AbstractExamenController {
         }
     }
 
-    private boolean doitMettreAJourStatutInteraction() {
-        return !examenParacliniqueService.isInteractionExamenConnecte(affectationMaterielConnecte)
-                && examenParacliniqueService
-                        .isChangementStatutOnlyAfterGeneratePdf(templateConfiguration);
+    private boolean doitMettreAJourStatutPhase() {
+        return !examentexte2Service.isInteractionExamenConnecte(attributionEquipementConnecte)
+                && examentexte2Service
+                        .isChangementStatutOnlyAfterGeneratePdf(configurationModele);
     }
 
     @Override
-    protected Long getDisplayedInteractionId() {
-        return displayedInteractionRealisee != null
-                && displayedInteractionRealisee.getInteraction() != null
-                        ? displayedInteractionRealisee.getInteraction().getId()
+    protected Long obtenirIdPhaseAffichage() {
+        return phaseTransitAffichage != null
+                && phaseTransitAffichage.getInteraction() != null
+                        ? phaseTransitAffichage.getInteraction().getId()
                         : null;
     }
 
-    private PrintableObject<ExamenParacliniqueVo> getExamenParacliniqueVoAsPrintableObject(final ExamenParacliniqueRealise examenParacliniqueRealise) {
-        final ExamenParacliniqueVo examenParacliniqueVo = buildExamenParacliniqueVo(examenParacliniqueRealise, displayedConsultant,
-                displayedDossierPrestationProperty.getValue());
-        final PrintableObject<ExamenParacliniqueVo> examenVoPrintableObject = new PrintableObject<>(examenParacliniqueVo,
+    private PrintableObject<OperationTransitVo> obtenirOperationTransitVoImprimable(final OperationTransitFinalisee examentexte2Realise) {
+        final OperationTransitVo examentexte2Vo = construireOperationTransitVo(examentexte2Realise, passagerAffichage,
+                dossierTransitAffichagePropriete.getValue());
+        final PrintableObject<OperationTransitVo> examenVoPrintableObject = new PrintableObject<>(examentexte2Vo,
                 EnumPrintObject.EXAMEN_IMPRESSION,
-                EnumTypeDocument.PARACLINIQUE);
-        examenVoPrintableObject.setModeleDocumentId(templateConfiguration.getModeleDocumentId());
+                EnumTypeRapport.PARACLINIQUE);
+        examenVoPrintableObject.setModeleRapportTransitId(configurationModele.getModeleRapportTransitId());
         return examenVoPrintableObject;
     }
 
-    private ExamenParacliniqueVo buildExamenParacliniqueVo(final ExamenParacliniqueRealise examenParacliniqueRealise, final Consultant consultant,
-            final DossierPrestation dossierPrestation) {
-        final ExamenParacliniqueVo examenParacliniqueVo = new ExamenParacliniqueVo();
-        examenParacliniqueVo.setId(examenParacliniqueRealise.getId());
+    private OperationTransitVo construireOperationTransitVo(final OperationTransitFinalisee examentexte2Realise, final Consultant consultant,
+            final DossierTransit dossierPrestation) {
+        final OperationTransitVo examentexte2Vo = new OperationTransitVo();
+        examentexte2Vo.setId(examentexte2Realise.getId());
 
-        examenParacliniqueVo.setSignataireSynthese(getSignataireSynthese());
-        InteractionRealisee interactionRealisee = interactionRealiseeService.getInteractionRealiseeById(examenParacliniqueRealise.getIdInteractionRealisee());
-        DonneesEntretienMedicalConclusion conclusion = donneesEntretienMedicalConclusionService
-                .getDonneesEntretienMedicalConclusionById(interactionRealisee.getIdPrestationRealisee());
-        examenParacliniqueVo.setSignataireEntretienMedical(getSignataireEntretienMedical(conclusion));
+        examentexte2Vo.setSignataireSynthese(getSignataireSynthese());
+        InteractionRealisee phaseTransit = phaseTransitService.getInteractionRealiseeById(examentexte2Realise.getIdInteractionRealisee());
+        SyntheseTransitDonnees conclusion = syntheseTransitService
+                .getSyntheseTransitDonneesById(phaseTransit.getIdPrestationRealisee());
+        examentexte2Vo.setSignataireEntretienMedical(getSignataireEntretienMedical(conclusion));
 
         if (consultant != null) {
-            examenParacliniqueVo.setConsultantId(consultant.getId());
-            examenParacliniqueVo.setEntiteRattachementId(consultant.getCesRattachement());
+            examentexte2Vo.setConsultantId(consultant.getId());
+            examentexte2Vo.setEntiteRattachementId(consultant.getCesRattachement());
         }
 
         if (dossierPrestation != null) {
-            examenParacliniqueVo.setDossierPrestationId(dossierPrestation.getId());
-            examenParacliniqueVo.setDatePrestation(dossierPrestation.getDateDemarrage());
+            examentexte2Vo.setDossierTransitId(dossierPrestation.getId());
+            examentexte2Vo.setDatePrestation(dossierPrestation.getDateDemarrage());
         }
 
-        if (CollectionUtils.isNotEmpty(examenParacliniqueRealise.getListeConstatRealiseExamen())) {
-            examenParacliniqueRealise.getListeConstatRealiseExamen()
-                    .forEach(constat -> examenParacliniqueVo.getConstatRealiseExamenMap().putIfAbsent(CONSTAT +
-                            constat.getElementConstat().getConstat().getLibelleCourt(),
-                            ConstatRealiseHelper.getConstatRealiseResultatStringValue(constat)));
+        if (CollectionUtils.isNotEmpty(examentexte2Realise.getListeSignalObserveValideExamen())) {
+            examentexte2Realise.getListeSignalObserveValideExamen()
+                    .forEach(constat -> examentexte2Vo.getSignalObserveValideExamenMap().putIfAbsent(SIGNAL_OBSERVE +
+                            constat.getElementSignal().getSignalObserve().getLibelleCourt(),
+                            SignalObserveValideHelper.getSignalObserveValideResultatStringValue(constat)));
         }
-        if (CollectionUtils.isNotEmpty(examenParacliniqueRealise.getListeConstatRealiseInterpretation())) {
-            examenParacliniqueRealise.getListeConstatRealiseInterpretation()
-                    .forEach(constat -> examenParacliniqueVo.getConstatRealiseInterpretationExamenMap().putIfAbsent(CONSTAT +
-                            constat.getElementConstat().getConstat().getLibelleCourt(),
-                            ConstatRealiseHelper.getConstatRealiseResultatStringValue(constat)));
+        if (CollectionUtils.isNotEmpty(examentexte2Realise.getListeSignalObserveValideInterpretation())) {
+            examentexte2Realise.getListeSignalObserveValideInterpretation()
+                    .forEach(constat -> examentexte2Vo.getSignalObserveValideInterpretationExamenMap().putIfAbsent(SIGNAL_OBSERVE +
+                            constat.getElementSignal().getSignalObserve().getLibelleCourt(),
+                            SignalObserveValideHelper.getSignalObserveValideResultatStringValue(constat)));
         }
-        if (CollectionUtils.isNotEmpty(examenParacliniqueRealise.getListeConstatMaterielRealise())) {
-            examenParacliniqueRealise.getListeConstatMaterielRealise().forEach(constat -> putConstatMaterielRealiseInMap(examenParacliniqueVo, constat));
+        if (CollectionUtils.isNotEmpty(examentexte2Realise.getListeSignalEquipementValide())) {
+            examentexte2Realise.getListeSignalEquipementValide().forEach(constat -> placerSignalEquipementDansMap(examentexte2Vo, constat));
         }
 
-        return examenParacliniqueVo;
+        return examentexte2Vo;
     }
 
-    private void putConstatMaterielRealiseInMap(ExamenParacliniqueVo examenParacliniqueVo, ConstatMaterielRealise constatMaterielRealise) {
-        if (constatMaterielRealise != null && constatMaterielRealise.getIdConstatPublie() != null) {
-            ConstatPublie constatPublie = constatPublieService.getConstatPublieById(constatMaterielRealise.getIdConstatPublie());
-            if (constatPublie != null && StringUtils.isNotBlank(constatPublie.getConstatJsonValue())) {
-                Constat constat = JsonUtils.convertJsonStringToObject(constatPublie.getConstatJsonValue(), Constat.class);
-                constat.setLibelle(constat.getLibelle() + CONSTAT_MATERIEL_SUFFIXE);
-                ElementConstat elemConstat = new ElementConstat();
-                elemConstat.setConstat(constat);
-                ConstatRealise constatRea = new ConstatRealise();
-                constatRea.setElementConstat(elemConstat);
-                constatRea.setIdExamenParacliniqueRealise(examenParacliniqueVo.getId());
+    private void placerSignalEquipementDansMap(OperationTransitVo examentexte2Vo, SignalEquipementValide constatMaterielRealise) {
+        if (constatMaterielRealise != null && constatMaterielRealise.getIdSignalDiffuse() != null) {
+            SignalDiffuse constatPublie = signalDiffusionService.getSignalDiffuseById(constatMaterielRealise.getIdSignalDiffuse());
+            if (constatPublie != null && StringUtils.isNotBlank(constatPublie.getSignalObserveJsonValue())) {
+                SignalObserve constat = JsonUtils.convertJsonStringToObject(constatPublie.getSignalObserveJsonValue(), SignalObserve.class);
+                constat.setLibelle(constat.getLibelle() + SUFFIXE_SIGNAL_EQUIPEMENT);
+                ElementSignal elemSignalObserve = new ElementSignal();
+                elemSignalObserve.setSignalObserve(constat);
+                SignalObserveValide constatRea = new SignalObserveValide();
+                constatRea.setElementSignal(elemSignalObserve);
+                constatRea.setIdOperationTransitFinalisee(examentexte2Vo.getId());
                 constatRea.setTextValue(constatMaterielRealise.getTextValue());
                 constatRea.setNumericValue(constatMaterielRealise.getNumericValue());
 
-                examenParacliniqueVo.getConstatMaterielRealiseMap().putIfAbsent(CONSTAT +
-                        constatRea.getElementConstat().getConstat().getLibelleCourt(),
-                        ConstatRealiseHelper.getConstatRealiseResultatStringValue(constatRea));
+                examentexte2Vo.getSignalEquipementValideMap().putIfAbsent(SIGNAL_OBSERVE +
+                        constatRea.getElementSignal().getSignalObserve().getLibelleCourt(),
+                        SignalObserveValideHelper.getSignalObserveValideResultatStringValue(constatRea));
             }
         }
     }
 
     @FXML
-    public void epcSupprimerExamen() {
-        if (interactionHabilitationHandler
+    public void supprimerOperationTransit() {
+        if (gestionnaireAutorisationPhase
                 .checkHabilitationSupprimerExamen(getDisplayedInteractionRealiseeInteraction())) {
-            supprimerExamenTreatment();
+            supprimerOperationTraitement();
         } else {
-            afficherErreurNonHabilite(EnumExamenManqueHabilitation.ABSENCE_DE_DROIT_DE_SUPPRESSION_EXAMEN.getLibelle());
+            afficherErreurNonAutorise(EnumExamenManqueHabilitation.ABSENCE_DE_DROIT_DE_SUPPRESSION_EXAMEN.getLibelle());
         }
     }
 
-    private void supprimerExamenTreatment() {
-        if (checkSupprimerExamenConditions()) {
-            dialogService.openDialogConfirmation(getPrimaryStage(), DELETE_EXAMEN_DIALOGBOX_TITLE,
-                    DELETE_EXAMEN_DIALOGBOX_MESSAGE, getOnAcceptDeleteDialogBoxCallBack(), null);
+    private void supprimerOperationTraitement() {
+        if (verifierConditionsSuppressionOperation()) {
+            serviceDialogue.openDialogConfirmation(getPrimaryStage(), TITRE_BOITE_DIALOGUE_SUPPRESSION_OPERATION,
+                    MESSAGE_BOITE_DIALOGUE_SUPPRESSION_OPERATION, obtenirRappelBoiteDialogueSuppression(), null);
         } else {
-            showSupprimerExamenErrorMessage();
+            afficherMessageErreurSuppressionOperation();
         }
     }
 
-    private boolean checkSupprimerExamenConditions() {
+    private boolean verifierConditionsSuppressionOperation() {
         return getDisplayedInteractionRealiseeInteraction().getIsSupprimable();
     }
 
-    private void showSupprimerExamenErrorMessage() {
+    private void afficherMessageErreurSuppressionOperation() {
         getErrorMessageHandler().clear();
-        ValidationError error = new ValidationError(ERROR_SUPPRESSION_EXAMEN_LBL, ERROR_SUPPRESSION_EXAMENT_MSG);
+        ValidationError error = new ValidationError(ERREUR_SUPPRESSION_OPERATION_LIBELLE, ERREUR_SUPPRESSION_OPERATION_MSG);
         getErrorMessageHandler().addErreur(error);
-        consoleController.refreshDataAndShow();
+        controleurConsole.refreshDataAndShow();
     }
 
-    private Consumer<DialogConfirmationController> getOnAcceptDeleteDialogBoxCallBack() {
+    private Consumer<DialogConfirmationController> obtenirRappelBoiteDialogueSuppression() {
         return t -> {
-            ExamenParacliniqueRealise examenParaclinique = selectedExamenParaclinique.get();
+            OperationTransitFinalisee examentexte2 = operationTransitSelectionnee.get();
             spinnerService.executeTask(() -> {
 
-                sessionContext.setTrace(EnumFonction.REALISER_EXAMEN_PARACLINIQUE,
-                        getEnumEcranOfExamenParaclinique(), getComplementEnumEcranExamenParaclinique(getEnumEcranOfExamenParaclinique()),
-                        EnumAction.SUPPRIMER,
+                contexteSession.setTrace(EnumRole.REALISER_EXAMEN_PARACLINIQUE,
+                        getEnumTerminalOfExamentexte2(), getComplementEnumTerminalExamentexte2(getEnumTerminalOfExamentexte2()),
+                        EnumActionTerminal.SUPPRIMER,
                         EnumTypeRessource.FAP,
-                        idDossierPrestation.toString());
+                        idDossierTransit.toString());
 
-                examenParacliniqueRealiseService.deleteExamenParacliniqueById(examenParaclinique.getId());
+                operationTransitFinaliseeService.deleteExamentexte2ById(examentexte2.getId());
                 return StringUtils.EMPTY;
-            }, empty -> deleteExamenPostOperations(examenParaclinique), primaryStage);
+            }, empty -> operationsPostSuppressionOperation(examentexte2), scenePrincipale);
         };
     }
 
-    private void deleteExamenPostOperations(ExamenParacliniqueRealise removedExamenParaclinique) {
-        ExamenParacliniqueRealise examenRealisePrecedent = epcListeExamensRealisesTableView.getLastCreatedExamenParacliniqueRealise(removedExamenParaclinique);
-        EnumStatutInteraction oldStatut = displayedInteractionRealisee.getStatut();
-        EnumStatutInteraction newStatut = EnumStatutInteraction.AFAIRE;
-        boolean isRealisateurInteractionRealiseeUpddated = true;
+    private void operationsPostSuppressionOperation(OperationTransitFinalisee removedExamentexte2) {
+        OperationTransitFinalisee examenRealisePrecedent = tableauOperationsFinalisees.getLastCreatedOperationTransitFinalisee(removedExamentexte2);
+        EnumStatutPhase oldStatut = phaseTransitAffichage.getStatut();
+        EnumStatutPhase newStatut = EnumStatutPhase.AFAIRE;
+        boolean estOperateurPhaseMisAJour = true;
         if (examenRealisePrecedent != null) {
-            idExamenToSelect = examenRealisePrecedent.getId();
-            newStatut = calculStatutInteractionRealiseeOfExamenRealisePrecedent(examenRealisePrecedent);
+            idOperationASelectionner = examenRealisePrecedent.getId();
+            newStatut = calculerStatutPhaseOperationPrecedente(examenRealisePrecedent);
             if (CollectionUtils.isNotEmpty(examenRealisePrecedent.getListePiecesJointes())) {
-                examenParacliniqueRealiseService.updateInclusCrOfPiecesJointes(Collections.singletonList(idExamenToSelect), true);
+                operationTransitFinaliseeService.updateInclusCrOfPiecesJointes(Collections.singletonList(idOperationASelectionner), true);
             }
-            isRealisateurInteractionRealiseeUpddated = majRealisateurSiStatutAutorise(connectedUserVoSupplier(),
-                    EnumStatutInteraction.STATUTS_NECESSITANT_REALISATEUR, displayedInteractionRealisee);
+            estOperateurPhaseMisAJour = majRealisateurSiStatutAutorise(operateurConnecteVoSupplier(),
+                    EnumStatutPhase.STATUTS_NECESSITANT_REALISATEUR, phaseTransitAffichage);
         } else {
-            idExamenToSelect = null;
-            displayedInteractionRealisee.setRealisateur(null);
+            idOperationASelectionner = null;
+            phaseTransitAffichage.setRealisateur(null);
         }
-        if (!oldStatut.equals(newStatut) || isRealisateurInteractionRealiseeUpddated) {
-            displayedInteractionRealisee.setStatut(newStatut);
-            displayedInteractionRealisee = updateInteractionRealisee(displayedInteractionRealisee);
+        if (!oldStatut.equals(newStatut) || estOperateurPhaseMisAJour) {
+            phaseTransitAffichage.setStatut(newStatut);
+            phaseTransitAffichage = updateInteractionRealisee(phaseTransitAffichage);
         }
         refreshFormData();
         habilitationEpcNouvelExamenBtn();
     }
 
-    private EnumStatutInteraction calculStatutInteractionRealiseeOfExamenRealisePrecedent(ExamenParacliniqueRealise examenRealisePrecedent) {
-        EnumStatutInteraction enumStatutInteraction = EnumStatutInteraction.AFAIRE;
+    private EnumStatutPhase calculerStatutPhaseOperationPrecedente(OperationTransitFinalisee examenRealisePrecedent) {
+        EnumStatutPhase enumStatutInteraction = EnumStatutPhase.AFAIRE;
         if (Boolean.TRUE.equals(examenRealisePrecedent.isInterprete())
-                || !EnumInteraction.isExamenConnecte(displayedInteractionRealiseeInteraction.getLibelleCourt())) {
-            enumStatutInteraction = EnumStatutInteraction.FAIT;
+                || !EnumInteraction.isExamenConnecte(phaseTransitAffichageInteraction.getLibelleCourt())) {
+            enumStatutInteraction = EnumStatutPhase.FAIT;
         } else if (CollectionUtils.isNotEmpty(examenRealisePrecedent.getListePiecesJointes())) {
-            enumStatutInteraction = EnumStatutInteraction.A_INTERPRETER;
+            enumStatutInteraction = EnumStatutPhase.A_INTERPRETER;
         }
         return enumStatutInteraction;
     }
 
     @FXML
-    public void epcModifierExamen() {
-        if (interactionHabilitationHandler.checkHabilitationModifierExamen(getDisplayedInteractionRealiseeInteraction())) {
-            launchModifyOperations();
+    public void modifierOperationTransit() {
+        if (gestionnaireAutorisationPhase.checkHabilitationModifierExamen(getDisplayedInteractionRealiseeInteraction())) {
+            lancerModifications();
         } else {
-            afficherErreurNonHabilite(EnumExamenManqueHabilitation.ABSENCE_DE_DROIT_DE_MODIFICATION_EXAMEN.getLibelle());
+            afficherErreurNonAutorise(EnumExamenManqueHabilitation.ABSENCE_DE_DROIT_DE_MODIFICATION_EXAMEN.getLibelle());
         }
     }
 
-    public void launchModifyOperations() {
-        clearAndShowSpecificWarningMessageForDPTraiteWithClotureAvecEmSyntheseParam(getDisplayedDossierPrestationPropertyValue());
-        editedExam = epcListeExamensRealisesTableView.getSelectionModel().getSelectedItem();
+    public void lancerModifications() {
+        clearAndShowSpecificWarningMessageForDPTraiteWithClotureAvecEmSyntheseParam(getDisplayedDossierTransitPropertyValue());
+        operationEnEdition = tableauOperationsFinalisees.getSelectionModel().getSelectedItem();
         setMode(ControllerMode.EDITION);
     }
 
     @FXML
-    public void epcEnregistrer() {
-        if (validate(constructValidationRules())) {
-            launchRegisteringOperations();
+    public void enregistrerOperation() {
+        if (validate(construireReglesValidation())) {
+            lancerEnregistrementOperations();
         }
     }
 
-    private void launchRegisteringOperations() {
-        DossierPrestation displayedDossierPrestation = getDisplayedDossierPrestationPropertyValue();
-        if (null != displayedDossierPrestation && EnumStatutDossierPrestation.isStatutTraite(displayedDossierPrestation.getStatut())) {
-            operateRegisterOrDeleteAfterConfirmation(dialog -> enregistrerTreatment(), displayedDossierPrestation);
+    private void lancerEnregistrementOperations() {
+        DossierTransit displayedDossierTransit = getDisplayedDossierTransitPropertyValue();
+        if (null != displayedDossierTransit && EnumStatutDossierTransit.isStatutTraite(displayedDossierTransit.getStatut())) {
+            operateRegisterOrDeleteAfterConfirmation(dialog -> enregistrerTraitement(), displayedDossierTransit);
         } else {
-            enregistrerTreatment();
+            enregistrerTraitement();
         }
     }
 
     @Override
-    protected boolean isSuppressionPieceJointeAutorisee() {
-        return examenParacliniqueService.isSuppressionPieceJointeAutorisee(getStatutDossierPrestationAccordingToDPProperty());
+    protected boolean estSuppressionAnnexeAutorisee() {
+        return examentexte2Service.estSuppressionAnnexeAutorisee(getStatutDossierTransitAccordingToDPProperty());
     }
 
     @Override
-    protected String getSupprimerPjCss() {
-        return SUPPRIMER_PJ_CSS;
+    protected String obtenirStyleSuppressionAnnexe() {
+        return SUPPRIMER_ANNEXE_CSS;
     }
 
-    private void enregistrerTreatment() {
-        if (isExamenMode) {
-            enregistrerExamen();
+    private void enregistrerTraitement() {
+        if (estModeOperation) {
+            enregistrerOperation();
         } else {
-            enregistrerInterpretation();
+            enregistrerSynthese();
         }
     }
 
     @Override
-    protected ExamenParacliniqueRealise registerExamenDataBaseOperation(boolean isNouveauExamenPara) {
-        ExamenParacliniqueRealise examenParacliniqueRealise = null;
+    protected OperationTransitFinalisee enregistrerOperationBaseDonnees(boolean isNouveauExamenPara) {
+        OperationTransitFinalisee examentexte2Realise = null;
         if (isNouveauExamenPara) {
-            sessionContext.setTrace(EnumFonction.REALISER_EXAMEN_PARACLINIQUE,
-                    getEnumEcranOfExamenParaclinique(), getComplementEnumEcranExamenParaclinique(getEnumEcranOfExamenParaclinique()),
-                    EnumAction.NOUVEL_EXAMEN,
+            contexteSession.setTrace(EnumRole.REALISER_EXAMEN_PARACLINIQUE,
+                    getEnumTerminalOfExamentexte2(), getComplementEnumTerminalExamentexte2(getEnumTerminalOfExamentexte2()),
+                    EnumActionTerminal.NOUVEL_EXAMEN,
                     EnumTypeRessource.FAP,
-                    idDossierPrestation.toString());
-            ExamenParacliniqueRealise examenRealise = beforeInsertExamenParacliniqueOperations();
-            examenParacliniqueRealise = examenParacliniqueRealiseService.saveExamenParacliniqueRealise(examenRealise);
+                    idDossierTransit.toString());
+            OperationTransitFinalisee examenRealise = operationsPreInsertionOperation();
+            examentexte2Realise = operationTransitFinaliseeService.saveOperationTransitFinalisee(examenRealise);
             if (CollectionUtils.isEmpty(examenRealise.getListePiecesJointes())) {
                 // reset des cases a cocher des PJ des exams réalisés, dans l'EM
-                List<ExamenParacliniqueRealiseVo> listExamenParacliniqueRealise = examenParacliniqueRealiseService
-                        .getListeExamParacliniqueRealiseByIdInteractReal(examenRealise.getIdInteractionRealisee());
-                if (CollectionUtils.isNotEmpty(listExamenParacliniqueRealise)) {
-                    List<Long> listIdExamParacliniqueRealise = listExamenParacliniqueRealise.stream().map(ExamenParacliniqueRealiseVo::getId)
+                List<OperationTransitFinaliseeVo> listOperationTransitFinalisee = operationTransitFinaliseeService
+                        .getListeExamtexte2RealiseByIdInteractReal(examenRealise.getIdInteractionRealisee());
+                if (CollectionUtils.isNotEmpty(listOperationTransitFinalisee)) {
+                    List<Long> listIdExamtexte2Realise = listOperationTransitFinalisee.stream().map(OperationTransitFinaliseeVo::getId)
                             .collect(Collectors.toList());
-                    examenParacliniqueRealiseService.updateInclusCrOfPiecesJointes(listIdExamParacliniqueRealise, false);
+                    operationTransitFinaliseeService.updateInclusCrOfPiecesJointes(listIdExamtexte2Realise, false);
                 }
             }
         } else {
-            sessionContext.setTrace(EnumFonction.REALISER_EXAMEN_PARACLINIQUE,
-                    getEnumEcranOfExamenParaclinique(), getComplementEnumEcranExamenParaclinique(getEnumEcranOfExamenParaclinique()),
-                    EnumAction.MODIFIER,
+            contexteSession.setTrace(EnumRole.REALISER_EXAMEN_PARACLINIQUE,
+                    getEnumTerminalOfExamentexte2(), getComplementEnumTerminalExamentexte2(getEnumTerminalOfExamentexte2()),
+                    EnumActionTerminal.MODIFIER,
                     EnumTypeRessource.FAP,
-                    idDossierPrestation.toString());
-            ExamenParacliniqueRealise examenRealise = beforeUpdateExamenParacliniqueOperations();
-            examenParacliniqueRealise = examenParacliniqueRealiseService.updateExamenParacliniqueRealise(examenRealise);
+                    idDossierTransit.toString());
+            OperationTransitFinalisee examenRealise = operationsPreMiseAJourOperation();
+            examentexte2Realise = operationTransitFinaliseeService.updateOperationTransitFinalisee(examenRealise);
         }
-        return examenParacliniqueRealise;
+        return examentexte2Realise;
     }
 
-    private void showEmptyInterpretationInsertError(String errorLibelle, String errorMessage) {
+    private void afficherErreurSyntheseVide(String errorLibelle, String errorMessage) {
         getErrorMessageHandler().clear();
         ValidationError error = new ValidationError(errorLibelle, errorMessage);
         getErrorMessageHandler().addErreur(error);
-        consoleController.refreshDataAndShow();
+        controleurConsole.refreshDataAndShow();
     }
 
-    private void enregistrerInterpretation() {
+    private void enregistrerSynthese() {
         boolean isEquals = true;
-        boolean isInsert = isInsertInterpretCase();
-        List<ConstatRealise> lsConstatRea = isInsert ? beforeInsertInterpretationOperations() : beforeUpdateInterpretationOperations();
-        boolean areEmptyConstatRea = ConstatRealiseHelper.areEmptyConstatReaValues(isEquals, lsConstatRea);
+        boolean isInsert = estInsertionSynthese();
+        List<SignalObserveValide> lsSignalObserveRea = isInsert ? operationsPreInsertionSynthese() : beforeUpdateInterpretationOperations();
+        boolean areEmptySignalObserveRea = SignalObserveValideHelper.areEmptySignalObserveReaValues(isEquals, lsSignalObserveRea);
         if (isInsert) {
-            addInterpretationToDatabaseCases(areEmptyConstatRea, lsConstatRea);
+            ajouterSyntheseBaseDonnees(areEmptySignalObserveRea, lsSignalObserveRea);
         } else {
-            removeOrUpdateInterpretationToDatabase(lsConstatRea);
+            supprimerOuMettreAJourSynthese(lsSignalObserveRea);
         }
     }
 
-    private boolean isInsertInterpretCase() {
+    private boolean estInsertionSynthese() {
         boolean result = false;
-        if (lsElemCstInterpOuLectureMateriel.isEmpty()) {
-            result = !selectedExamenParaclinique.get().isInterprete();
+        if (elementsSignalSyntheseEquipement.isEmpty()) {
+            result = !operationTransitSelectionnee.get().isInterprete();
         } else {
-            result = isInsertWithCstInterpMaterielCase(selectedExamenParaclinique.get().getInterpreteur() != null);
+            result = estInsertionAvecSignalEquipement(operationTransitSelectionnee.get().getInterpreteur() != null);
         }
         return result;
     }
 
-    private boolean isInsertWithCstInterpMaterielCase(boolean isAnalysed) {
+    private boolean estInsertionAvecSignalEquipement(boolean isAnalysed) {
         boolean result = !isAnalysed;
-        if (isAnalysed && CollectionUtils.isEmpty(selectedExamenParaclinique.get().getListeConstatRealiseInterpretation())) {
+        if (isAnalysed && CollectionUtils.isEmpty(operationTransitSelectionnee.get().getListeSignalObserveValideInterpretation())) {
             result = true;
-        } else if (isAnalysed && areEmptyAllInterpretationFields(
-                !selectedExamenParaclinique.get().getListeConstatRealiseInterpretation().isEmpty())) {
-            result = !selectedExamenParaclinique.get().isInterprete();
+        } else if (isAnalysed && syntheseChampsVides(
+                !operationTransitSelectionnee.get().getListeSignalObserveValideInterpretation().isEmpty())) {
+            result = !operationTransitSelectionnee.get().isInterprete();
         }
         return result;
     }
 
-    private boolean areEmptyAllInterpretationFields(boolean isUpdate) {
-        List<ConstatRealise> lsConstatRealises = getListInterpretationConstatRealise(
-                selectedExamenParaclinique.get().getId(), isUpdate);
+    private boolean syntheseChampsVides(boolean isUpdate) {
+        List<SignalObserveValide> lsSignalObserveValides = obtenirListeSyntheseSignaux(
+                operationTransitSelectionnee.get().getId(), isUpdate);
         boolean isEquals = true;
-        return ConstatRealiseHelper.areEmptyConstatReaValues(isEquals, lsConstatRealises);
+        return SignalObserveValideHelper.areEmptySignalObserveReaValues(isEquals, lsSignalObserveValides);
     }
 
-    private void addInterpretationToDatabaseCases(boolean areAllConstatsRealisesAreEmpty, List<ConstatRealise> lsConstatRea) {
-        boolean isNotAnalyse = selectedExamenParaclinique.get().getAnalyste() == null;
-        boolean isModifIntoMaterielPart = !isModifIntoInterpretationDataInitAndMaterielCase(null, lsConstatRea) && isNotAnalyse;
-        List<ConstatMaterielRealise> lsCMR = selectedExamenParaclinique.get().getListeConstatMaterielRealise();
+    private void ajouterSyntheseBaseDonnees(boolean areAllSignalObservesRealisesAreEmpty, List<SignalObserveValide> lsSignalObserveRea) {
+        boolean isNotAnalyse = operationTransitSelectionnee.get().getAnalyste() == null;
+        boolean isModifIntoMaterielPart = !modificationDansSyntheseInitEtEquipement(null, lsSignalObserveRea) && isNotAnalyse;
+        List<SignalEquipementValide> lsCMR = operationTransitSelectionnee.get().getListeSignalEquipementValide();
         boolean wasExamenLaunched = lsCMR != null && !lsCMR.isEmpty();
 
-        boolean isExamenMaterielDeleteCase = !lsElemCstInterpOuLectureMateriel.isEmpty() && areEmptyInterpretationData(lsConstatRea) && isNotAnalyse
+        boolean isExamenMaterielDeleteCase = !elementsSignalSyntheseEquipement.isEmpty() && syntheseDonneesVides(lsSignalObserveRea) && isNotAnalyse
                 && wasExamenLaunched;
-        if (!areAllConstatsRealisesAreEmpty || isModifIntoMaterielPart) {
-            addInterpretationDatabase(lsConstatRea, areAllConstatsRealisesAreEmpty, isExamenMaterielDeleteCase);
+        if (!areAllSignalObservesRealisesAreEmpty || isModifIntoMaterielPart) {
+            addInterpretationDatabase(lsSignalObserveRea, areAllSignalObservesRealisesAreEmpty, isExamenMaterielDeleteCase);
         } else {
-            showEmptyInterpretationInsertError(ERROR_INTERPRETATION_LBL, ERROR_INTERPRETATION_MSG);
+            afficherErreurSyntheseVide(ERREUR_SYNTHESE_LIBELLE, ERREUR_SYNTHESE_MSG);
         }
     }
 
-    private void addInterpretationDatabase(List<ConstatRealise> lsConstatRea, boolean areEmptyConstatsRealises, boolean isMaterielDelCase) {
+    private void addInterpretationDatabase(List<SignalObserveValide> lsSignalObserveRea, boolean areEmptySignalObservesRealises, boolean isMaterielDelCase) {
         spinnerService.executeTask(() -> {
 
-            sessionContext.setTrace(EnumFonction.REALISER_EXAMEN_PARACLINIQUE,
-                    getEnumEcranOfExamenParaclinique(), getComplementEnumEcranExamenParaclinique(getEnumEcranOfExamenParaclinique()),
-                    EnumAction.AJOUTER_INTERPRETATION,
+            contexteSession.setTrace(EnumRole.REALISER_EXAMEN_PARACLINIQUE,
+                    getEnumTerminalOfExamentexte2(), getComplementEnumTerminalExamentexte2(getEnumTerminalOfExamentexte2()),
+                    EnumActionTerminal.AJOUTER_INTERPRETATION,
                     EnumTypeRessource.FAP,
-                    idDossierPrestation.toString());
+                    idDossierTransit.toString());
 
-            return examenParacliniqueRealiseService.saveExamenParacliniqueRealiseInterpretation(lsConstatRea, connectedUser, areEmptyConstatsRealises);
-        }, examenRealise -> addInterpretationToDatabasePostOperations(examenRealise, isMaterielDelCase), primaryStage);
+            return operationTransitFinaliseeService.saveOperationTransitFinaliseeInterpretation(lsSignalObserveRea, operateurConnecte, areEmptySignalObservesRealises);
+        }, examenRealise -> operationsPostAjoutSyntheseBase(examenRealise, isMaterielDelCase), scenePrincipale);
     }
 
-    private void addInterpretationToDatabasePostOperations(ExamenParacliniqueRealise examenRealise, boolean isMaterielDelCase) {
-        if (selectedExamenParaclinique.get().equals(epcListeExamensRealisesTableView.getLastCreatedExamenParacliniqueRealise(null)) && !isMaterielDelCase) {
-            updateInteractionRealiseeForNewMainExamenParaclinique(examenRealise);
+    private void operationsPostAjoutSyntheseBase(OperationTransitFinalisee examenRealise, boolean isMaterielDelCase) {
+        if (operationTransitSelectionnee.get().equals(tableauOperationsFinalisees.getLastCreatedOperationTransitFinalisee(null)) && !isMaterielDelCase) {
+            mettreAJourPhasePourNouvelleOperation(examenRealise);
         }
         if (examenRealise != null) {
-            idExamenToSelect = examenRealise.getId();
+            idOperationASelectionner = examenRealise.getId();
         }
         saisirInterpretationMode(ControllerMode.CONSULTATION);
         refreshFormData();
     }
 
-    private void removeOrUpdateInterpretationToDatabase(List<ConstatRealise> lsConstatRea) {
-        boolean isEmptyLsConstatReaInterpOuLecture = ConstatRealiseHelper.isListConstatRealiseEmpty(lsConstatRea);
-        spinnerService.executeTask(() -> removeOrUpdateInterpretationDatabaseCases(isEmptyLsConstatReaInterpOuLecture, lsConstatRea),
-                examenRealise -> removeOrUpdateInterpretationPostOperations(isEmptyLsConstatReaInterpOuLecture, examenRealise), primaryStage);
+    private void supprimerOuMettreAJourSynthese(List<SignalObserveValide> lsSignalObserveRea) {
+        boolean isEmptyLsSignalObserveReaInterpOuLecture = SignalObserveValideHelper.isListSignalObserveValideEmpty(lsSignalObserveRea);
+        spinnerService.executeTask(() -> casSuppressionOuMiseAJourSynthese(isEmptyLsSignalObserveReaInterpOuLecture, lsSignalObserveRea),
+                examenRealise -> operationsPostSuppressionOuMiseAJourSynthese(isEmptyLsSignalObserveReaInterpOuLecture, examenRealise), scenePrincipale);
     }
 
-    private ExamenParacliniqueRealise removeOrUpdateInterpretationDatabaseCases(boolean isEmptyLsConstat, List<ConstatRealise> lsConstatRea) {
-        if (isEmptyLsConstat) {
-            sessionContext.setTrace(EnumFonction.REALISER_EXAMEN_PARACLINIQUE,
-                    getEnumEcranOfExamenParaclinique(), getComplementEnumEcranExamenParaclinique(getEnumEcranOfExamenParaclinique()),
-                    EnumAction.SUPPRIMER_INTERPRETATION,
+    private OperationTransitFinalisee casSuppressionOuMiseAJourSynthese(boolean isEmptyLsSignalObserve, List<SignalObserveValide> lsSignalObserveRea) {
+        if (isEmptyLsSignalObserve) {
+            contexteSession.setTrace(EnumRole.REALISER_EXAMEN_PARACLINIQUE,
+                    getEnumTerminalOfExamentexte2(), getComplementEnumTerminalExamentexte2(getEnumTerminalOfExamentexte2()),
+                    EnumActionTerminal.SUPPRIMER_INTERPRETATION,
                     EnumTypeRessource.FAP,
-                    idDossierPrestation.toString());
+                    idDossierTransit.toString());
 
-            return examenParacliniqueRealiseService.deleteExamenParacliniqueRealiseInterpretation(lsConstatRea);
+            return operationTransitFinaliseeService.deleteOperationTransitFinaliseeInterpretation(lsSignalObserveRea);
         } else {
-            sessionContext.setTrace(EnumFonction.REALISER_EXAMEN_PARACLINIQUE,
-                    getEnumEcranOfExamenParaclinique(), getComplementEnumEcranExamenParaclinique(getEnumEcranOfExamenParaclinique()),
-                    EnumAction.MODIFIER_INTERPRETATION,
+            contexteSession.setTrace(EnumRole.REALISER_EXAMEN_PARACLINIQUE,
+                    getEnumTerminalOfExamentexte2(), getComplementEnumTerminalExamentexte2(getEnumTerminalOfExamentexte2()),
+                    EnumActionTerminal.MODIFIER_INTERPRETATION,
                     EnumTypeRessource.FAP,
-                    idDossierPrestation.toString());
-            Utilisateur existingInterp = selectedExamenParaclinique.get().getInterpreteur();
-            return examenParacliniqueRealiseService.updateExamenParacliniqueRealiseInterpretation(lsConstatRea, existingInterp);
+                    idDossierTransit.toString());
+            Operateur existingInterp = operationTransitSelectionnee.get().getInterpreteur();
+            return operationTransitFinaliseeService.updateOperationTransitFinaliseeInterpretation(lsSignalObserveRea, existingInterp);
         }
     }
 
-    private void removeOrUpdateInterpretationPostOperations(boolean isEmptyLsConstatReaInterpretation, ExamenParacliniqueRealise examenRealise) {
-        boolean isLastExamen = selectedExamenParaclinique.get().equals(epcListeExamensRealisesTableView.getLastCreatedExamenParacliniqueRealise(null));
+    private void operationsPostSuppressionOuMiseAJourSynthese(boolean isEmptyLsSignalObserveReaInterpretation, OperationTransitFinalisee examenRealise) {
+        boolean isLastExamen = operationTransitSelectionnee.get().equals(tableauOperationsFinalisees.getLastCreatedOperationTransitFinalisee(null));
         boolean isExamenRealiseNotNull = examenRealise != null;
-        updateButtonsAccordingToLastExamen(isLastExamen);
+        mettreAJourBoutonsDerniereOperation(isLastExamen);
         if (isLastExamen) {
-            updateInteractionRealiseeForNewMainExamenParaclinique(examenRealise);
+            mettreAJourPhasePourNouvelleOperation(examenRealise);
         }
         if (isExamenRealiseNotNull) {
-            idExamenToSelect = examenRealise.getId();
+            idOperationASelectionner = examenRealise.getId();
         }
         saisirInterpretationMode(ControllerMode.CONSULTATION);
-        if (!isEmptyLsConstatReaInterpretation && isExamenRealiseNotNull && examenRealise.equals(selectedExamenParaclinique.get())) {
-            epcListeExamensRealisesTableView.scrollTableViewToSelectedExamenParacliniqueRow(idExamenToSelect);
+        if (!isEmptyLsSignalObserveReaInterpretation && isExamenRealiseNotNull && examenRealise.equals(operationTransitSelectionnee.get())) {
+            tableauOperationsFinalisees.scrollTableViewToSelectedExamentexte2Row(idOperationASelectionner);
         } else {
             refreshFormData();
         }
     }
 
-    private List<ConstatRealise> beforeInsertInterpretationOperations() {
-        Long idExamenParacliniqueRealise = selectedExamenParaclinique.getValue().getId();
-        return getListInterpretationConstatRealise(idExamenParacliniqueRealise, false);
+    private List<SignalObserveValide> operationsPreInsertionSynthese() {
+        Long idOperationTransitFinalisee = operationTransitSelectionnee.getValue().getId();
+        return obtenirListeSyntheseSignaux(idOperationTransitFinalisee, false);
     }
 
     @Override
-    protected List<ConstatRealise> getInterpretationInsertCaseList() {
-        return getListConstatsRealisesInterpretationOuLectureInsertCase();
+    protected List<SignalObserveValide> obtenirListeCasInsertionSynthese() {
+        return obtenirListeSignauxSyntheseInsertion();
     }
 
-    private ExamenParacliniqueRealise beforeInsertExamenParacliniqueOperations() {
-        ExamenParacliniqueRealise examenParaRealise = new ExamenParacliniqueRealise();
-        examenParaRealise.setRealisateur(connectedUserVo);
+    private OperationTransitFinalisee operationsPreInsertionOperation() {
+        OperationTransitFinalisee examenParaRealise = new OperationTransitFinalisee();
+        examenParaRealise.setRealisateur(operateurConnecteVo);
         examenParaRealise.setDateCreation(LocalDateTime.now().truncatedTo(ChronoUnit.MICROS));
-        examenParaRealise.setIdInteractionRealisee(displayedInteractionRealisee.getId());
+        examenParaRealise.setIdInteractionRealisee(phaseTransitAffichage.getId());
         examenParaRealise.setInterprete(false);
         String infoMaterielUtiliseJsonString = JsonUtils
-                .convertObjectToJsonString(getInfoMaterielUtiliseFromLsAffectationMaterielNew(lsAffectationMaterielUtilisableToExamen));
+                .convertObjectToJsonString(obtenirInfoEquipementDepuisAttribution(attributionsEquipementUtilisables));
         examenParaRealise.setInfoMaterielUtilise(infoMaterielUtiliseJsonString);
-        examenParaRealise.setListeConstatRealiseExamen(getListExamenConstatRealise());
-        examenParaRealise.setIsLecturePrerequise(lecturePrerequiseChcbx.isSelected());
+        examenParaRealise.setListeSignalObserveValideExamen(obtenirListeOperationsSignaux());
+        examenParaRealise.setIsLecturePrerequise(caseCocherPreRequis.isSelected());
         return examenParaRealise;
     }
 
-    private ExamenParacliniqueRealise beforeUpdateExamenParacliniqueOperations() {
-        ExamenParacliniqueRealise examenParaRealise = selectedExamenParaclinique.getValue();
+    private OperationTransitFinalisee operationsPreMiseAJourOperation() {
+        OperationTransitFinalisee examenParaRealise = operationTransitSelectionnee.getValue();
         LocalDateTime actualDateTime = LocalDateTime.now().truncatedTo(ChronoUnit.MICROS);
         if (null == examenParaRealise.getDatePremiereModification()) {
             examenParaRealise.setDatePremiereModification(actualDateTime);
         }
         examenParaRealise.setDateModification(actualDateTime);
-        List<ConstatRealise> lsConstatsRealises = examenParaRealise.getListeConstatRealiseExamen();
-        List<ConstatRealise> lsConstatsRealisesMaj = lsConstatsRealises.stream()
-                .map(ctr -> retrieveConstatRealiseFromElementConstat(ctr.getElementConstat(), ctr.getId(), composantExamenPropertiesByElementId))
+        List<SignalObserveValide> lsSignalObservesRealises = examenParaRealise.getListeSignalObserveValideExamen();
+        List<SignalObserveValide> lsSignalObservesRealisesMaj = lsSignalObservesRealises.stream()
+                .map(ctr -> retrieveSignalObserveValideFromElementSignal(ctr.getElementSignal(), ctr.getId(), composantOperationProprietesParIdElement))
                 .collect(Collectors.toList());
-        examenParaRealise.setListeConstatRealiseExamen(lsConstatsRealisesMaj);
-        examenParaRealise.setIsLecturePrerequise(lecturePrerequiseChcbx.isSelected());
+        examenParaRealise.setListeSignalObserveValideExamen(lsSignalObservesRealisesMaj);
+        examenParaRealise.setIsLecturePrerequise(caseCocherPreRequis.isSelected());
         return examenParaRealise;
     }
 
-    private List<ConstatRealise> getListExamenConstatRealise() {
-        List<ConstatRealise> constatRealises = new ArrayList<>();
-        if (!lsElementsConstatExamen.isEmpty()) {
-            constatRealises = lsElementsConstatExamen.stream()
-                    .map(cs -> retrieveConstatRealiseFromElementConstat(cs, null, composantExamenPropertiesByElementId))
+    private List<SignalObserveValide> obtenirListeOperationsSignaux() {
+        List<SignalObserveValide> constatRealises = new ArrayList<>();
+        if (!elementsSignalExamen.isEmpty()) {
+            constatRealises = elementsSignalExamen.stream()
+                    .map(cs -> retrieveSignalObserveValideFromElementSignal(cs, null, composantOperationProprietesParIdElement))
                     .collect(Collectors.toList());
         }
         return constatRealises;
     }
 
-    List<ConstatRealise> getListInterpretationConstatRealise(Long idExamenParacliniqueRealise, boolean isUpdate) {
-        lsConstatRealiseInterpretation = new ArrayList<>();
+    List<SignalObserveValide> obtenirListeSyntheseSignaux(Long idOperationTransitFinalisee, boolean isUpdate) {
+        signauxObservesSynthese = new ArrayList<>();
         if (!isUpdate) {
-            lsConstatRealiseInterpretation = getListConstatsRealisesInterpretationOuLectureInsertCase();
+            signauxObservesSynthese = obtenirListeSignauxSyntheseInsertion();
         } else {
-            getListConstatsRealisesUpdateCase();
+            getListSignalObservesRealisesUpdateCase();
         }
-        lsConstatRealiseInterpretation.forEach(constatReal -> constatReal.setIdExamenParacliniqueRealise(idExamenParacliniqueRealise));
-        return lsConstatRealiseInterpretation;
+        signauxObservesSynthese.forEach(constatReal -> constatReal.setIdOperationTransitFinalisee(idOperationTransitFinalisee));
+        return signauxObservesSynthese;
     }
 
-    private List<ConstatRealise> getListConstatsRealisesInterpretationOuLectureInsertCase() {
-        return lsElementsConstatInterpretation.stream().map(
-                cs -> retrieveConstatRealiseFromElementConstat(cs, null, composantInterpretationOuLecturePropertiesByElementId))
+    private List<SignalObserveValide> obtenirListeSignauxSyntheseInsertion() {
+        return elementsSignalInterpretation.stream().map(
+                cs -> retrieveSignalObserveValideFromElementSignal(cs, null, composantSyntheseProprietesParIdElement))
                 .collect(Collectors.toList());
     }
 
     @Override
-    protected List<ElementConstat> getInterpretationElements() {
-        return lsElementsConstatInterpretation;
+    protected List<ElementSignal> getInterpretationElements() {
+        return elementsSignalInterpretation;
     }
 
     @Override
-    protected Map<Long, ElementGrilleDynamiqueComposantProperties> getInterpretationPropertiesByElementId() {
-        return composantInterpretationOuLecturePropertiesByElementId;
+    protected Map<Long, ElementGrilleTerminalPropriete> getInterpretationPropertiesByElementId() {
+        return composantSyntheseProprietesParIdElement;
     }
 
     @FXML
     public void epcNouvelExamen() {
-        final EnumErreurLancementExamen retourFaisabiliteExamen = verifierFaisabiliteExamen();
+        final EnumErreurLancementOperation retourFaisabiliteExamen = verifierFaisabiliteExamen();
         Interaction interaction = getDisplayedInteractionRealiseeInteraction();
-        if (sessionContext.getListeAffectationsMateriel() != null
-                && interaction.getReferencesTypeMateriel() != null
-                && !interaction.getReferencesTypeMateriel().isEmpty()
-                && !EnumErreurLancementExamen.AUCUNE_ERREUR.equals(retourFaisabiliteExamen)) {
-            dialogService.openDialogAlerte(null, "Erreur utilisation matériel",
-                    String.format(retourFaisabiliteExamen.getLibelleErreur(), sessionContext.getSalle().getNom()));
+        if (contexteSession.getListeAffectationsMateriel() != null
+                && interaction.getReferenceTransitsTypeMateriel() != null
+                && !interaction.getReferenceTransitsTypeMateriel().isEmpty()
+                && !EnumErreurLancementOperation.AUCUNE_ERREUR.equals(retourFaisabiliteExamen)) {
+            serviceDialogue.openDialogAlerte(null, "Erreur utilisation matériel",
+                    String.format(retourFaisabiliteExamen.getLibelleErreur(), contexteSession.getZoneTransit().getNom()));
         } else {
-            if (interactionHabilitationHandler.checkHabilitationRealiserExamen(interaction)) {
+            if (gestionnaireAutorisationPhase.checkHabilitationRealiserExamen(interaction)) {
                 constatVerificationBeforeOperation();
             } else {
-                afficherErreurNonHabilite(EnumExamenManqueHabilitation.ABSENCE_DE_DROIT_DE_REALISATION_EXAMEN.getLibelle());
+                afficherErreurNonAutorise(EnumExamenManqueHabilitation.ABSENCE_DE_DROIT_DE_REALISATION_EXAMEN.getLibelle());
             }
         }
     }
 
-    private EnumErreurLancementExamen verifierFaisabiliteExamen() {
-        EnumErreurLancementExamen faisabilite = EnumErreurLancementExamen.AUCUNE_ERREUR;
-        final List<Reference> listeTypesMaterielInteraction = getDisplayedInteractionRealiseeInteraction().getReferencesTypeMateriel();
+    private EnumErreurLancementOperation verifierFaisabiliteExamen() {
+        EnumErreurLancementOperation faisabilite = EnumErreurLancementOperation.AUCUNE_ERREUR;
+        final List<ReferenceTransit> listeTypesMaterielInteraction = getDisplayedInteractionRealiseeInteraction().getReferenceTransitsTypeMateriel();
 
-        final Set<String> listeNomsMaterielValideSession = listeAffectationsMaterielToSetOfStrings(sessionContext.getListeAffectationsMateriel());
+        final Set<String> listeNomsMaterielValideSession = listeAffectationsMaterielToSetOfStrings(contexteSession.getListeAffectationsMateriel());
         final Set<String> listeNomsMaterielNecessairesInteraction = listeTypesMaterielInteraction != null
                 ? listeTypeMaterielsToSetOfStrings(listeTypesMaterielInteraction)
                 : new HashSet<>();
@@ -1878,153 +1878,153 @@ public class ExamenParacliniqueController extends AbstractExamenController {
     }
 
     private boolean isContientMaterielInutilisable(final Set<String> listeNomsMaterielNecessairesInteraction) {
-        final Predicate<AffectationMateriel> justeLeMaterielNecessairePourInteraction = am -> listeNomsMaterielNecessairesInteraction
+        final Predicate<AttributionEquipement> justeLeMaterielNecessairePourInteraction = am -> listeNomsMaterielNecessairesInteraction
                 .contains(am.getModele().getType());
-        return sessionContext.getListeAffectationsMateriel().stream().filter(justeLeMaterielNecessairePourInteraction)
+        return contexteSession.getListeAffectationsMateriel().stream().filter(justeLeMaterielNecessairePourInteraction)
                 .anyMatch(PREDICAT_MATERIEL_UTILISABLE.negate());
     }
 
     private boolean isContientMaterielUtilisable(final Set<String> listeNomsMaterielNecessairesInteraction) {
-        final Predicate<AffectationMateriel> justeLeMaterielNecessairePourInteraction = am -> listeNomsMaterielNecessairesInteraction
+        final Predicate<AttributionEquipement> justeLeMaterielNecessairePourInteraction = am -> listeNomsMaterielNecessairesInteraction
                 .contains(am.getModele().getType());
-        final List<AffectationMateriel> contientMaterielInutilisable = sessionContext.getListeAffectationsMateriel().stream()
-                .filter(justeLeMaterielNecessairePourInteraction).filter(AffectationMateriel::isUtilisable).collect(Collectors.toList());
+        final List<AttributionEquipement> contientMaterielInutilisable = contexteSession.getListeAffectationsMateriel().stream()
+                .filter(justeLeMaterielNecessairePourInteraction).filter(AttributionEquipement::isUtilisable).collect(Collectors.toList());
         Set<String> typeMaterielUtilisableNecessaire = new HashSet<>();
-        for (AffectationMateriel affectationMateriel : contientMaterielInutilisable) {
+        for (AttributionEquipement affectationMateriel : contientMaterielInutilisable) {
             typeMaterielUtilisableNecessaire.add(affectationMateriel.getModele().getType());
         }
         return listeNomsMaterielNecessairesInteraction.equals(typeMaterielUtilisableNecessaire);
     }
 
-    private Set<String> listeTypeMaterielsToSetOfStrings(final List<Reference> listeTypesMateriel) {
-        return listeTypesMateriel.stream().map(Reference::getIntitule).collect(Collectors.toSet());
+    private Set<String> listeTypeMaterielsToSetOfStrings(final List<ReferenceTransit> listeTypesMateriel) {
+        return listeTypesMateriel.stream().map(ReferenceTransit::getIntitule).collect(Collectors.toSet());
     }
 
-    private Set<String> listeAffectationsMaterielToSetOfStrings(final List<AffectationMateriel> listeAffectationsMateriel) {
+    private Set<String> listeAffectationsMaterielToSetOfStrings(final List<AttributionEquipement> listeAffectationsMateriel) {
         return listeAffectationsMateriel.stream().map(item -> item.getModele().getType()).collect(Collectors.toSet());
     }
 
     private void constatVerificationBeforeOperation() {
-        if (isNouvelExamenOperationVerif()) {
-            initNouvelExamenOperation();
+        if (estNouvelleOperationValide()) {
+            initialiserNouvelleOperation();
         } else {
-            clearConsoleAndAddMessage(ERROR_AUCUN_CONSTAT_LBL, ERROR_AUCUN_CONSTAT);
+            clearConsoleAndAddMessage(ERREUR_AUCUN_SIGNAL_LIBELLE, ERREUR_AUCUN_SIGNAL);
         }
     }
 
-    private boolean isNouvelExamenOperationVerif() {
-        return !lsElementsConstatExamen.isEmpty() || !lsElementsConstatMateriel.isEmpty();
+    private boolean estNouvelleOperationValide() {
+        return !elementsSignalExamen.isEmpty() || !elementsSignalEquipement.isEmpty();
     }
 
-    private void initNouvelExamenOperation() {
-        if (checkNouvelExamenConditions()) {
-            launchNewExamenOperationWithWarningIfStatutDPTraite();
+    private void initialiserNouvelleOperation() {
+        if (verifierConditionsNouvelleOperation()) {
+            lancerNouvelleOperationAvecAvertissement();
         } else {
-            clearConsoleAndAddMessage(ERROR_PLUSIEURS_TENT_LBL, ERROR_PLUSIEURS_TENT_MSG);
+            clearConsoleAndAddMessage(ERREUR_TENTATIVES_MULTIPLES_LIBELLE, ERREUR_TENTATIVES_MULTIPLES_MSG);
         }
     }
 
-    public void launchNewExamenOperationWithWarningIfStatutDPTraite() {
-        clearAndShowSpecificWarningMessageForDPTraiteWithClotureAvecEmSyntheseParam(getDisplayedDossierPrestationPropertyValue());
-        epcListeExamensRealisesTableView.getSelectionModel().clearSelection();
-        editedExam = null;
-        displayedInteractionRealisee.setStatut(EnumStatutInteraction.AFAIRE);
-        if (examensParacliniqueAlreadyExisting.isEmpty()) {
-            if (displayedPrestationRealiseeDonneesRealisees != null) {
-                displayedPrestationRealiseeDonneesRealisees.getConstatRealises().stream().map(ResultatConstat::new)
-                        .forEach(this::applyResultatConstatIntoGrilles);
+    public void lancerNouvelleOperationAvecAvertissement() {
+        clearAndShowSpecificWarningMessageForDPTraiteWithClotureAvecEmSyntheseParam(getDisplayedDossierTransitPropertyValue());
+        tableauOperationsFinalisees.getSelectionModel().clearSelection();
+        operationEnEdition = null;
+        phaseTransitAffichage.setStatut(EnumStatutPhase.AFAIRE);
+        if (operationsTransitExistantes.isEmpty()) {
+            if (operationRealiseeDonneesFinalisees != null) {
+                operationRealiseeDonneesFinalisees.getSignalObserveValides().stream().map(ResultatSignalObserve::new)
+                        .forEach(this::applyResultatSignalObserveIntoGrilles);
             }
 
-            MoteurRegleResult reglesResult = moteurRegleService.executeRulesWithDefaultRegistry(getMoteurRegleContextParaclinique());
-            composantExamenPropertiesByElementId.refreshWithContext(getConsultantEntite(),
-                    displayedDossierPrestationProperty.getValue(), getDonneesRealiseesInteraction(), reglesResult);
-            composantInterpretationOuLecturePropertiesByElementId.refreshWithContext(getConsultantEntite(),
-                    displayedDossierPrestationProperty.getValue(), getDonneesRealiseesInteraction(), reglesResult);
-            refreshReglesAffichageEtConstats(reglesResult);
+            RegleResultat reglesResult = moteurRegleService.executeRulesWithDefaultRegistry(getRegleContexttexte2());
+            composantOperationProprietesParIdElement.refreshWithContext(getConsultantEntite(),
+                    dossierTransitAffichagePropriete.getValue(), getDonneesFinaliseesInteraction(), reglesResult);
+            composantSyntheseProprietesParIdElement.refreshWithContext(getConsultantEntite(),
+                    dossierTransitAffichagePropriete.getValue(), getDonneesFinaliseesInteraction(), reglesResult);
+            refreshReglesAffichageEtSignalObserves(reglesResult);
         } else {
             rowSelectionOperations(null);
         }
-        implementationComposantDynamique.changeAsterixToShowValue(false);
+        moduleDynamiqueImpl.changeAsterixToShowValue(false);
         setMode(ControllerMode.EDITION);
     }
 
-    private DonneesRealisees getDonneesRealiseesInteraction() {
-        DonneesRealisees donneesRealiseesInteraction = new DonneesRealisees();
+    private DonneesFinalisees getDonneesFinaliseesInteraction() {
+        DonneesFinalisees donneesRealiseesInteraction = new DonneesFinalisees();
         Interaction interaction = getDisplayedInteractionRealiseeInteraction();
-        List<ConstatRealiseWithOrigineInformationsVo> constatRealiseWithOrigineInfos = getListConstatRealiseExamen()
+        List<SignalObserveValideVo> constatRealiseWithOrigineInfos = getListSignalObserveValideExamen()
                 .stream()
-                .map(constatRealise -> ConstatRealiseWithOrigineInformationsVoFactory
-                        .addOrigineInformationsToConstatRealise(constatRealise,
+                .map(constatRealise -> SignalObserveValideVoFactory
+                        .addOrigineInformationsToSignalObserveValide(constatRealise,
                                 interaction.getLibelleCourt(),
-                                UtilisateurVoFactory.buildUtilisateurVo(sessionContext.getConnectedUser())))
+                                OperateurVoFactory.buildOperateurVo(contexteSession.getConnectedUser())))
                 .collect(Collectors.toList());
-        donneesRealiseesInteraction.setConstatRealises(constatRealiseWithOrigineInfos);
+        donneesRealiseesInteraction.setSignalObserveValides(constatRealiseWithOrigineInfos);
 
-        List<ConstatRealiseWithOrigineInformationsVo> constatRealiseInterpretationInsertWithOrigineInfos = getListConstatsRealisesInterpretationOuLectureInsertCase()
+        List<SignalObserveValideVo> constatRealiseInterpretationInsertWithOrigineInfos = obtenirListeSignauxSyntheseInsertion()
                 .stream()
-                .map(constatRealise -> ConstatRealiseWithOrigineInformationsVoFactory
-                        .addOrigineInformationsToConstatRealise(constatRealise,
+                .map(constatRealise -> SignalObserveValideVoFactory
+                        .addOrigineInformationsToSignalObserveValide(constatRealise,
                                 interaction.getLibelleCourt(),
-                                UtilisateurVoFactory.buildUtilisateurVo(sessionContext.getConnectedUser())))
+                                OperateurVoFactory.buildOperateurVo(contexteSession.getConnectedUser())))
                 .collect(Collectors.toList());
 
-        donneesRealiseesInteraction.getConstatRealises().addAll(constatRealiseInterpretationInsertWithOrigineInfos);
+        donneesRealiseesInteraction.getSignalObserveValides().addAll(constatRealiseInterpretationInsertWithOrigineInfos);
 
-        if (displayedPrestationRealiseeDonneesRealisees != null) {
-            List<ConstatRealiseWithOrigineInformationsVo> constatRealiseNotAlreadyPresent = displayedPrestationRealiseeDonneesRealisees
-                    .getConstatRealises().stream()
-                    .filter(constatRealise -> donneesRealiseesInteraction.getConstatRealises().stream()
-                            .noneMatch(constatRealiseInteraction -> constatRealiseInteraction.getElementConstat()
-                                    .getConstat().equals(constatRealise.getElementConstat().getConstat())))
+        if (operationRealiseeDonneesFinalisees != null) {
+            List<SignalObserveValideVo> constatRealiseNotAlreadyPresent = operationRealiseeDonneesFinalisees
+                    .getSignalObserveValides().stream()
+                    .filter(constatRealise -> donneesRealiseesInteraction.getSignalObserveValides().stream()
+                            .noneMatch(constatRealiseInteraction -> constatRealiseInteraction.getElementSignal()
+                                    .getSignalObserve().equals(constatRealise.getElementSignal().getSignalObserve())))
                     .collect(Collectors.toList());
-            donneesRealiseesInteraction.getConstatRealises().addAll(constatRealiseNotAlreadyPresent);
+            donneesRealiseesInteraction.getSignalObserveValides().addAll(constatRealiseNotAlreadyPresent);
 
-            donneesRealiseesInteraction.getConstatMaterielRealises()
-                    .addAll(displayedPrestationRealiseeDonneesRealisees.getConstatMaterielRealises());
+            donneesRealiseesInteraction.getSignalEquipementValides()
+                    .addAll(operationRealiseeDonneesFinalisees.getSignalEquipementValides());
             donneesRealiseesInteraction.getAnteceFamiliaux()
-                    .addAll(displayedPrestationRealiseeDonneesRealisees.getAnteceFamiliaux());
+                    .addAll(operationRealiseeDonneesFinalisees.getAnteceFamiliaux());
             donneesRealiseesInteraction.getAntecePersoMedicaux()
-                    .addAll(displayedPrestationRealiseeDonneesRealisees.getAntecePersoMedicaux());
+                    .addAll(operationRealiseeDonneesFinalisees.getAntecePersoMedicaux());
             donneesRealiseesInteraction.getAntecePersoOperes()
-                    .addAll(displayedPrestationRealiseeDonneesRealisees.getAntecePersoOperes());
+                    .addAll(operationRealiseeDonneesFinalisees.getAntecePersoOperes());
             donneesRealiseesInteraction.getMaladiesConnues()
-                    .addAll(displayedPrestationRealiseeDonneesRealisees.getMaladiesConnues());
+                    .addAll(operationRealiseeDonneesFinalisees.getMaladiesConnues());
             donneesRealiseesInteraction.getQuestionReponseQuestionRealisees()
-                    .addAll(displayedPrestationRealiseeDonneesRealisees.getQuestionReponseQuestionRealisees());
+                    .addAll(operationRealiseeDonneesFinalisees.getQuestionReponseQuestionRealisees());
             donneesRealiseesInteraction.getSignesFonctionnels()
-                    .addAll(displayedPrestationRealiseeDonneesRealisees.getSignesFonctionnels());
+                    .addAll(operationRealiseeDonneesFinalisees.getSignesFonctionnels());
             donneesRealiseesInteraction.getSignesPhysiques()
-                    .addAll(displayedPrestationRealiseeDonneesRealisees.getSignesPhysiques());
+                    .addAll(operationRealiseeDonneesFinalisees.getSignesPhysiques());
         }
         return donneesRealiseesInteraction;
     }
 
-    private void applyResultatConstatIntoGrilles(ResultatConstat constatResult) {
-        if (composantExamenPropertiesByElementId != null) {
-            composantExamenPropertiesByElementId.applyResultatConstatIntoGrille(constatResult);
+    private void applyResultatSignalObserveIntoGrilles(ResultatSignalObserve constatResult) {
+        if (composantOperationProprietesParIdElement != null) {
+            composantOperationProprietesParIdElement.applyResultatSignalObserveIntoGrille(constatResult);
         }
-        if (composantInterpretationOuLecturePropertiesByElementId != null) {
-            composantInterpretationOuLecturePropertiesByElementId.applyResultatConstatIntoGrille(constatResult);
+        if (composantSyntheseProprietesParIdElement != null) {
+            composantSyntheseProprietesParIdElement.applyResultatSignalObserveIntoGrille(constatResult);
         }
     }
 
-    private boolean checkNouvelExamenConditions() {
+    private boolean verifierConditionsNouvelleOperation() {
         Interaction interaction = getDisplayedInteractionRealiseeInteraction();
-        return interaction.getIsPlusieursTentative() || (!interaction.getIsPlusieursTentative() && epcListeExamensRealisesTableView.getItems().isEmpty());
+        return interaction.getIsPlusieursTentative() || (!interaction.getIsPlusieursTentative() && tableauOperationsFinalisees.getItems().isEmpty());
     }
 
     @FXML
     public void epcSaisirInterpretation() {
-        if (interactionHabilitationHandler.checkHabilitationSaisirInterpretation(getDisplayedInteractionRealiseeInteraction())) {
+        if (gestionnaireAutorisationPhase.checkHabilitationSaisirInterpretation(getDisplayedInteractionRealiseeInteraction())) {
             launchAddInterpretationOperationsWithWarningIfStatutDPTraite();
         } else {
-            afficherErreurNonHabilite(EnumExamenManqueHabilitation.ABSENCE_DE_DROIT_DE_SAISIE_INTERPRETATION.getLibelle());
+            afficherErreurNonAutorise(EnumExamenManqueHabilitation.ABSENCE_DE_DROIT_DE_SAISIE_INTERPRETATION.getLibelle());
         }
     }
 
     public void launchAddInterpretationOperationsWithWarningIfStatutDPTraite() {
-        clearAndShowSpecificWarningMessageForDPTraiteWithClotureAvecEmSyntheseParam(getDisplayedDossierPrestationPropertyValue());
-        editedExam = epcListeExamensRealisesTableView.getSelectionModel().getSelectedItem();
+        clearAndShowSpecificWarningMessageForDPTraiteWithClotureAvecEmSyntheseParam(getDisplayedDossierTransitPropertyValue());
+        operationEnEdition = tableauOperationsFinalisees.getSelectionModel().getSelectedItem();
         saisirInterpretationMode(ControllerMode.EDITION);
     }
 
@@ -2032,88 +2032,88 @@ public class ExamenParacliniqueController extends AbstractExamenController {
         if (mode.equals(ControllerMode.EDITION)) {
             saisirInterpretationEditionModeCaseOperations();
         } else {
-            isExamenMode = true;
+            estModeOperation = true;
             saisirInterpretationConsultationModeCaseOperations();
         }
     }
 
     private void saisirInterpretationEditionModeCaseOperations() {
-        interpretationControllerMode = ControllerMode.EDITION;
-        isExamenMode = false;
-        setLecturePrerequiseChildrenDisableValue();
-        Stream.of(epcModifierExamenBtn, epcSupprimerExamenBtn, epcImprimerExamenBtn, epcInterpreterBtn, epcLancerExamenBtn)
+        modeControleurSynthese = ControllerMode.EDITION;
+        estModeOperation = false;
+        definirEtatEnfantsPreRequis();
+        Stream.of(boutonModifierOperation, boutonSupprimerOperation, boutonImprimerOperation, boutonSynthese, boutonLancerOperation)
                 .forEach(btn -> btn.disableProperty().unbind());
-        Stream.of(epcSupprimerExamenBtn, epcModifierExamenBtn, epcImprimerExamenBtn, epcNouvelExamenBtn, epcInterpreterBtn,
-                epcAcquisitionResultatsBtn, epcLancerExamenBtn).forEach(btn -> setDisable(btn, true));
-        Stream.of(epcAnnulerExamenBtn, epcAjoutManuelPJBtn)
-                .forEach(btn -> setDisable(btn, false));
-        epcEnregistrerExamenBtn.setDisable(!interactionHabilitationHandler.checkHabilitationSaisirInterpretation(getDisplayedInteractionRealiseeInteraction()));
-        implementationComposantDynamique.switchModeTo(ControllerMode.EDITION, composantInterpretationOuLecturePropertiesByElementId);
+        Stream.of(boutonSupprimerOperation, boutonModifierOperation, boutonImprimerOperation, boutonNouvelleOperation, boutonSynthese,
+                boutonRecupererResultats, boutonLancerOperation).forEach(btn -> definirDesactive(btn, true));
+        Stream.of(boutonAnnulerOperation, boutonAjouterAnnexeManuelle)
+                .forEach(btn -> definirDesactive(btn, false));
+        boutonEnregistrerOperation.definirDesactive(!gestionnaireAutorisationPhase.checkHabilitationSaisirInterpretation(getDisplayedInteractionRealiseeInteraction()));
+        moduleDynamiqueImpl.switchModeTo(ControllerMode.EDITION, composantSyntheseProprietesParIdElement);
     }
 
     private void saisirInterpretationConsultationModeCaseOperations() {
-        interpretationControllerMode = ControllerMode.CONSULTATION;
+        modeControleurSynthese = ControllerMode.CONSULTATION;
 
-        setDisable(epcSupprimerExamenBtn, isSupprimerExamenNotAllowed(getDisplayedInteractionRealiseeInteraction()));
-        setDisable(epcNouvelExamenBtn, !isNouvelExamenBtnAllowed());
-        if (isLectureMode) {
-            setDisable(epcInterpreterBtn, !actionManager.hasHabilitation(Habilitation.GERER_EXAMEN_LECTURE_EXAMEN) || !lecturePrerequiseChcbx.isSelected());
+        definirDesactive(boutonSupprimerOperation, isSupprimerExamenNotAllowed(getDisplayedInteractionRealiseeInteraction()));
+        definirDesactive(boutonNouvelleOperation, !isNouvelExamenBtnAllowed());
+        if (estModeLecture) {
+            definirDesactive(boutonSynthese, !gestionnaireAction.hasHabilitation(Habilitation.GERER_EXAMEN_LECTURE_OPERATION) || !caseCocherPreRequis.isSelected());
         } else {
-            setDisable(epcInterpreterBtn, !interactionHabilitationHandler.checkHabilitationSaisirInterpretation(getDisplayedInteractionRealiseeInteraction()));
+            definirDesactive(boutonSynthese, !gestionnaireAutorisationPhase.checkHabilitationSaisirInterpretation(getDisplayedInteractionRealiseeInteraction()));
         }
-        setDisable(epcModifierExamenBtn, !interactionHabilitationHandler.checkHabilitationModifierExamen(getDisplayedInteractionRealiseeInteraction()));
-        setDisable(epcImprimerExamenBtn, !interactionHabilitationHandler.checkHabilitationImprimerExamen(getDisplayedInteractionRealiseeInteraction()));
+        definirDesactive(boutonModifierOperation, !gestionnaireAutorisationPhase.checkHabilitationModifierExamen(getDisplayedInteractionRealiseeInteraction()));
+        definirDesactive(boutonImprimerOperation, !gestionnaireAutorisationPhase.checkHabilitationImprimerExamen(getDisplayedInteractionRealiseeInteraction()));
 
-        epcSupprimerExamenBtn.disableProperty().bind(supprimerBtnBinding());
+        boutonSupprimerOperation.disableProperty().bind(supprimerBtnBinding());
 
-        Stream.of(epcModifierExamenBtn, epcImprimerExamenBtn).forEach(btn -> btn.disableProperty()
-                .bind(epcListeExamensRealisesTableView.getSelectionModel().selectedItemProperty().isNull()));
-        epcInterpreterBtn.disableProperty().bind(interpreterBtnBinding().not());
-        Stream.of(epcEnregistrerExamenBtn, epcAnnulerExamenBtn, epcAcquisitionResultatsBtn, epcAjoutManuelPJBtn)
-                .forEach(btn -> setDisable(btn, true));
-        BooleanBinding canLancerExamenBeLaunched = Bindings.createBooleanBinding(canLancerExamenOperationBeLaunched(),
-                epcListeExamensRealisesTableView.getSelectionModel().selectedItemProperty());
-        epcLancerExamenBtn.disableProperty().bind(canLancerExamenBeLaunched.not());
-        implementationComposantDynamique.switchModeTo(ControllerMode.CONSULTATION, composantInterpretationOuLecturePropertiesByElementId);
+        Stream.of(boutonModifierOperation, boutonImprimerOperation).forEach(btn -> btn.disableProperty()
+                .bind(tableauOperationsFinalisees.getSelectionModel().selectedItemProperty().isNull()));
+        boutonSynthese.disableProperty().bind(interpreterBtnBinding().not());
+        Stream.of(boutonEnregistrerOperation, boutonAnnulerOperation, boutonRecupererResultats, boutonAjouterAnnexeManuelle)
+                .forEach(btn -> definirDesactive(btn, true));
+        BooleanBinding canLancerExamenBeLaunched = Bindings.createBooleanBinding(peutLancerOperation(),
+                tableauOperationsFinalisees.getSelectionModel().selectedItemProperty());
+        boutonLancerOperation.disableProperty().bind(canLancerExamenBeLaunched.not());
+        moduleDynamiqueImpl.switchModeTo(ControllerMode.CONSULTATION, composantSyntheseProprietesParIdElement);
     }
 
     private BooleanBinding interpreterBtnBinding() {
         return Bindings.createBooleanBinding(() -> {
-            boolean isModifiyingAllowed = isModifiyingAllowed();
-            boolean isSelectedItem = epcListeExamensRealisesTableView.getSelectionModel().selectedItemProperty().isNotNull().get();
-            boolean isInterpretationOuLectureItem = lsElementsConstatInterpretation.emptyProperty().not().get();
-            boolean isHabilitationInterpreterOuLecture = !isLectureMode ? interactionHabilitationHandler
+            boolean estModificationAutorisee = estModificationAutorisee();
+            boolean isSelectedItem = tableauOperationsFinalisees.getSelectionModel().selectedItemProperty().isNotNull().get();
+            boolean isInterpretationOuLectureItem = elementsSignalInterpretation.emptyProperty().not().get();
+            boolean isHabilitationInterpreterOuLecture = !estModeLecture ? gestionnaireAutorisationPhase
                     .checkHabilitationSaisirInterpretation(getDisplayedInteractionRealiseeInteraction())
-                    : (actionManager.hasHabilitation(Habilitation.GERER_EXAMEN_LECTURE_EXAMEN) && lecturePrerequiseChcbx.isSelected());
-            return isModifiyingAllowed && isSelectedItem && isInterpretationOuLectureItem && isHabilitationInterpreterOuLecture;
-        }, epcListeExamensRealisesTableView.getSelectionModel().selectedItemProperty(), lsElementsConstatInterpretation.emptyProperty());
+                    : (gestionnaireAction.hasHabilitation(Habilitation.GERER_EXAMEN_LECTURE_OPERATION) && caseCocherPreRequis.isSelected());
+            return estModificationAutorisee && isSelectedItem && isInterpretationOuLectureItem && isHabilitationInterpreterOuLecture;
+        }, tableauOperationsFinalisees.getSelectionModel().selectedItemProperty(), elementsSignalInterpretation.emptyProperty());
     }
 
     private BooleanBinding supprimerBtnBinding() {
         return Bindings.createBooleanBinding(() -> {
-            boolean isNoSelectedItem = epcListeExamensRealisesTableView.getSelectionModel().selectedItemProperty().isNull().get();
-            boolean isStateNotAllowed = isInteractionRealiseTransmis2ndLectureOrEnAttenteLectureState(displayedInteractionRealisee);
+            boolean isNoSelectedItem = tableauOperationsFinalisees.getSelectionModel().selectedItemProperty().isNull().get();
+            boolean isStateNotAllowed = estPhaseTransmiseOuEnAttente(phaseTransitAffichage);
             return isNoSelectedItem || isStateNotAllowed;
-        }, epcListeExamensRealisesTableView.getSelectionModel().selectedItemProperty());
+        }, tableauOperationsFinalisees.getSelectionModel().selectedItemProperty());
     }
 
     private boolean isNouvelExamenBtnAllowed() {
-        boolean isModifiyingAllowed = isModifiyingAllowed();
-        boolean isHabilitationRealised = interactionHabilitationHandler
+        boolean estModificationAutorisee = estModificationAutorisee();
+        boolean isHabilitationRealised = gestionnaireAutorisationPhase
                 .checkHabilitationRealiserExamen(getDisplayedInteractionRealiseeInteraction());
-        boolean isStateAllowed = displayedInteractionRealisee == null
-                || !isInteractionRealiseTransmis2ndLectureOrEnAttenteLectureState(displayedInteractionRealisee);
-        return isModifiyingAllowed && isHabilitationRealised && isStateAllowed;
+        boolean isStateAllowed = phaseTransitAffichage == null
+                || !estPhaseTransmiseOuEnAttente(phaseTransitAffichage);
+        return estModificationAutorisee && isHabilitationRealised && isStateAllowed;
     }
 
     private boolean isSupprimerExamenNotAllowed(Interaction interaction) {
-        return !interactionHabilitationHandler.checkHabilitationSupprimerExamen(interaction)
-                || isInteractionRealiseTransmis2ndLectureOrEnAttenteLectureState(displayedInteractionRealisee);
+        return !gestionnaireAutorisationPhase.checkHabilitationSupprimerExamen(interaction)
+                || estPhaseTransmiseOuEnAttente(phaseTransitAffichage);
     }
 
     private Spinner getSpinner() {
         Spinner spinner;
-        Pane mainPane = (Pane) primaryStage.getScene().getRoot();
+        Pane mainPane = (Pane) scenePrincipale.getScene().getRoot();
         if (null != mainPane) {
             if (!mainPane.getChildren().isEmpty()) {
                 Node nodeSpinner = mainPane.getChildren().stream().filter(Spinner.class::isInstance).findFirst().orElse(null);
@@ -2127,115 +2127,115 @@ public class ExamenParacliniqueController extends AbstractExamenController {
         return null;
     }
 
-    private void operateAcquisitionResultatTracing() {
+    private void tracerRecuperationResultats() {
         TraceVo traceVo = new TraceVo();
-        traceVo.setTrace(EnumFonction.REALISER_EXAMEN_PARACLINIQUE, EnumEcran.EXAMEN_PARACLINIQUE,
-                getComplementEnumEcranExamenParaclinique(getEnumEcranOfExamenParaclinique()),
-                EnumAction.ACQUISITION_RESULTAT,
+        traceVo.setTrace(EnumRole.REALISER_EXAMEN_PARACLINIQUE, EnumTerminal.EXAMEN_PARACLINIQUE,
+                getComplementEnumTerminalExamentexte2(getEnumTerminalOfExamentexte2()),
+                EnumActionTerminal.ACQUISITION_RESULTAT,
                 EnumTypeRessource.FAP,
-                idDossierPrestation.toString());
-        traceService.create(traceVo);
+                idDossierTransit.toString());
+        serviceTrace.create(traceVo);
     }
 
     @FXML
-    public void epcAcquisitionResultats() {
-        operateAcquisitionResultatTracing();
+    public void recupererResultatsOperation() {
+        tracerRecuperationResultats();
 
-        if (validate(constructValidationRulesAvantAcquisition())) {
+        if (validate(construireReglesValidationAvantRecuperation())) {
             // DANS CE CAS SEULEMENT, AJOUT DE MODIFICATIONS SUR LE CSS PROPRE AU SPINNER
             if (null != getPrimaryStage() && null != getPrimaryStage().getScene()) {
                 mainSpinner = getSpinner();
-                if (null != mainSpinner && !mainSpinner.getStyleClass().contains(CSS_CLASS_SPINNER_TEXT)) {
-                    mainSpinner.getStyleClass().add(CSS_CLASS_SPINNER_TEXT);
+                if (null != mainSpinner && !mainSpinner.getStyleClass().contains(CLASSE_CSS_INDICATEUR_TEXTE)) {
+                    mainSpinner.getStyleClass().add(CLASSE_CSS_INDICATEUR_TEXTE);
                 }
             }
 
-            if (isFormatEchangeHL7()) {
-                spinnerService.executeTaskWithText(this::acquerirResultatsHl7MaterielConnecte,
-                        this::executePostAcquisitionResultatsHL7OnSpecificCase, PREPARATION_FICHIERS, primaryStage);
+            if (estFormatEchangeStandard()) {
+                spinnerService.executeTaskWithText(this::recupererResultatsEquipementConnecte,
+                        this::executerPostRecuperationStandardCasSpecifique, PREPARATION_FICHIERS, scenePrincipale);
             } else {
-                spinnerService.executeTaskWithText(this::aquisitionProgrammeEtudes,
-                        this::executePostAcquisitionResultatsOnSpecificCase, PREPARATION_FICHIERS, primaryStage);
+                spinnerService.executeTaskWithText(this::recupererProgrammeAnalyse,
+                        this::executerPostRecuperationCasSpecifique, PREPARATION_FICHIERS, scenePrincipale);
             }
         }
     }
 
-    private boolean acquerirResultatsHl7MaterielConnecte() {
+    private boolean recupererResultatsEquipementConnecte() {
         boolean isOk = false;
         try {
-            Map<String, List<ElementConstat>> mapElementConstat = getElementsConstatMapper();
-            mapElementConstat.put(EnumTypeElementConstat.ELEMENT_CONSTAT_EXAMEN_OBLIGATOIRE_AVANT_ACQUISITION.getCode(),
-                    getListElementConstatsObligatoiresAvantAcquisition());
+            Map<String, List<ElementSignal>> mapElementSignal = obtenirMapperElementsSignal();
+            mapElementSignal.put(EnumTypeElementSignal.ELEMENT_SIGNAL_OBSERVE_EXAMEN_OBLIGATOIRE_AVANT_ACQUISITION.getCode(),
+                    obtenirListeElementsSignauxObligatoires());
 
-            ExamenParacliniqueRealise examenParacliniqueRealiseToUpdate = beforeUpdateExamenParacliniqueOperations();
-            InteractionRealisee interactionRealiseeToUpdate = postAcquisitionGetInteractionRealiseeToUpdate();
+            OperationTransitFinalisee examentexte2RealiseToUpdate = operationsPreMiseAJourOperation();
+            InteractionRealisee phaseTransitToUpdate = obtenirPhaseAMettreAJourPostRecuperation();
 
-            examenParacliniqueRealiseService.acquerirResultatsHl7MaterielConnecte(affectationMaterielConnecte,
-                    examenParacliniqueRealiseToUpdate,
-                    interactionRealiseeToUpdate,
-                    mapElementConstat,
-                    idConsultant,
-                    idDossierPrestation);
+            operationTransitFinaliseeService.recupererResultatsEquipementConnecte(attributionEquipementConnecte,
+                    examentexte2RealiseToUpdate,
+                    phaseTransitToUpdate,
+                    mapElementSignal,
+                    idPassager,
+                    idDossierTransit);
             isOk = true;
         } catch (Hl7MessageReaderException e) {
             LOGGER.warn(e.getMessage(), e);
-            List<ValidationError> errors = e.getErreurs().stream().map(error -> new ValidationError(ACQUISITION_EXAMEN, error))
+            List<ValidationError> errors = e.getErreurs().stream().map(error -> new ValidationError(RECUPERATION_OPERATION, error))
                     .collect(Collectors.toList());
             clearAddListOfValidationErrorAndShowConsole(errors);
         } catch (MaterielConnectedAquisitionResultsEmptyException e) {
             LOGGER.warn(e.getMessage(), e);
-            clearAddValidationErrorAndShowConsole(new ValidationError(ErrorLevel.WARNING, ACQUISITION_EXAMEN, NOT_ALL_RESULT_FILES));
+            clearAddValidationErrorAndShowConsole(new ValidationError(ErrorLevel.WARNING, RECUPERATION_OPERATION, FICHIERS_RESULTAT_INCOMPLETS));
         } catch (MaterielConnectedAquisitionFileNotFoundException | FileNotFoundInDirectoryException e) {
             LOGGER.warn(e.getMessage(), e);
-            clearConsoleAndAddMessage(ACQUISITION_EXAMEN, e.getMessage());
+            clearConsoleAndAddMessage(RECUPERATION_OPERATION, e.getMessage());
         } catch (Exception e) {
             LOGGER.warn(e.getMessage(), e);
-            clearConsoleAndAddMessage(ACQUISITION_EXAMEN, "Erreur : " + e.getMessage());
+            clearConsoleAndAddMessage(RECUPERATION_OPERATION, "Erreur : " + e.getMessage());
         }
         return isOk;
     }
 
-    private boolean isFormatEchangeHL7() {
-        return affectationMaterielConnecte.getModele().getFormatEchange().isHl7();
+    private boolean estFormatEchangeStandard() {
+        return attributionEquipementConnecte.getModele().getFormatEchange().isHl7();
     }
 
-    private List<ValidationRule> constructValidationRulesAvantAcquisition() {
+    private List<ValidationRule> construireReglesValidationAvantRecuperation() {
         List<ValidationRule> listValidationRules = new ArrayList<>();
-        List<ElementConstat> listElementConstatsObligatoiresAvantAcquisition = getListElementConstatsObligatoiresAvantAcquisition();
-        if (CollectionUtils.isNotEmpty(listElementConstatsObligatoiresAvantAcquisition)) {
-            listElementConstatsObligatoiresAvantAcquisition
-                    .forEach(elementConstat -> createConstatRealiseAvantAcquisitionValidationRule(listValidationRules, elementConstat));
+        List<ElementSignal> listElementSignalsObligatoiresAvantAcquisition = obtenirListeElementsSignauxObligatoires();
+        if (CollectionUtils.isNotEmpty(listElementSignalsObligatoiresAvantAcquisition)) {
+            listElementSignalsObligatoiresAvantAcquisition
+                    .forEach(elementSignalObserve -> creerRegleValidationSignalAvantRecuperation(listValidationRules, elementSignalObserve));
         }
         return listValidationRules;
     }
 
-    private void createConstatRealiseAvantAcquisitionValidationRule(List<ValidationRule> listValidationRules, ElementConstat elemConstat) {
-        listValidationRules.add(createConstatRealiseValidationRule(elemConstat, true));
+    private void creerRegleValidationSignalAvantRecuperation(List<ValidationRule> listValidationRules, ElementSignal elemSignalObserve) {
+        listValidationRules.add(creerRegleValidationSignalObserve(elemSignalObserve, true));
     }
 
     // Que la valeur retournée par la première opération soit true ou false, la méthode executeTaskWithText lance
     // la seconde opération. De ce fait, mise en place d'une vérification avant le lancement de la seconde opération
-    private void executePostAcquisitionResultatsOnSpecificCase(Boolean isOk) {
+    private void executerPostRecuperationCasSpecifique(Boolean isOk) {
         if (Boolean.TRUE.equals(isOk)) {
-            epcPostAcquisitionResultatsOperations();
+            operationsPostRecuperationResultats();
         }
-        supprimerTextSpinner();
+        supprimerIndicateurTexte();
     }
 
-    private void executePostAcquisitionResultatsHL7OnSpecificCase(Boolean isOk) {
+    private void executerPostRecuperationStandardCasSpecifique(Boolean isOk) {
         if (Boolean.TRUE.equals(isOk)) {
             refreshDonneesAfterAcquisitionData();
         }
-        supprimerTextSpinner();
+        supprimerIndicateurTexte();
     }
 
-    private void supprimerTextSpinner() {
+    private void supprimerIndicateurTexte() {
         if (null != getPrimaryStage() && null != mainSpinner) {
-            mainSpinner.getStyleClass().remove(CSS_CLASS_SPINNER_TEXT);
+            mainSpinner.getStyleClass().remove(CLASSE_CSS_INDICATEUR_TEXTE);
         }
     }
 
-    private void executeSleepingOnThread() {
+    private void executerPauseThread() {
         try {
             Thread.sleep(4000);
         } catch (InterruptedException e) {
@@ -2243,76 +2243,76 @@ public class ExamenParacliniqueController extends AbstractExamenController {
         }
     }
 
-    private Boolean aquisitionProgrammeEtudes() {
+    private Boolean recupererProgrammeAnalyse() {
         if (null != getPrimaryStage() && null != mainSpinner) {
-            executeSleepingOnThread();
+            executerPauseThread();
         }
 
-        String programmeEtudeId = fapDataRdv != null ? fapDataRdv.getIdProgrammeEtude() : null;
+        String programmeEtudeId = fichePassageData != null ? fichePassageData.getIdProgrammeEtude() : null;
 
         if (programmeEtudeId == null) {
-            programmeEtudeId = idConsultantStr;
+            programmeEtudeId = idPassagerStr;
         }
 
-        return executeAcquisitionAndSaveOperationWithData(programmeEtudeId);
+        return executerRecuperationEtEnregistrement(programmeEtudeId);
     }
 
-    private Map<String, List<ElementConstat>> getElementsConstatMapper() {
-        Map<String, List<ElementConstat>> elementsConstatMapper = new HashMap<>();
-        elementsConstatMapper.put("E", lsElementsConstatMateriel);
-        elementsConstatMapper.put("I", lsElemCstInterpOuLectureMateriel);
-        return elementsConstatMapper;
+    private Map<String, List<ElementSignal>> obtenirMapperElementsSignal() {
+        Map<String, List<ElementSignal>> elementsSignalObserveMapper = new HashMap<>();
+        elementsSignalObserveMapper.put("E", elementsSignalEquipement);
+        elementsSignalObserveMapper.put("I", elementsSignalSyntheseEquipement);
+        return elementsSignalObserveMapper;
     }
 
-    public void removeBindingWithSessionContextProperties() {
-        isRunningListChangeAffMatProperty.unbind();
+    public void supprimerLiaisonProprietesContexte() {
+        estExecutionModificationAttribution.unbind();
     }
 
-    private Boolean executeAcquisitionAndSaveOperationWithData(String programmeEtudeId) {
+    private Boolean executerRecuperationEtEnregistrement(String programmeEtudeId) {
         try {
-            boolean isFullOperationRealised = examenParacliniqueRealiseService.retrieveAndSaveResultsFromFile(affectationMaterielConnecte,
-                    selectedExamenParaclinique.get(), programmeEtudeId, getElementsConstatMapper());
+            boolean isFullOperationRealised = operationTransitFinaliseeService.retrieveAndSaveResultsFromFile(attributionEquipementConnecte,
+                    operationTransitSelectionnee.get(), programmeEtudeId, obtenirMapperElementsSignal());
             if (!isFullOperationRealised) {
-                clearAddValidationErrorAndShowConsole(new ValidationError(ErrorLevel.WARNING, ACQUISITION_EXAMEN, NOT_ALL_RESULT_FILES));
+                clearAddValidationErrorAndShowConsole(new ValidationError(ErrorLevel.WARNING, RECUPERATION_OPERATION, FICHIERS_RESULTAT_INCOMPLETS));
             }
             return Boolean.TRUE;
 
         } catch (MaterielConnectedAquisitionFileNotFoundException e) {
             LOGGER.warn(e.getMessage(), e);
-            clearConsoleAndAddMessage(ACQUISITION_EXAMEN, e.getMessage());
+            clearConsoleAndAddMessage(RECUPERATION_OPERATION, e.getMessage());
             return Boolean.FALSE;
         }
     }
 
-    protected void epcPostAcquisitionResultatsOperations() {
-        selectedExamenParaclinique.get().setListePiecesJointes(new ArrayList<>());
+    protected void operationsPostRecuperationResultats() {
+        operationTransitSelectionnee.get().setListePiecesJointes(new ArrayList<>());
         if (getPrimaryStage() != null && getPrimaryStage().getScene() != null) {
             try {
-                List<Document> listeDocuments = new ArrayList<>();
-                switch (affectationMaterielConnecte.getModele().getType()) {
-                    case AUDIOMETRE:
-                        creationEtRecupPJAudiometrie(listeDocuments);
+                List<RapportTransit> listeRapportTransits = new ArrayList<>();
+                switch (attributionEquipementConnecte.getModele().getType()) {
+                    case EQUIPEMENT_MESURE_AUDIO:
+                        creerEtRecupererAnnexeAudio(listeRapportTransits);
                         break;
-                    case ECG:
-                        creationEtRecupPjECG(listeDocuments);
+                    case EQUIPEMENT_SIGNAL_CARDIQUE:
+                        creerEtRecupererAnnexeSignal(listeRapportTransits);
                         break;
-                    case SPIROMETRE:
-                        examenParacliniqueService.creationEtRecupPJSpirometrie(listeDocuments, affectationMaterielConnecte, idDossierPrestation,
-                                this::ajouterAttributsDocument);
+                    case EQUIPEMENT_MESURE_FLUX:
+                        examentexte2Service.creationEtRecupPJSpirometrie(listeRapportTransits, attributionEquipementConnecte, idDossierTransit,
+                                this::ajouterAttributsRapportTransit);
                         break;
                     default:
-                        LOGGER.warn("Type de matériel inconnu : {}", affectationMaterielConnecte.getModele().getType());
+                        LOGGER.warn("Type de matériel inconnu : {}", attributionEquipementConnecte.getModele().getType());
                         break;
                 }
-                updateStatutAInterpreterEtRealisateurInteractionRealisee(listeDocuments);
-                listeDocuments.forEach(Doc -> storePJ(converterSage2DocToDocExamen.convert(Doc)));
+                mettreAJourStatutPhaseEtOperateur(listeRapportTransits);
+                listeRapportTransits.forEach(Doc -> stockerAnnexe(converterDocumentVersRapportTransit.convert(Doc)));
 
-                if (isConstatsObligatoiresAvantAcquisitionPresent()) {
-                    registerExamenDataBaseOperation(false);
+                if (signauxObligatoiresAvantRecuperationExistent()) {
+                    enregistrerOperationBaseDonnees(false);
                 }
             } catch (IOException e) {
                 LOGGER.warn(e.getMessage(), e);
-                clearConsoleAndAddMessage(ERROR_PIECES_JOINTES_LBL, ERROR_RECUPERATION_PJ_MSG);
+                clearConsoleAndAddMessage(ERREUR_ANNEXES_LIBELLE, ERREUR_RECUPERATION_ANNEXE_MSG);
             }
         }
 
@@ -2320,62 +2320,62 @@ public class ExamenParacliniqueController extends AbstractExamenController {
     }
 
     private void refreshDonneesAfterAcquisitionData() {
-        Long idExamenToSelect = selectedExamenParaclinique.get().getId();
-        epcAnnulerExamenBtn.setText(LIBELLE_ANNULER_DEFAUT);
-        isSoftwareLaunchOperation = false;
+        Long idOperationASelectionner = operationTransitSelectionnee.get().getId();
+        boutonAnnulerOperation.setText(LIBELLE_ANNULER_PAR_DEFAUT);
+        estLancementModule = false;
         setMode(ControllerMode.CONSULTATION);
         refreshFormData();
-        MoteurRegleResult reglesResult = moteurRegleService.executeRulesWithDefaultRegistry(getMoteurRegleContextParaclinique());
-        composantExamenPropertiesByElementId.refreshWithContext(getConsultantEntite(),
-                displayedDossierPrestationProperty.getValue(), getDonneesRealiseesInteraction(), reglesResult);
-        composantInterpretationOuLecturePropertiesByElementId.refreshWithContext(getConsultantEntite(),
-                displayedDossierPrestationProperty.getValue(), getDonneesRealiseesInteraction(), reglesResult);
-        if (idExamenToSelect != null) {
-            notEmptyRowSelectionInterpAndMatOperations(selectedExamenParaclinique.get());
+        RegleResultat reglesResult = moteurRegleService.executeRulesWithDefaultRegistry(getRegleContexttexte2());
+        composantOperationProprietesParIdElement.refreshWithContext(getConsultantEntite(),
+                dossierTransitAffichagePropriete.getValue(), getDonneesFinaliseesInteraction(), reglesResult);
+        composantSyntheseProprietesParIdElement.refreshWithContext(getConsultantEntite(),
+                dossierTransitAffichagePropriete.getValue(), getDonneesFinaliseesInteraction(), reglesResult);
+        if (idOperationASelectionner != null) {
+            notEmptyRowSelectionInterpAndMatOperations(operationTransitSelectionnee.get());
         }
-        refreshReglesAffichageEtConstats(reglesResult);
-        supprimerTextSpinner();
+        refreshReglesAffichageEtSignalObserves(reglesResult);
+        supprimerIndicateurTexte();
     }
 
-    private List<ElementConstat> getListElementConstatsObligatoiresAvantAcquisition() {
-        return getAvailableElementConstatListFromFullList(lsElementsConstatExamen).stream()
-                .filter(eltConstat -> Boolean.TRUE.equals(eltConstat.getIsObligatoireAvantAcquisition()))
+    private List<ElementSignal> obtenirListeElementsSignauxObligatoires() {
+        return getAvailableElementSignalListFromFullList(elementsSignalExamen).stream()
+                .filter(eltSignalObserve -> Boolean.TRUE.equals(eltSignalObserve.getIsObligatoireAvantAcquisition()))
                 .collect(Collectors.toList());
     }
 
-    private boolean isConstatsObligatoiresAvantAcquisitionPresent() {
-        List<ElementConstat> lsElementsConstatAvailable = getListElementConstatsObligatoiresAvantAcquisition();
-        return CollectionUtils.isNotEmpty(lsElementsConstatAvailable);
+    private boolean signauxObligatoiresAvantRecuperationExistent() {
+        List<ElementSignal> elementsSignalAvailable = obtenirListeElementsSignauxObligatoires();
+        return CollectionUtils.isNotEmpty(elementsSignalAvailable);
     }
 
-    private InteractionRealisee postAcquisitionGetInteractionRealiseeToUpdate() {
-        final InteractionRealisee clonedInteractionRealisee = (InteractionRealisee) displayedInteractionRealisee.clone();
-        clonedInteractionRealisee.setStatut(statutInteractionAInterpreterOrLectureARealiser);
-        majRealisateurSiStatutAutorise(connectedUserVoSupplier(), EnumStatutInteraction.STATUTS_NECESSITANT_REALISATEUR, clonedInteractionRealisee);
-        if (UtilisateurVoFactory.getUtilisateurVoSystem().equals(clonedInteractionRealisee.getInitiateur())) {
+    private InteractionRealisee obtenirPhaseAMettreAJourPostRecuperation() {
+        final InteractionRealisee clonedInteractionRealisee = (InteractionRealisee) phaseTransitAffichage.clone();
+        clonedInteractionRealisee.setStatut(statutPhaseASynthetiserOuALire);
+        majRealisateurSiStatutAutorise(operateurConnecteVoSupplier(), EnumStatutPhase.STATUTS_NECESSITANT_REALISATEUR, clonedInteractionRealisee);
+        if (OperateurVoFactory.getOperateurVoSystem().equals(clonedInteractionRealisee.getInitiateur())) {
             clonedInteractionRealisee.setInitiateur(null);
         }
         return clonedInteractionRealisee;
     }
 
-    private void updateStatutAInterpreterEtRealisateurInteractionRealisee(List<Document> listeDocuments) {
-        if (CollectionUtils.isNotEmpty(listeDocuments)) {
-            displayedInteractionRealisee.setStatut(statutInteractionAInterpreterOrLectureARealiser);
-            majRealisateurSiStatutAutorise(connectedUserVoSupplier(), EnumStatutInteraction.STATUTS_NECESSITANT_REALISATEUR, displayedInteractionRealisee);
-            displayedInteractionRealisee = updateInteractionRealisee(displayedInteractionRealisee);
+    private void mettreAJourStatutPhaseEtOperateur(List<RapportTransit> listeRapportTransits) {
+        if (CollectionUtils.isNotEmpty(listeRapportTransits)) {
+            phaseTransitAffichage.setStatut(statutPhaseASynthetiserOuALire);
+            majRealisateurSiStatutAutorise(operateurConnecteVoSupplier(), EnumStatutPhase.STATUTS_NECESSITANT_REALISATEUR, phaseTransitAffichage);
+            phaseTransitAffichage = updateInteractionRealisee(phaseTransitAffichage);
         }
     }
 
-    private Document creationDocumentPdfEcg(File file, String fileNameSuffix) {
-        if (file != null && EnumTypeDocument.PARACLINIQUE != null && fileNameSuffix != null) {
-            Document documentToUpload = new Document();
+    private RapportTransit creerDocumentPdfSignal(File file, String fileNameSuffix) {
+        if (file != null && EnumTypeRapport.PARACLINIQUE != null && fileNameSuffix != null) {
+            RapportTransit documentToUpload = new RapportTransit();
             try {
                 byte[] pdfEcgAvecInsertionRectangeBlanc = fileUtils.cacherPartieDocPdf(Files.readAllBytes(file.toPath()));
                 documentToUpload.setContent(pdfEcgAvecInsertionRectangeBlanc);
             } catch (IOException e) {
                 throw new ModelTechnicalException("Une erreur est survenue lors de la lecture du fichier", e);
             }
-            documentToUpload.setType(EnumTypeDocument.PARACLINIQUE);
+            documentToUpload.setType(EnumTypeRapport.PARACLINIQUE);
             documentToUpload.setNom(FileUtils.getFilenameWithSuffix(file.getName(), fileNameSuffix));
             return documentToUpload;
         } else {
@@ -2383,202 +2383,202 @@ public class ExamenParacliniqueController extends AbstractExamenController {
         }
     }
 
-    private void creationEtRecupPjECG(List<Document> listeDocuments) {
-        File resultFileRootFolder = new File(affectationMaterielConnecte.getResultFilesFolderPath());
+    private void creerEtRecupererAnnexeSignal(List<RapportTransit> listeRapportTransits) {
+        File resultFileRootFolder = new File(attributionEquipementConnecte.getResultFilesFolderPath());
         List<Path> pieceJointes = new ArrayList<>();
 
-        // traitement specifique aux pdf ECG
+        // traitement specifique aux pdf EQUIPEMENT_SIGNAL_CARDIQUE
         // ***************************
         List<Path> listePathsFichiersPdfEcg = fileUtils.getMatchingFilesFromFileNameFilterInDirectory(resultFileRootFolder,
-                (dir, fileName) -> EnumFormatDocument.PDF.getType().equalsIgnoreCase(FilenameUtils.getExtension(fileName)));
+                (dir, fileName) -> EnumFormatRapportTransit.PDF.getType().equalsIgnoreCase(FilenameUtils.getExtension(fileName)));
 
         listePathsFichiersPdfEcg.forEach(file -> {
-            Document Doc = creationDocumentPdfEcg(file.toFile(), "_" + idDossierPrestation);
+            RapportTransit Doc = creerDocumentPdfSignal(file.toFile(), "_" + idDossierTransit);
             if (Doc != null) {
                 Doc.setUserCreationId(ClientContextManager._SYSTEM_USER_ID);
-                ajouterAttributsDocument(Doc);
-                listeDocuments.add(editiqueStorageService.createDocument(Doc));
+                ajouterAttributsRapportTransit(Doc);
+                listeRapportTransits.add(archivageDocumentService.createRapportTransit(Doc));
             }
         });
 
         File resultFileFolder = new File(resultFileRootFolder.toPath().resolve("origin").toString());
         pieceJointes.addAll(fileUtils.getMatchingFilesFromFileNameFilterInDirectory(resultFileFolder,
-                (dir, fileName) -> EnumFormatDocument.XML.getType().equalsIgnoreCase(FilenameUtils.getExtension(fileName))));
+                (dir, fileName) -> EnumFormatRapportTransit.XML.getType().equalsIgnoreCase(FilenameUtils.getExtension(fileName))));
         File anonymizedResultFileFolder = new File(resultFileRootFolder.toPath().resolve("anonymized").toString());
         List<Path> listPath = fileUtils.getMatchingFilesFromFileNameFilterInDirectory(anonymizedResultFileFolder,
-                (dir, fileName) -> EnumFormatDocument.XML.getType().equalsIgnoreCase(FilenameUtils.getExtension(fileName)));
-        listPath.forEach(file -> changeFileNameAnonymized(anonymizedResultFileFolder, file));
+                (dir, fileName) -> EnumFormatRapportTransit.XML.getType().equalsIgnoreCase(FilenameUtils.getExtension(fileName)));
+        listPath.forEach(file -> changerNomFichierAnonyme(anonymizedResultFileFolder, file));
         pieceJointes.addAll(fileUtils.getMatchingFilesFromFileNameFilterInDirectory(anonymizedResultFileFolder,
-                (dir, fileName) -> EnumFormatDocument.XML.getType().equalsIgnoreCase(FilenameUtils.getExtension(fileName))));
+                (dir, fileName) -> EnumFormatRapportTransit.XML.getType().equalsIgnoreCase(FilenameUtils.getExtension(fileName))));
         pieceJointes.forEach(file -> {
-            Document Doc = DocumentFactory.buildDocument(file.toFile(), EnumTypeDocument.PARACLINIQUE, "_" + idDossierPrestation);
+            RapportTransit Doc = RapportTransitFactory.buildRapportTransit(file.toFile(), EnumTypeRapport.PARACLINIQUE, "_" + idDossierTransit);
             Doc.setUserCreationId(ClientContextManager._SYSTEM_USER_ID);
-            ajouterAttributsDocument(Doc);
-            listeDocuments.add(editiqueStorageService.createDocument(Doc));
+            ajouterAttributsRapportTransit(Doc);
+            listeRapportTransits.add(archivageDocumentService.createRapportTransit(Doc));
         });
     }
 
-    private void changeFileNameAnonymized(File anonymizedResultFileFolder, Path file) {
+    private void changerNomFichierAnonyme(File anonymizedResultFileFolder, Path file) {
         try {
             Files.move(file, anonymizedResultFileFolder.toPath().resolve("anonyme_" + file.getFileName()));
         } catch (IOException e) {
-            LOGGER.warn(ERROR_RECUPERATION_PJ_MSG, e);
-            clearConsoleAndAddMessage(ERROR_PIECES_JOINTES_LBL, ERROR_RECUPERATION_PJ_MSG);
+            LOGGER.warn(ERREUR_RECUPERATION_ANNEXE_MSG, e);
+            clearConsoleAndAddMessage(ERREUR_ANNEXES_LIBELLE, ERREUR_RECUPERATION_ANNEXE_MSG);
         }
     }
 
-    private void creationEtRecupPJAudiometrie(List<Document> listeDocuments) throws IOException {
-        try (Stream<Path> pathStream = Files.walk(Paths.get(affectationMaterielConnecte.getResultFilesFolderPath()), 1)) {
+    private void creerEtRecupererAnnexeAudio(List<RapportTransit> listeRapportTransits) throws IOException {
+        try (Stream<Path> pathStream = Files.walk(Paths.get(attributionEquipementConnecte.getResultFilesFolderPath()), 1)) {
             List<Path> listeFichiers = pathStream.filter(path -> !Files.isDirectory(path)).collect(Collectors.toList());
             listeFichiers
                     .forEach(fichier -> {
-                        Document Doc = DocumentFactory.buildDocument(fichier.toFile(), EnumTypeDocument.PARACLINIQUE,
-                                "_" + idDossierPrestation);
+                        RapportTransit Doc = RapportTransitFactory.buildRapportTransit(fichier.toFile(), EnumTypeRapport.PARACLINIQUE,
+                                "_" + idDossierTransit);
                         Doc.setUserCreationId(ClientContextManager._SYSTEM_USER_ID);
-                        ajouterAttributsDocument(Doc);
-                        listeDocuments.add(editiqueStorageService.createDocument(Doc));
+                        ajouterAttributsRapportTransit(Doc);
+                        listeRapportTransits.add(archivageDocumentService.createRapportTransit(Doc));
                     });
         }
     }
 
-    private void storePJ(DocumentPieceJointe document) {
-        PieceJointeExamen pj = new PieceJointeExamen(document.getId(), selectedExamenParaclinique.get().getId());
-        examenParacliniqueRealiseService.createPieceJointeExamen(pj);
-        selectedExamenParaclinique.get().getListePiecesJointes().add(document);
+    private void stockerAnnexe(DocumentAnnexe document) {
+        AnnexeOperation pj = new AnnexeOperation(document.getId(), operationTransitSelectionnee.get().getId());
+        operationTransitFinaliseeService.createAnnexeOperation(pj);
+        operationTransitSelectionnee.get().getListePiecesJointes().add(document);
     }
 
-    private void operateLaunchExamenTracing() {
+    private void tracerLancementOperation() {
         TraceVo traceVo = new TraceVo();
-        traceVo.setTrace(EnumFonction.REALISER_EXAMEN_PARACLINIQUE, EnumEcran.EXAMEN_PARACLINIQUE,
-                getComplementEnumEcranExamenParaclinique(getEnumEcranOfExamenParaclinique()),
-                EnumAction.LANCER_EXAMEN,
+        traceVo.setTrace(EnumRole.REALISER_EXAMEN_PARACLINIQUE, EnumTerminal.EXAMEN_PARACLINIQUE,
+                getComplementEnumTerminalExamentexte2(getEnumTerminalOfExamentexte2()),
+                EnumActionTerminal.LANCER_EXAMEN,
                 EnumTypeRessource.FAP,
-                idDossierPrestation.toString());
-        traceService.create(traceVo);
+                idDossierTransit.toString());
+        serviceTrace.create(traceVo);
     }
 
     @FXML
-    public void epcLancerExamen() throws InterruptedException {
-        operateLaunchExamenTracing();
-        if (interactionHabilitationHandler.checkHabilitationRealiserExamen(getDisplayedInteractionRealiseeInteraction())) {
-            lancerExamenWithMaterielDataVerification();
+    public void lancerOperationTransit() throws InterruptedException {
+        tracerLancementOperation();
+        if (gestionnaireAutorisationPhase.checkHabilitationRealiserExamen(getDisplayedInteractionRealiseeInteraction())) {
+            lancerOperationAvecVerificationEquipement();
         } else {
-            afficherErreurNonHabilite(EnumExamenManqueHabilitation.ABSENCE_DE_DROIT_DE_REALISATION_EXAMEN.getLibelle());
+            afficherErreurNonAutorise(EnumExamenManqueHabilitation.ABSENCE_DE_DROIT_DE_REALISATION_EXAMEN.getLibelle());
         }
     }
 
-    private void lancerExamenWithMaterielDataVerification() throws InterruptedException {
+    private void lancerOperationAvecVerificationEquipement() throws InterruptedException {
         List<ValidationError> errors = new ArrayList<>();
         if (getPrimaryStage() != null && getPrimaryStage().getScene() != null) {
-            errors = examenParacliniqueService
-                    .verifyDataInAffectMatConnecteForCommandLineAndPathsOfPatientFileAndResultFileFolders(affectationMaterielConnecte);
+            errors = examentexte2Service
+                    .verifyDataInAffectMatConnecteForCommandLineAndPathsOfPatientFileAndResultFileFolders(attributionEquipementConnecte);
         }
         if (errors.isEmpty()) {
-            lancerExamenMainOperation();
+            lancerOperationPrincipale();
         } else {
             clearAddListOfValidationErrorAndShowConsole(errors);
         }
     }
 
-    private void lancerExamenMainOperation() throws InterruptedException {
+    private void lancerOperationPrincipale() throws InterruptedException {
         try {
             if (getPrimaryStage() != null && getPrimaryStage().getScene() != null) {
-                reinitialiserLancementExamenMainOperation();
+                reinitialiserLancementOperation();
             }
-            genererFichePatient();
+            genererFichePassage();
         } catch (MaterielConnectedAquisitionFileNotFoundException e) {
-            LOGGER.warn(LOGICIEL_CIBLE_NON_INSTALLER_MAL_CONFIGURER, e);
-            clearConsoleAndAddMessage(LANCEMENT_EXAMEN, LOGICIEL_CIBLE_NON_INSTALLER_MAL_CONFIGURER);
+            LOGGER.warn(MODULE_CIBLE_NON_INSTALLE_MAL_CONFIGURE, e);
+            clearConsoleAndAddMessage(LANCER_OPERATION, MODULE_CIBLE_NON_INSTALLE_MAL_CONFIGURE);
         }
-        if (isConnectedExamen.get() && affectationMaterielConnecte.getCommandLine() != null) {
-            launchExamNormalOrTestCase();
+        if (estOperationConnectee.get() && attributionEquipementConnecte.getCommandLine() != null) {
+            lancerOperationNormaleOuTest();
         }
     }
 
-    private void genererFichePatient() {
-        FichePatientCriteria fichePatientCriteria = genererFichePatientCriteria();
-        examenParacliniqueRealiseService.genererFichePatient(fichePatientCriteria);
+    private void genererFichePassage() {
+        FichePassageCritere fichePatientCriteria = genererFichePassageCriteres();
+        operationTransitFinaliseeService.genererFichePassage(fichePatientCriteria);
     }
 
-    private void launchExamNormalOrTestCase() throws InterruptedException {
+    private void lancerOperationNormaleOuTest() throws InterruptedException {
         if (getPrimaryStage() != null && getPrimaryStage().getScene() != null) {
-            launchExamNormalCase();
+            lancerOperationNormale();
         } else {
-            setUiModeRecupAndSoftwareLaunchOk();
+            definirModeTerminalRecuperationOk();
         }
     }
 
-    private void launchExamNormalCase() throws InterruptedException {
-        File dossierFichierPatient = getDossierFichierPatient(affectationMaterielConnecte.getPatientFileFolderPath());
+    private void lancerOperationNormale() throws InterruptedException {
+        File dossierFichierPatient = obtenirDossierFichePassage(attributionEquipementConnecte.getPatientFileFolderPath());
         if (null != dossierFichierPatient.list() && dossierFichierPatient.list().length > 0) {
             try {
-                lancerApplication();
+                lancerModule();
             } catch (IOException e) {
                 LOGGER.warn(e.getMessage(), e);
-                clearConsoleAndAddMessage(ERROR_LIGNE_COMMANDE_LBL, ERROR_LIGNE_COMMANDE_MSG);
+                clearConsoleAndAddMessage(ERROR_LIGNE_COMMANDE_LBL, ERREUR_LIGNE_COMMANDE_MSG);
             }
         } else {
-            clearConsoleAndAddMessage(ERROR_FICHIER_PATIENT_LBL, ERROR_FICHIER_PATIENT_MSG);
+            clearConsoleAndAddMessage(ERREUR_FICHE_PASSAGE_LIBELLE, ERREUR_FICHE_PASSAGE_MSG);
         }
     }
 
-    private void afficherErreurNonHabilite(final String message) {
+    private void afficherErreurNonAutorise(final String message) {
         clearConsoleAndAddMessage("Habilitation", message);
     }
 
-    private void lancerApplication() throws InterruptedException, IOException {
-        lanceurApplicationService.launchApplication(affectationMaterielConnecte.getCommandLine(), EnumFormatDocument.EXE.getExtension());
-        String resultFilesFolderPath = affectationMaterielConnecte.getResultFilesFolderPath();
+    private void lancerModule() throws InterruptedException, IOException {
+        lanceurModuleService.launchApplication(attributionEquipementConnecte.getCommandLine(), EnumFormatRapportTransit.EXE.getExtension());
+        String resultFilesFolderPath = attributionEquipementConnecte.getResultFilesFolderPath();
         File dossierResultats = new File(resultFilesFolderPath);
         if (dossierResultats.list().length > 0) {
-            setUiModeRecupAndSoftwareLaunchOk();
-            editedExam = epcListeExamensRealisesTableView.getSelectionModel().getSelectedItem();
+            definirModeTerminalRecuperationOk();
+            operationEnEdition = tableauOperationsFinalisees.getSelectionModel().getSelectedItem();
         } else {
-            clearConsoleAndAddMessage(ERROR_CONTENEUR_RESULTATS_LBL, ERROR_CONTENEUR_RESULTATS_MSG);
+            clearConsoleAndAddMessage(ERREUR_CONTENEUR_RESULTATS_LIBELLE, ERREUR_CONTENEUR_RESULTATS_MSG);
         }
     }
 
-    private FichePatientCriteria genererFichePatientCriteria() {
-        final FichePatientCriteria fichePatientCriteria = new FichePatientCriteria();
-        final Consultant consultant = consultantService.getConsultantById(super.idConsultant);
-        idConsultantStr = consultant != null ? consultant.getId().toString() : null;
+    private FichePassageCritere genererFichePassageCriteres() {
+        final FichePassageCritere fichePatientCriteria = new FichePassageCritere();
+        final Consultant consultant = passagerService.getConsultantById(super.idPassager);
+        idPassagerStr = consultant != null ? consultant.getId().toString() : null;
         fichePatientCriteria.setConsultant(consultant);
-        fichePatientCriteria.setUtilisateur(sessionContext.getConnectedUser());
-        fichePatientCriteria.setFapDataRdv(fapDataRdv);
-        fichePatientCriteria.setMateriel(affectationMaterielConnecte);
-        fichePatientCriteria.setCesExecution(displayedDossierPrestationProperty.getValue().getEntite());
-        renseignerFichePatientByFormatEchangeMateriel(fichePatientCriteria);
+        fichePatientCriteria.setOperateur(contexteSession.getConnectedUser());
+        fichePatientCriteria.setFapDataRdv(fichePassageData);
+        fichePatientCriteria.setMateriel(attributionEquipementConnecte);
+        fichePatientCriteria.setCesExecution(dossierTransitAffichagePropriete.getValue().getEntite());
+        renseignerFichePassageParFormatStandard(fichePatientCriteria);
         return fichePatientCriteria;
     }
 
-    private void renseignerFichePatientByFormatEchangeMateriel(final FichePatientCriteria fichePatientCriteria) {
+    private void renseignerFichePassageParFormatStandard(final FichePassageCritere fichePatientCriteria) {
         if (fichePatientCriteria.isFormatEchangeMaterielHl7()) {
-            renseignerByConstatCodeLoinc(fichePatientCriteria);
+            renseignerParCodeSignal(fichePatientCriteria);
         } else {
-            renseignerPoidsEtTaille(fichePatientCriteria);
+            renseignerDonneesPassage(fichePatientCriteria);
         }
     }
 
-    private void renseignerPoidsEtTaille(final FichePatientCriteria fichePatientCriteria) {
+    private void renseignerDonneesPassage(final FichePassageCritere fichePatientCriteria) {
         if (configurationModeleEcran != null) {
-            Optional<ConstatParacliniqueConfiguration> optionalPoidsTailleConfiguration = configurationModeleEcran
-                    .getConfigurationBlocs().stream()
-                    .filter(configBloc -> EnumBlocEcranDynamiqueAutres.PARACLINIQUE_CONSTATS
+            Optional<SignalTransitConfiguration> optionalPoidsTailleConfiguration = configurationModeleEcran
+                    .getBlocTerminals().stream()
+                    .filter(configBloc -> EnumBlocTerminalDynamiqueAutres.PARACLINIQUE_SIGNAL_OBSERVES
                             .equals(configBloc.getBlocEcranDynamique()))
-                    .map(ConstatParacliniqueConfiguration.class::cast).findFirst();
+                    .map(SignalTransitConfiguration.class::cast).findFirst();
             if (optionalPoidsTailleConfiguration.isPresent()) {
-                MoteurRegleContext contextInteraction = getMoteurRegleContextParaclinique();
-                if (optionalPoidsTailleConfiguration.get().getPoids() != null && contextInteraction.getConstatContext()
+                RegleContext contextInteraction = getRegleContexttexte2();
+                if (optionalPoidsTailleConfiguration.get().getPoids() != null && contextInteraction.getSignalObserveContext()
                         .containsKey(optionalPoidsTailleConfiguration.get().getPoids().getLibelleCourt())) {
-                    String poidsValue = contextInteraction.getConstatContext()
+                    String poidsValue = contextInteraction.getSignalObserveContext()
                             .get(optionalPoidsTailleConfiguration.get().getPoids().getLibelleCourt());
                     if (poidsValue != null) {
                         fichePatientCriteria.setPoids(Double.parseDouble(poidsValue));
                     }
                 }
-                if (optionalPoidsTailleConfiguration.get().getTaille() != null && contextInteraction.getConstatContext()
+                if (optionalPoidsTailleConfiguration.get().getTaille() != null && contextInteraction.getSignalObserveContext()
                         .containsKey(optionalPoidsTailleConfiguration.get().getTaille().getLibelleCourt())) {
-                    String tailleValue = contextInteraction.getConstatContext()
+                    String tailleValue = contextInteraction.getSignalObserveContext()
                             .get(optionalPoidsTailleConfiguration.get().getTaille().getLibelleCourt());
                     if (tailleValue != null) {
                         fichePatientCriteria.setTaille(Integer.parseInt(tailleValue));
@@ -2588,218 +2588,218 @@ public class ExamenParacliniqueController extends AbstractExamenController {
         }
     }
 
-    private void renseignerByConstatCodeLoinc(final FichePatientCriteria fichePatientCriteria) {
-        MoteurRegleContext contextInteraction = getMoteurRegleContextParaclinique();
-        String poidsValue = searchConstatRealiseValueByCodeLoinc(contextInteraction, EnumConstatCodeLoinc.CONSTAT_POIDS_CODE_LOINC);
+    private void renseignerParCodeSignal(final FichePassageCritere fichePatientCriteria) {
+        RegleContext contextInteraction = getRegleContexttexte2();
+        String poidsValue = rechercherValeurSignalParCode(contextInteraction, EnumCodeSignalStandard.SIGNAL_OBSERVE_POIDS_CODE_LOINC);
         if (poidsValue != null) {
             fichePatientCriteria.setPoids(Double.parseDouble(poidsValue));
         }
-        String tailleValue = searchConstatRealiseValueByCodeLoinc(contextInteraction, EnumConstatCodeLoinc.CONSTAT_TAILLE_CODE_LOINC);
+        String tailleValue = rechercherValeurSignalParCode(contextInteraction, EnumCodeSignalStandard.SIGNAL_OBSERVE_TAILLE_CODE_LOINC);
         if (tailleValue != null) {
             fichePatientCriteria.setTaille(Integer.parseInt(tailleValue));
         }
         // La valeur du constat est oui/non ou vide
-        String fumeur = searchConstatRealiseValueByCodeLoinc(contextInteraction, EnumConstatCodeLoinc.CONSTAT_FUMER_CODE_LOINC);
-        fichePatientCriteria.setFumeur(EnumOuiNonNspEnCours.toBoolean(fumeur));
+        String fumeur = rechercherValeurSignalParCode(contextInteraction, EnumCodeSignalStandard.SIGNAL_OBSERVE_FUMER_CODE_LOINC);
+        fichePatientCriteria.setFumeur(EnumOuiNonIndetermineEnCours.toBoolean(fumeur));
         // La valeur du constat est oui/non ou vide
-        String ancienFumeur = searchConstatRealiseValueByCodeLoinc(contextInteraction, EnumConstatCodeLoinc.CONSTAT_ANCIEN_FUMEUR_CODE_LOINC);
-        fichePatientCriteria.setAncienFumeur(EnumOuiNonNspEnCours.toBoolean(ancienFumeur));
+        String ancienFumeur = rechercherValeurSignalParCode(contextInteraction, EnumCodeSignalStandard.SIGNAL_OBSERVE_ANCIEN_FUMEUR_CODE_LOINC);
+        fichePatientCriteria.setAncienFumeur(EnumOuiNonIndetermineEnCours.toBoolean(ancienFumeur));
     }
 
-    private String searchConstatRealiseValueByCodeLoinc(final MoteurRegleContext contextInteraction, final EnumConstatCodeLoinc loinc) {
-        return Optional.ofNullable(displayedPrestationRealiseeDonneesRealisees)
-                .map(DonneesRealisees::getConstatRealises)
+    private String rechercherValeurSignalParCode(final RegleContext contextInteraction, final EnumCodeSignalStandard loinc) {
+        return Optional.ofNullable(operationRealiseeDonneesFinalisees)
+                .map(DonneesFinalisees::getSignalObserveValides)
                 .stream()
                 .flatMap(List::stream)
                 .filter(Objects::nonNull)
-                .map(ConstatRealiseWithOrigineInformationsVo::getElementConstat)
+                .map(SignalObserveValideVo::getElementSignal)
                 .filter(Objects::nonNull)
-                .map(ElementConstat::getConstat)
+                .map(ElementSignal::getSignalObserve)
                 .filter(Objects::nonNull)
                 .filter(constat -> loinc != null
                         && loinc.getCodeLoinc().equals(constat.getCodeLOINC())
-                        && contextInteraction.getConstatContext().containsKey(constat.getLibelleCourt()))
-                .map(constat -> contextInteraction.getConstatContext().get(constat.getLibelleCourt()))
+                        && contextInteraction.getSignalObserveContext().containsKey(constat.getLibelleCourt()))
+                .map(constat -> contextInteraction.getSignalObserveContext().get(constat.getLibelleCourt()))
                 .filter(Objects::nonNull)
                 .findFirst()
                 .orElse(null);
     }
 
-    private File getDossierFichierPatient(String folderPath) {
+    private File obtenirDossierFichePassage(String folderPath) {
         return new File(folderPath);
     }
 
-    private void setUiModeRecupAndSoftwareLaunchOk() {
-        epcAnnulerExamenBtn.setWrapText(true);
-        epcAnnulerExamenBtn.setText(LIBELLE_ANNULER_EXAMEN);
-        setDisable(epcAnnulerExamenBtn, false);
-        setDisable(epcAcquisitionResultatsBtn,
-                !interactionHabilitationHandler.checkHabilitationRealiserExamen(getDisplayedInteractionRealiseeInteraction()));
+    private void definirModeTerminalRecuperationOk() {
+        boutonAnnulerOperation.setWrapText(true);
+        boutonAnnulerOperation.setText(LIBELLE_ANNULER_OPERATION);
+        definirDesactive(boutonAnnulerOperation, false);
+        definirDesactive(boutonRecupererResultats,
+                !gestionnaireAutorisationPhase.checkHabilitationRealiserExamen(getDisplayedInteractionRealiseeInteraction()));
 
-        Stream.of(epcModifierExamenBtn, epcSupprimerExamenBtn, epcImprimerExamenBtn, epcInterpreterBtn, epcLancerExamenBtn)
+        Stream.of(boutonModifierOperation, boutonSupprimerOperation, boutonImprimerOperation, boutonSynthese, boutonLancerOperation)
                 .forEach(btn -> btn.disableProperty().unbind());
-        Stream.of(epcNouvelExamenBtn, epcEnregistrerExamenBtn, epcSupprimerExamenBtn, epcImprimerExamenBtn, epcModifierExamenBtn,
-                epcInterpreterBtn, epcLancerExamenBtn, epcAjoutManuelPJBtn).forEach(btn -> setDisable(btn, true));
+        Stream.of(boutonNouvelleOperation, boutonEnregistrerOperation, boutonSupprimerOperation, boutonImprimerOperation, boutonModifierOperation,
+                boutonSynthese, boutonLancerOperation, boutonAjouterAnnexeManuelle).forEach(btn -> definirDesactive(btn, true));
 
-        setModeOfConstatsObligatoiresAvantAcquisition(ControllerMode.EDITION);
+        definirModeSignauxObligatoires(ControllerMode.EDITION);
 
-        isSoftwareLaunchOperation = true;
-        implementationComposantDynamique.changeAsterixToShowValue(true);
+        estLancementModule = true;
+        moduleDynamiqueImpl.changeAsterixToShowValue(true);
     }
 
-    private void setModeOfConstatsObligatoiresAvantAcquisition(ControllerMode controllerMode) {
-        if (composantExamenPropertiesByElementId != null) {
-            List<ElementConstat> lsElementsConstatAvailable = getAvailableElementConstatListFromFullList(lsElementsConstat);
-            lsElementsConstatAvailable.stream()
-                    .filter(eltConstat -> Boolean.TRUE.equals(eltConstat.getIsObligatoireAvantAcquisition()))
-                    .forEach(eltConstat -> composantExamenPropertiesByElementId.get(eltConstat.getId()).setMode(controllerMode));
+    private void definirModeSignauxObligatoires(ControllerMode controllerMode) {
+        if (composantOperationProprietesParIdElement != null) {
+            List<ElementSignal> elementsSignalAvailable = getAvailableElementSignalListFromFullList(elementsSignal);
+            elementsSignalAvailable.stream()
+                    .filter(eltSignalObserve -> Boolean.TRUE.equals(eltSignalObserve.getIsObligatoireAvantAcquisition()))
+                    .forEach(eltSignalObserve -> composantOperationProprietesParIdElement.get(eltSignalObserve.getId()).setMode(controllerMode));
         }
     }
 
-    private ExamenParacliniqueMaterielUtilise getInfoMaterielUtiliseFromLsAffectationMaterielNew(List<AffectationMateriel> lsAffectation) {
-        return new ExamenParacliniqueMaterielUtiliseBuilder()
-                .withIdSalle(salle.getId())
-                .withNomSale(salle.getNom())
-                .withListAffectationMateriel(lsAffectation).build();
+    private OperationTransitEquipement obtenirInfoEquipementDepuisAttribution(List<AttributionEquipement> lsAffectation) {
+        return new OperationTransitEquipementBuilder()
+                .withIdZoneTransit(zoneTransit.getId())
+                .withNomSale(zoneTransit.getNom())
+                .withListAttributionEquipement(lsAffectation).build();
     }
 
-    private void retrieveConfigurationModeleEcran() {
-        ConfigurationModeleEcranVo configEcranVo = displayedInteractionRealisee.getInteraction().getConfigurationEcrans().get(0);
-        configurationModeleEcran = prestationService.getConfigurationModeleEcranById(configEcranVo.getId());
-        createGrilleDynamiqueFromConfigurationModeleEcran(EnumBlocEcranDynamiqueGrilleDynamique.CONSTATS_MESURES);
+    private void recupererConfigurationTerminal() {
+        ConfigurationTerminalVo configEcranVo = phaseTransitAffichage.getInteraction().getConfigurationEcrans().get(0);
+        configurationModeleEcran = operationService.getConfigurationModeleEcranById(configEcranVo.getId());
+        creerGrilleDynamiqueDepuisConfiguration(EnumBlocTerminalGrilleDynamique.SIGNAL_OBSERVES_MESURES);
 
-        isLectureMode = isBlocEcranDynamiqueGrilleDynamiqueHasElements(EnumBlocEcranDynamiqueGrilleDynamique.CONSTATS_LECTURE);
-        if (isLectureMode) {
-            createGrilleDynamiqueFromConfigurationModeleEcran(EnumBlocEcranDynamiqueGrilleDynamique.CONSTATS_LECTURE);
+        estModeLecture = blocTerminalDynamiqueContientElements(EnumBlocTerminalGrilleDynamique.SIGNAL_OBSERVES_LECTURE);
+        if (estModeLecture) {
+            creerGrilleDynamiqueDepuisConfiguration(EnumBlocTerminalGrilleDynamique.SIGNAL_OBSERVES_LECTURE);
         } else {
-            createGrilleDynamiqueFromConfigurationModeleEcran(EnumBlocEcranDynamiqueGrilleDynamique.CONSTATS_INTERPRETATION);
+            creerGrilleDynamiqueDepuisConfiguration(EnumBlocTerminalGrilleDynamique.SIGNAL_OBSERVES_INTERPRETATION);
         }
         loadRules();
     }
 
-    private boolean isBlocEcranDynamiqueGrilleDynamiqueHasElements(EnumBlocEcranDynamiqueGrilleDynamique blocEcranDyn) {
-        List<ConfigurationBloc> grilles = configurationModeleEcran.getListOfConfigurationBlocFromBlocEcranDynamiqueGrilleDynamique(blocEcranDyn);
-        return grilles.stream().anyMatch(grille -> CollectionUtils.isNotEmpty(((GrilleDynamique) grille).getElements()));
+    private boolean blocTerminalDynamiqueContientElements(EnumBlocTerminalGrilleDynamique blocEcranDyn) {
+        List<BlocTerminal> grilles = configurationModeleEcran.getListOfBlocTerminalFromBlocEcranDynamiqueGrilleDynamiqueTerminal(blocEcranDyn);
+        return grilles.stream().anyMatch(grille -> CollectionUtils.isNotEmpty(((GrilleDynamiqueTerminal) grille).getElements()));
     }
 
-    private void createGrilleDynamiqueFromConfigurationModeleEcran(EnumBlocEcranDynamiqueGrilleDynamique blocEcranDyn) {
-        List<ConfigurationBloc> grilles = configurationModeleEcran.getListOfConfigurationBlocFromBlocEcranDynamiqueGrilleDynamique(blocEcranDyn);
-        grilles.forEach(grille -> createGrilleDynamiqueFromConfigurationBlocList(blocEcranDyn, grille));
+    private void creerGrilleDynamiqueDepuisConfiguration(EnumBlocTerminalGrilleDynamique blocEcranDyn) {
+        List<BlocTerminal> grilles = configurationModeleEcran.getListOfBlocTerminalFromBlocEcranDynamiqueGrilleDynamiqueTerminal(blocEcranDyn);
+        grilles.forEach(grille -> createGrilleDynamiqueTerminalFromBlocTerminalList(blocEcranDyn, grille));
     }
 
-    protected void generateInterpretationGrilleDynamique() {
-        retrieveElementsConstatFromInterpretationGrilleDynamique();
-        composantInterpretationOuLecturePropertiesByElementId = implementationComposantDynamique
-                .generateGrilleDynamiqueIntoGridPane(interpretationGrilleDynamique, interpretationGridPane, getPrimaryStage().getScene());
-        operateColSpanOnAllInterpretationGridPaneCellsWhichContainConstatsAvailableToMaximumSizing();
-        implementationComposantDynamique.switchModeTo(ControllerMode.CONSULTATION, composantInterpretationOuLecturePropertiesByElementId);
-        retrieveLibelleAndRegleAffichage(interpretationGrilleDynamique, composantInterpretationOuLecturePropertiesByElementId);
-        isListenerEnableProperty.set(true);
-        initElemCstPropValChangeListener(lsElementsConstatInterpretation, composantInterpretationOuLecturePropertiesByElementId);
+    protected void genererGrilleSyntheseDynamique() {
+        obtenirElementsSignalDepuisGrilleSynthese();
+        composantSyntheseProprietesParIdElement = moduleDynamiqueImpl
+                .generateGrilleDynamiqueTerminalIntoGridPane(grilleSyntheseDynamique, grilleSynthese, getPrimaryStage().getScene());
+        appliquerFusionColonnesGrilleSynthese();
+        moduleDynamiqueImpl.switchModeTo(ControllerMode.CONSULTATION, composantSyntheseProprietesParIdElement);
+        obtenirLibelleEtRegleAffichage(grilleSyntheseDynamique, composantSyntheseProprietesParIdElement);
+        estEcouteurActivePropriete.set(true);
+        initElemCstPropValChangeListener(elementsSignalInterpretation, composantSyntheseProprietesParIdElement);
     }
 
-    private void retrieveElementsConstatFromInterpretationGrilleDynamique() {
-        lsElementsConstatInterpretation.setValue(interpretationGrilleDynamique.getElements().stream()
-                .filter(ElementConstat.class::isInstance).map(ElementConstat.class::cast)
+    private void obtenirElementsSignalDepuisGrilleSynthese() {
+        elementsSignalInterpretation.setValue(grilleSyntheseDynamique.getElements().stream()
+                .filter(ElementSignal.class::isInstance).map(ElementSignal.class::cast)
                 .collect(Collectors.toCollection(FXCollections::observableArrayList)));
-        lsElemCstInterpOuLectureMateriel = lsElementsConstatInterpretation.stream()
-                .filter(ecm -> ecm.getConstat().getAppareilConnecte() != null)
+        elementsSignalSyntheseEquipement = elementsSignalInterpretation.stream()
+                .filter(ecm -> ecm.getSignalObserve().getAppareilConnecte() != null)
                 .collect(Collectors.toList());
     }
 
-    private boolean verifyAvailabiltyForMaximumSizingOfConstat(List<ElementConstat> lsElementsConstat, ElementConstat elementConstat) {
-        int col = elementConstat.getNumeroColonne();
-        int row = elementConstat.getNumeroLigne();
-        Constat constat = elementConstat.getConstat();
+    private boolean verifierDisponibiliteTailleMaxSignal(List<ElementSignal> elementsSignal, ElementSignal elementSignalObserve) {
+        int col = elementSignalObserve.getNumeroColonne();
+        int row = elementSignalObserve.getNumeroLigne();
+        SignalObserve constat = elementSignalObserve.getSignalObserve();
 
-        boolean isMaxSizeExpected = EnumListeFormatConstat.QUALITATIF_TEXTE_LIBRE == constat.getFormResult()
+        boolean isMaxSizeExpected = EnumListeFormatSignal.QUALITATIF_TEXTE_LIBRE == constat.getFormResult()
                 && constat.getMotifNonRealise() == null && col < 3;
         if (isMaxSizeExpected) {
-            Optional<ElementConstat> nextConstat = lsElementsConstat.stream()
-                    .filter(elemConstat -> col < elemConstat.getNumeroColonne() && row == elemConstat.getNumeroLigne()).findFirst();
-            isMaxSizeExpected = !nextConstat.isPresent();
+            Optional<ElementSignal> nextSignalObserve = elementsSignal.stream()
+                    .filter(elemSignalObserve -> col < elemSignalObserve.getNumeroColonne() && row == elemSignalObserve.getNumeroLigne()).findFirst();
+            isMaxSizeExpected = !nextSignalObserve.isPresent();
         }
         return isMaxSizeExpected;
     }
 
-    private void operateColSpanOnAllExamGridPaneCellsWhichContainConstatsAvailableToMaximumSizing() {
-        lsElementsConstat.forEach(elemCst -> examenGridPane.operateColumnSpanOnExamGridPaneCellsWhichContainsOneSpecificConstat(lsElementsConstat, elemCst));
-        lsElementsConstat.stream()
-                .filter(elemCst -> verifyAvailabiltyForMaximumSizingOfConstat(lsElementsConstat, elemCst))
-                .forEach(elemCst -> operateColumnSpanOnGridPaneCellsWhichContainsOneSpecificConstat(elemCst, examenGridPane));
+    private void appliquerFusionColonnesGrilleOperations() {
+        elementsSignal.forEach(elemCst -> grilleOperation.operateColumnSpanOnExamGridPaneCellsWhichContainsOneSpecificSignalObserve(elementsSignal, elemCst));
+        elementsSignal.stream()
+                .filter(elemCst -> verifierDisponibiliteTailleMaxSignal(elementsSignal, elemCst))
+                .forEach(elemCst -> appliquerFusionColonnesGrilleSignalSpecifique(elemCst, grilleOperation));
     }
 
-    private void operateColSpanOnAllInterpretationGridPaneCellsWhichContainConstatsAvailableToMaximumSizing() {
-        lsElementsConstatInterpretation.stream()
-                .filter(elemCst -> verifyAvailabiltyForMaximumSizingOfConstat(lsElementsConstatInterpretation, elemCst))
-                .forEach(elemCst -> operateColumnSpanOnGridPaneCellsWhichContainsOneSpecificConstat(elemCst, interpretationGridPane));
+    private void appliquerFusionColonnesGrilleSynthese() {
+        elementsSignalInterpretation.stream()
+                .filter(elemCst -> verifierDisponibiliteTailleMaxSignal(elementsSignalInterpretation, elemCst))
+                .forEach(elemCst -> appliquerFusionColonnesGrilleSignalSpecifique(elemCst, grilleSynthese));
     }
 
-    private void operateColumnSpanOnGridPaneCellsWhichContainsOneSpecificConstat(ElementConstat elemConstat, GridPane gridpane) {
-        Integer numColCstExpected = elemConstat.getNumeroColonne() + 1;
-        Integer numRowCstExpected = elemConstat.getNumeroLigne();
+    private void appliquerFusionColonnesGrilleSignalSpecifique(ElementSignal elemSignalObserve, GridPane gridpane) {
+        Integer numColCstExpected = elemSignalObserve.getNumeroColonne() + 1;
+        Integer numRowCstExpected = elemSignalObserve.getNumeroLigne();
         gridpane.getChildren().stream().filter(node -> GridPane.getColumnIndex(node) != null && GridPane.getRowIndex(node) != null)
                 .filter(node -> numColCstExpected.equals(GridPane.getColumnIndex(node)) && numRowCstExpected.equals(GridPane.getRowIndex(node)))
                 .forEach(node -> GridPane.setColumnSpan(node, (numColCstExpected == 1 ? 3 : 2)));
     }
 
-    protected void generateExamenGrilleDynamique() {
-        composantExamenPropertiesByElementId = implementationComposantDynamique.generateGrilleDynamiqueIntoGridPane(
-                examenGrilleDynamique, examenGridPane, getPrimaryStage().getScene());
-        retrieveElementsConstatFromExamenGrilleDynamique();
-        operateColSpanOnAllExamGridPaneCellsWhichContainConstatsAvailableToMaximumSizing();
-        retrieveLibelleAndRegleAffichage(examenGrilleDynamique, composantExamenPropertiesByElementId);
-        lsElementsConstatMateriel.forEach(element -> composantExamenPropertiesByElementId.applyModePropertyChangeListenerOnGridPaneElement(element));
-        isListenerEnableProperty.set(true);
-        initElemCstPropValChangeListener(lsElementsConstat, composantExamenPropertiesByElementId);
+    protected void genererGrilleOperationDynamique() {
+        composantOperationProprietesParIdElement = moduleDynamiqueImpl.generateGrilleDynamiqueTerminalIntoGridPane(
+                grilleOperationDynamique, grilleOperation, getPrimaryStage().getScene());
+        obtenirElementsSignalDepuisGrilleOperation();
+        appliquerFusionColonnesGrilleOperations();
+        obtenirLibelleEtRegleAffichage(grilleOperationDynamique, composantOperationProprietesParIdElement);
+        elementsSignalEquipement.forEach(element -> composantOperationProprietesParIdElement.applyModePropertyChangeListenerOnGridPaneElement(element));
+        estEcouteurActivePropriete.set(true);
+        initElemCstPropValChangeListener(elementsSignal, composantOperationProprietesParIdElement);
     }
 
-    private void retrieveElementsConstatFromExamenGrilleDynamique() {
-        lsElementsConstat = examenGrilleDynamique.getElements().stream().filter(ElementConstat.class::isInstance)
-                .map(ElementConstat.class::cast).collect(Collectors.toList());
-        lsElementsConstatExamen = lsElementsConstat.stream()
-                .filter(ecm -> ecm.getConstat().getAppareilConnecte() == null).collect(Collectors.toList());
-        lsElementsConstatMateriel = lsElementsConstat.stream()
-                .filter(ecm -> ecm.getConstat().getAppareilConnecte() != null).collect(Collectors.toList());
+    private void obtenirElementsSignalDepuisGrilleOperation() {
+        elementsSignal = grilleOperationDynamique.getElements().stream().filter(ElementSignal.class::isInstance)
+                .map(ElementSignal.class::cast).collect(Collectors.toList());
+        elementsSignalExamen = elementsSignal.stream()
+                .filter(ecm -> ecm.getSignalObserve().getAppareilConnecte() == null).collect(Collectors.toList());
+        elementsSignalEquipement = elementsSignal.stream()
+                .filter(ecm -> ecm.getSignalObserve().getAppareilConnecte() != null).collect(Collectors.toList());
     }
 
-    private void retrieveLibelleAndRegleAffichage(GrilleDynamique grille, GrilleDynamiqueUi grilleUi) {
-        List<LibelleRegleAffichage> lsLibRegleAff = grille.getElements().stream()
-                .filter(LibelleRegleAffichage.class::isInstance).map(LibelleRegleAffichage.class::cast)
+    private void obtenirLibelleEtRegleAffichage(GrilleDynamiqueTerminal grille, GrilleTerminalUi grilleUi) {
+        List<LibelleRegleTerminal> lsLibRegleAff = grille.getElements().stream()
+                .filter(LibelleRegleTerminal.class::isInstance).map(LibelleRegleTerminal.class::cast)
                 .collect(Collectors.toList());
-        reglesAffichageElementComposantPropertiesMap
-                .putAll(lsLibRegleAff.stream().collect(Collectors.toMap(LibelleRegleAffichage::getId,
+        reglesAffichageProprietesComposantMap
+                .putAll(lsLibRegleAff.stream().collect(Collectors.toMap(LibelleRegleTerminal::getId,
                         libelleRegleAffichage -> grilleUi.get(libelleRegleAffichage.getId()))));
-        lsLibelleRegleAffichage.addAll(lsLibRegleAff);
+        libellesRegleAffichage.addAll(lsLibRegleAff);
     }
 
-    private void checkUsableBeforeExecuteReglesAffichageEtCalcul(final ElementSaisieGrilleDynamiqueComposantProperties composantProperties, Object oldValue,
+    private void verifierUtilisableAvantExecutionRegles(final ElementSaisieGrillePropriete composantProperties, Object oldValue,
             boolean reexecuteRules) {
         if (Boolean.TRUE.equals(composantProperties.isUsable())) {
             // Execution du moteur de regle et refresh du formulaire de l'ecran
-            MoteurRegleResult reglesResult = moteurRegleService.executeRulesWithDefaultRegistry(getMoteurRegleContextParaclinique());
+            RegleResultat reglesResult = moteurRegleService.executeRulesWithDefaultRegistry(getRegleContexttexte2());
             if (isControleValiditeResultatsRegleDeCalculOk(reglesResult)) {
-                composantExamenPropertiesByElementId.refreshWithContext(getConsultantEntite(),
-                        displayedDossierPrestationProperty.getValue(), getDonneesRealiseesInteraction(), reglesResult);
-                composantInterpretationOuLecturePropertiesByElementId.refreshWithContext(getConsultantEntite(),
-                        displayedDossierPrestationProperty.getValue(), getDonneesRealiseesInteraction(), reglesResult);
+                composantOperationProprietesParIdElement.refreshWithContext(getConsultantEntite(),
+                        dossierTransitAffichagePropriete.getValue(), getDonneesFinaliseesInteraction(), reglesResult);
+                composantSyntheseProprietesParIdElement.refreshWithContext(getConsultantEntite(),
+                        dossierTransitAffichagePropriete.getValue(), getDonneesFinaliseesInteraction(), reglesResult);
 
                 // Si au moins un element ayant une valeur saisie a ete demodule, alors supprimer cette precedente
                 // valeur
                 // Si une regle de calcul existe que sa valeur est null ou 0 alors supprimer la precedente valeur
-                resetElementsGrilleDynamiUDemodulesValuesInEditionMode(composantExamenPropertiesByElementId, lsElementsConstat, reglesResult);
+                resetElementsGrilleDynamiUDemodulesValuesInEditionMode(composantOperationProprietesParIdElement, elementsSignal, reglesResult);
                 // Rafraichissement des donnees de l'ecran calculees par le moteur de regles
-                refreshReglesAffichageEtConstats(reglesResult);
+                refreshReglesAffichageEtSignalObserves(reglesResult);
             } else {
                 composantProperties.setValue(oldValue);
             }
-        } else if (!listenedUsableProperties.contains(composantProperties.usableProperty())) {
-            composantProperties.usableProperty().addListener(getComposantPropertiesUusablePropertyListener(composantProperties, oldValue));
-            listenedUsableProperties.add(composantProperties.usableProperty());
+        } else if (!proprietesUtilisablesEcoutees.contains(composantProperties.usableProperty())) {
+            composantProperties.usableProperty().addListener(obtenirProprieteEcouteurUtilisable(composantProperties, oldValue));
+            proprietesUtilisablesEcoutees.add(composantProperties.usableProperty());
         }
     }
 
-    private ChangeListener<Boolean> getComposantPropertiesUusablePropertyListener(ElementSaisieGrilleDynamiqueComposantProperties composantProperties,
+    private ChangeListener<Boolean> obtenirProprieteEcouteurUtilisable(ElementSaisieGrillePropriete composantProperties,
             Object oldValue) {
         return new ChangeListener<Boolean>() {
             @Override
@@ -2807,16 +2807,16 @@ public class ExamenParacliniqueController extends AbstractExamenController {
                     final Boolean newValueUsableProperty) {
                 if (Boolean.TRUE.equals(newValueUsableProperty)) {
                     observableUsableProperty.removeListener(this);
-                    listenedUsableProperties.remove(observableUsableProperty);
-                    MoteurRegleResult reglesResult = moteurRegleService.executeRulesWithDefaultRegistry(getMoteurRegleContextParaclinique());
+                    proprietesUtilisablesEcoutees.remove(observableUsableProperty);
+                    RegleResultat reglesResult = moteurRegleService.executeRulesWithDefaultRegistry(getRegleContexttexte2());
                     if (isControleValiditeResultatsRegleDeCalculOk(reglesResult)) {
-                        composantExamenPropertiesByElementId.refreshWithContext(getConsultantEntite(),
-                                displayedDossierPrestationProperty.getValue(),
-                                getDonneesRealiseesInteraction(), reglesResult);
-                        composantInterpretationOuLecturePropertiesByElementId.refreshWithContext(getConsultantEntite(),
-                                displayedDossierPrestationProperty.getValue(),
-                                getDonneesRealiseesInteraction(), reglesResult);
-                        refreshReglesAffichageEtConstats(reglesResult);
+                        composantOperationProprietesParIdElement.refreshWithContext(getConsultantEntite(),
+                                dossierTransitAffichagePropriete.getValue(),
+                                getDonneesFinaliseesInteraction(), reglesResult);
+                        composantSyntheseProprietesParIdElement.refreshWithContext(getConsultantEntite(),
+                                dossierTransitAffichagePropriete.getValue(),
+                                getDonneesFinaliseesInteraction(), reglesResult);
+                        refreshReglesAffichageEtSignalObserves(reglesResult);
                     } else {
                         composantProperties.setValue(oldValue);
                     }
@@ -2825,8 +2825,8 @@ public class ExamenParacliniqueController extends AbstractExamenController {
         };
     }
 
-    private Consumer<DialogConfirmationController> onSelectionItemTableView(
-            final ExamenParacliniqueRealise itemSelectionne) {
+    private Consumer<DialogConfirmationController> surSelectionElementTableau(
+            final OperationTransitFinalisee itemSelectionne) {
         return t -> {
             rowSelectionOperations(itemSelectionne);
             setMode(ControllerMode.CONSULTATION);
@@ -2834,218 +2834,218 @@ public class ExamenParacliniqueController extends AbstractExamenController {
     }
 
     @Override
-    protected void rowSelectionOperations(ExamenParacliniqueRealise examen) {
-        isListenerEnableProperty.set(false);
-        Stream.of(composantExamenPropertiesByElementId, composantInterpretationOuLecturePropertiesByElementId)
-                .forEach(GrilleDynamiqueUtils::resetAllValues);
-        lecturePrerequiseChcbx.setSelected(false);
-        isListenerEnableProperty.set(true);
-        reglesAffichageElementComposantPropertiesMap.values().forEach(egd -> egd.setVisible(Boolean.FALSE));
+    protected void rowSelectionOperations(OperationTransitFinalisee examen) {
+        estEcouteurActivePropriete.set(false);
+        Stream.of(composantOperationProprietesParIdElement, composantSyntheseProprietesParIdElement)
+                .forEach(GrilleDynamiqueTerminalUtils::resetAllValues);
+        caseCocherPreRequis.setSelected(false);
+        estEcouteurActivePropriete.set(true);
+        reglesAffichageProprietesComposantMap.values().forEach(egd -> egd.setVisible(Boolean.FALSE));
         if (examen != null) {
-            lecturePrerequiseChcbx.setSelected(Boolean.TRUE.equals(examen.getIsLecturePrerequise()));
+            caseCocherPreRequis.setSelected(Boolean.TRUE.equals(examen.getIsLecturePrerequise()));
 
-            examen.getListeConstatRealiseExamen().forEach(cstRea -> composantExamenPropertiesByElementId.putConstatRealiseValueInGrilleDynamique(cstRea));
+            examen.getListeSignalObserveValideExamen().forEach(cstRea -> composantOperationProprietesParIdElement.putSignalObserveValideValueInGrilleDynamiqueTerminal(cstRea));
             if (examen.isInterprete() != null && Boolean.TRUE.equals(examen.isInterprete())) {
-                examen.getListeConstatRealiseInterpretation()
-                        .forEach(cstRea -> composantInterpretationOuLecturePropertiesByElementId.putConstatRealiseValueInGrilleDynamique(cstRea));
+                examen.getListeSignalObserveValideInterpretation()
+                        .forEach(cstRea -> composantSyntheseProprietesParIdElement.putSignalObserveValideValueInGrilleDynamiqueTerminal(cstRea));
             }
 
-            MoteurRegleResult reglesResult = moteurRegleService.executeRulesWithDefaultRegistry(getMoteurRegleContextParaclinique());
-            composantExamenPropertiesByElementId.refreshWithContext(getConsultantEntite(),
-                    displayedDossierPrestationProperty.getValue(), getDonneesRealiseesInteraction(), reglesResult);
-            composantInterpretationOuLecturePropertiesByElementId.refreshWithContext(getConsultantEntite(),
-                    displayedDossierPrestationProperty.getValue(), getDonneesRealiseesInteraction(), reglesResult);
+            RegleResultat reglesResult = moteurRegleService.executeRulesWithDefaultRegistry(getRegleContexttexte2());
+            composantOperationProprietesParIdElement.refreshWithContext(getConsultantEntite(),
+                    dossierTransitAffichagePropriete.getValue(), getDonneesFinaliseesInteraction(), reglesResult);
+            composantSyntheseProprietesParIdElement.refreshWithContext(getConsultantEntite(),
+                    dossierTransitAffichagePropriete.getValue(), getDonneesFinaliseesInteraction(), reglesResult);
             notEmptyRowSelectionInterpAndMatOperations(examen);
-            refreshReglesAffichageEtConstats(reglesResult);
+            refreshReglesAffichageEtSignalObserves(reglesResult);
         }
     }
 
-    private void notEmptyRowSelectionInterpAndMatOperations(ExamenParacliniqueRealise examen) {
+    private void notEmptyRowSelectionInterpAndMatOperations(OperationTransitFinalisee examen) {
         if (Boolean.TRUE.equals(examen.isInterprete())) {
-            examen.getListeConstatRealiseInterpretation()
-                    .forEach(cstRea -> composantInterpretationOuLecturePropertiesByElementId.putConstatRealiseValueInGrilleDynamique(cstRea));
+            examen.getListeSignalObserveValideInterpretation()
+                    .forEach(cstRea -> composantSyntheseProprietesParIdElement.putSignalObserveValideValueInGrilleDynamiqueTerminal(cstRea));
         }
-        if (!lsElementsConstatMateriel.isEmpty() && examen.getListeConstatMaterielRealise() != null
-                && !examen.getListeConstatMaterielRealise().isEmpty()) {
-            putConstatMaterielValuesIntoGrillesDynamiques(lsElementsConstatMateriel, examen,
-                    composantExamenPropertiesByElementId);
-            putConstatMaterielValuesIntoInterpretationGrille(examen);
+        if (!elementsSignalEquipement.isEmpty() && examen.getListeSignalEquipementValide() != null
+                && !examen.getListeSignalEquipementValide().isEmpty()) {
+            placerValeursSignalEquipementDansGrilles(elementsSignalEquipement, examen,
+                    composantOperationProprietesParIdElement);
+            placerValeursSignalEquipementDansGrilleSynthese(examen);
         }
 
-        List<ElementConstat> listElementConstatsObligatoiresAvantAcquisition = getListElementConstatsObligatoiresAvantAcquisition();
-        if (CollectionUtils.isNotEmpty(listElementConstatsObligatoiresAvantAcquisition)) {
-            boolean isAuMoins1ConstatObligPostAcquisitionIsSetted = listElementConstatsObligatoiresAvantAcquisition.stream()
-                    .anyMatch(elementConstat -> isAuMoins1ConstatObligPostAcquisitionIsSetted(elementConstat));
-            implementationComposantDynamique.changeAsterixToShowValue(Boolean.TRUE.equals(isAuMoins1ConstatObligPostAcquisitionIsSetted));
+        List<ElementSignal> listElementSignalsObligatoiresAvantAcquisition = obtenirListeElementsSignauxObligatoires();
+        if (CollectionUtils.isNotEmpty(listElementSignalsObligatoiresAvantAcquisition)) {
+            boolean auMoinsUnSignalObligatoirePostRecuperationRenseigne = listElementSignalsObligatoiresAvantAcquisition.stream()
+                    .anyMatch(elementSignalObserve -> auMoinsUnSignalObligatoirePostRecuperationRenseigne(elementSignalObserve));
+            moduleDynamiqueImpl.changeAsterixToShowValue(Boolean.TRUE.equals(auMoinsUnSignalObligatoirePostRecuperationRenseigne));
         }
     }
 
-    private boolean isAuMoins1ConstatObligPostAcquisitionIsSetted(ElementConstat elemConstat) {
-        ConstatRealise constatRealise = retrieveConstatRealiseFromElementConstat(elemConstat, null, composantExamenPropertiesByElementId);
-        return !constatRealise.isEmptyConstatRealiseValue();
+    private boolean auMoinsUnSignalObligatoirePostRecuperationRenseigne(ElementSignal elemSignalObserve) {
+        SignalObserveValide constatRealise = retrieveSignalObserveValideFromElementSignal(elemSignalObserve, null, composantOperationProprietesParIdElement);
+        return !constatRealise.isEmptySignalObserveValideValue();
     }
 
-    private void putConstatMaterielValuesIntoInterpretationGrille(ExamenParacliniqueRealise examen) {
-        if (!lsElemCstInterpOuLectureMateriel.isEmpty() && examen.getAnalyste() == null) {
-            Map<String, ConstatMaterielRealise> cstMaterielReaByIdIOPGeneriqueMap = new HashMap<>();
-            lsElemCstInterpOuLectureMateriel.forEach(ecm -> generateCstMaterielReaByIdIOPOrCodeLoincMap(ecm, examen, cstMaterielReaByIdIOPGeneriqueMap));
+    private void placerValeursSignalEquipementDansGrilleSynthese(OperationTransitFinalisee examen) {
+        if (!elementsSignalSyntheseEquipement.isEmpty() && examen.getAnalyste() == null) {
+            Map<String, SignalEquipementValide> cstMaterielReaByIdIOPGeneriqueMap = new HashMap<>();
+            elementsSignalSyntheseEquipement.forEach(ecm -> genererSignalEquipementParIdOuCode(ecm, examen, cstMaterielReaByIdIOPGeneriqueMap));
             if (!cstMaterielReaByIdIOPGeneriqueMap.isEmpty()) {
-                lsElemCstInterpOuLectureMateriel
-                        .forEach(elemCst -> putConstatMaterielValueFromElemCstIntoInterpretationGrille(elemCst, cstMaterielReaByIdIOPGeneriqueMap));
+                elementsSignalSyntheseEquipement
+                        .forEach(elemCst -> placerValeurSignalDepuisElementDansGrilleSynthese(elemCst, cstMaterielReaByIdIOPGeneriqueMap));
             }
         }
     }
 
-    private void putConstatMaterielValueFromElemCstIntoInterpretationGrille(ElementConstat elemCst,
-            Map<String, ConstatMaterielRealise> cstMaterielReaByIdIOPGeneriqueMap) {
-        String idIOPGenerique = isFormatEchangeHL7() ? elemCst.getConstat().getCodeLOINC() : elemCst.getConstat().getIdInteroperabilite();
+    private void placerValeurSignalDepuisElementDansGrilleSynthese(ElementSignal elemCst,
+            Map<String, SignalEquipementValide> cstMaterielReaByIdIOPGeneriqueMap) {
+        String idIOPGenerique = estFormatEchangeStandard() ? elemCst.getSignalObserve().getCodeLOINC() : elemCst.getSignalObserve().getIdInteroperabilite();
         if (cstMaterielReaByIdIOPGeneriqueMap.containsKey(idIOPGenerique)) {
-            ConstatMaterielRealise cstMatRea = cstMaterielReaByIdIOPGeneriqueMap.get(idIOPGenerique);
-            Map<Long, ElementSaisieGrilleDynamiqueComposantProperties> composantPropByElemId = new HashMap<>();
-            generateComponentsByElemIdMap(composantPropByElemId, composantInterpretationOuLecturePropertiesByElementId);
-            setConstatMaterielValueByType(elemCst, cstMatRea, composantPropByElemId);
+            SignalEquipementValide cstMatRea = cstMaterielReaByIdIOPGeneriqueMap.get(idIOPGenerique);
+            Map<Long, ElementSaisieGrillePropriete> composantPropByElemId = new HashMap<>();
+            genererComposantsParIdElement(composantPropByElemId, composantSyntheseProprietesParIdElement);
+            definirValeurSignalEquipementParType(elemCst, cstMatRea, composantPropByElemId);
         }
     }
 
-    private void generateCstMaterielReaByIdIOPOrCodeLoincMap(ElementConstat ecm, ExamenParacliniqueRealise examen,
-            Map<String, ConstatMaterielRealise> cstMaterielReaByIdIOPOrCodeLoincMap) {
-        if (isFormatEchangeHL7()) {
-            String codeLoinc = ecm.getConstat().getCodeLOINC();
-            examen.getListeConstatMaterielRealise().stream()
+    private void genererSignalEquipementParIdOuCode(ElementSignal ecm, OperationTransitFinalisee examen,
+            Map<String, SignalEquipementValide> cstMaterielReaByIdIOPOrCodeLoincMap) {
+        if (estFormatEchangeStandard()) {
+            String codeLoinc = ecm.getSignalObserve().getCodeLOINC();
+            examen.getListeSignalEquipementValide().stream()
                     .filter(c -> null != c.getCodeLoinc() && c.getCodeLoinc().equals(codeLoinc)).findFirst()
                     .ifPresent(constatMat -> cstMaterielReaByIdIOPOrCodeLoincMap.put(codeLoinc, constatMat));
         } else {
-            String idIOP = ecm.getConstat().getIdInteroperabilite();
-            examen.getListeConstatMaterielRealise().stream()
+            String idIOP = ecm.getSignalObserve().getIdInteroperabilite();
+            examen.getListeSignalEquipementValide().stream()
                     .filter(c -> null != c.getIdIOP() && c.getIdIOP().equals(idIOP)).findFirst()
                     .ifPresent(constatMat -> cstMaterielReaByIdIOPOrCodeLoincMap.put(idIOP, constatMat));
         }
     }
 
-    private void putConstatMaterielValuesIntoGrillesDynamiques(List<ElementConstat> lsElementConstat,
-            ExamenParacliniqueRealise examen, Map<Long, ElementGrilleDynamiqueComposantProperties> composants) {
-        lsElementConstat.stream()
-                .filter(ecm -> examen.getListeConstatMaterielRealise().stream().map(ConstatMaterielRealise::getIdConstatPublie)
-                        .collect(Collectors.toList()).contains(ecm.getConstat().getId()))
-                .forEach(ecm -> setConstatMaterielValue(examen, ecm, composants));
+    private void placerValeursSignalEquipementDansGrilles(List<ElementSignal> lsElementSignal,
+            OperationTransitFinalisee examen, Map<Long, ElementGrilleTerminalPropriete> composants) {
+        lsElementSignal.stream()
+                .filter(ecm -> examen.getListeSignalEquipementValide().stream().map(SignalEquipementValide::getIdSignalDiffuse)
+                        .collect(Collectors.toList()).contains(ecm.getSignalObserve().getId()))
+                .forEach(ecm -> definirValeurSignalEquipement(examen, ecm, composants));
     }
 
-    private void setConstatMaterielValue(ExamenParacliniqueRealise examen, ElementConstat ecm,
-            Map<Long, ElementGrilleDynamiqueComposantProperties> composants) {
-        Long idCst = ecm.getConstat().getId();
-        ConstatMaterielRealise constatMaterielResult = examen.getListeConstatMaterielRealise().stream()
-                .filter(cmr -> cmr.getIdConstatPublie().equals(idCst)).findFirst().orElse(null);
+    private void definirValeurSignalEquipement(OperationTransitFinalisee examen, ElementSignal ecm,
+            Map<Long, ElementGrilleTerminalPropriete> composants) {
+        Long idCst = ecm.getSignalObserve().getId();
+        SignalEquipementValide constatMaterielResult = examen.getListeSignalEquipementValide().stream()
+                .filter(cmr -> cmr.getIdSignalDiffuse().equals(idCst)).findFirst().orElse(null);
         if (constatMaterielResult != null) {
-            Map<Long, ElementSaisieGrilleDynamiqueComposantProperties> composantPropByElemId = new HashMap<>();
-            generateComponentsByElemIdMap(composantPropByElemId, composants);
-            setConstatMaterielValueByType(ecm, constatMaterielResult, composantPropByElemId);
+            Map<Long, ElementSaisieGrillePropriete> composantPropByElemId = new HashMap<>();
+            genererComposantsParIdElement(composantPropByElemId, composants);
+            definirValeurSignalEquipementParType(ecm, constatMaterielResult, composantPropByElemId);
         }
     }
 
-    private void generateComponentsByElemIdMap(
-            Map<Long, ElementSaisieGrilleDynamiqueComposantProperties> composantPropByElemId,
-            Map<Long, ElementGrilleDynamiqueComposantProperties> composants) {
+    private void genererComposantsParIdElement(
+            Map<Long, ElementSaisieGrillePropriete> composantPropByElemId,
+            Map<Long, ElementGrilleTerminalPropriete> composants) {
         composants.keySet().stream()
-                .filter(key -> composants.get(key) instanceof ElementSaisieGrilleDynamiqueComposantProperties)
+                .filter(key -> composants.get(key) instanceof ElementSaisieGrillePropriete)
                 .forEach(key -> composantPropByElemId.put(key, retrieveComponentByKey(key, composants)));
     }
 
-    private void setConstatMaterielValueByType(ElementConstat ecm, ConstatMaterielRealise constatMaterielResult,
-            Map<Long, ElementSaisieGrilleDynamiqueComposantProperties> composantPropByElemId) {
-        ConstatMaterielRealiseWithConstatLibelleCourtVo constatMatRea = constatMaterielRealiseFac
-                .buildConstatMaterielRealiseWithConstatLibelleCourtVo(constatMaterielResult);
-        constatMatRea.setConstatFormatAndConstatNombreDecimalWithConstatData(ecm.getConstat());
-        composantPropByElemId.get(ecm.getId()).setValue(ConstatRealiseHelper.getConstatMaterielRealiseResultatStringValue(constatMatRea));
+    private void definirValeurSignalEquipementParType(ElementSignal ecm, SignalEquipementValide constatMaterielResult,
+            Map<Long, ElementSaisieGrillePropriete> composantPropByElemId) {
+        SignalEquipementValideVo constatMatRea = signalEquipementValideFactory
+                .buildSignalEquipementValideVo(constatMaterielResult);
+        constatMatRea.setSignalObserveFormatAndSignalObserveNombreDecimalWithSignalObserveData(ecm.getSignalObserve());
+        composantPropByElemId.get(ecm.getId()).setValue(SignalObserveValideHelper.getSignalEquipementValideResultatStringValue(constatMatRea));
     }
 
-    private ElementSaisieGrilleDynamiqueComposantProperties retrieveComponentByKey(long key, Map<Long, ElementGrilleDynamiqueComposantProperties> composants) {
-        return (ElementSaisieGrilleDynamiqueComposantProperties) composants.get(key);
+    private ElementSaisieGrillePropriete retrieveComponentByKey(long key, Map<Long, ElementGrilleTerminalPropriete> composants) {
+        return (ElementSaisieGrillePropriete) composants.get(key);
     }
 
-    private Consumer<DialogConfirmationController> onCancelDialogConfirmationBoxOperation(final ExamenParacliniqueRealise oldExamenParacliniqueRealise) {
+    private Consumer<DialogConfirmationController> surAnnulationBoiteConfirmation(final OperationTransitFinalisee oldOperationTransitFinalisee) {
         return t -> Platform.runLater(() -> {
-            epcListeExamensRealisesTableView.resetSelectionModelValue(oldExamenParacliniqueRealise);
+            tableauOperationsFinalisees.resetSelectionModelValue(oldOperationTransitFinalisee);
         });
     }
 
-    private boolean isModifIntoGrilleDynamiqueData() {
-        List<ConstatRealise> lsModifiedConstatRea = getListExamenConstatRealise();
+    private boolean modificationDansGrilleDynamique() {
+        List<SignalObserveValide> lsModifiedSignalObserveRea = obtenirListeOperationsSignaux();
         boolean isEquals = true;
-        if (editedExam != null) {
-            isEquals = ConstatRealiseHelper.isModifIntoConstatExamenDataCase(isEquals, editedExam, lsModifiedConstatRea);
+        if (operationEnEdition != null) {
+            isEquals = SignalObserveValideHelper.isModifIntoSignalObserveExamenDataCase(isEquals, operationEnEdition, lsModifiedSignalObserveRea);
         } else {
-            isEquals = ConstatRealiseHelper.areEmptyConstatReaValues(isEquals, lsModifiedConstatRea);
+            isEquals = SignalObserveValideHelper.areEmptySignalObserveReaValues(isEquals, lsModifiedSignalObserveRea);
         }
         return !isEquals;
     }
 
-    private boolean isModifIntoInterpretationDynamiquePartData() {
-        List<ConstatRealise> lsModifiedConstatRea = getListInterpretationConstatRealise(editedExam.getId(), !isInsertInterpretCase());
+    private boolean modificationDansSyntheseDynamique() {
+        List<SignalObserveValide> lsModifiedSignalObserveRea = obtenirListeSyntheseSignaux(operationEnEdition.getId(), !estInsertionSynthese());
         boolean isEqual = true;
-        if (editedExam != null && editedExam.isInterprete()) {
-            isEqual = ConstatRealiseHelper.isModifIntoConstatInterpretationDataCase(isEqual, editedExam, lsModifiedConstatRea);
-        } else if (editedExam != null && !lsElemCstInterpOuLectureMateriel.isEmpty() && editedExam.getAnalyste() == null) {
-            isEqual = isModifIntoInterpretationDataInitAndMaterielCase(isEqual, lsModifiedConstatRea);
-        } else if (editedExam != null && !lsElemCstInterpOuLectureMateriel.isEmpty()
-                && editedExam.getListeConstatRealiseInterpretation() != null) {
-            isEqual = ConstatRealiseHelper.isModifIntoConstatInterpretationDataCase(isEqual, editedExam, lsModifiedConstatRea);
+        if (operationEnEdition != null && operationEnEdition.isInterprete()) {
+            isEqual = SignalObserveValideHelper.isModifIntoSignalObserveInterpretationDataCase(isEqual, operationEnEdition, lsModifiedSignalObserveRea);
+        } else if (operationEnEdition != null && !elementsSignalSyntheseEquipement.isEmpty() && operationEnEdition.getAnalyste() == null) {
+            isEqual = modificationDansSyntheseInitEtEquipement(isEqual, lsModifiedSignalObserveRea);
+        } else if (operationEnEdition != null && !elementsSignalSyntheseEquipement.isEmpty()
+                && operationEnEdition.getListeSignalObserveValideInterpretation() != null) {
+            isEqual = SignalObserveValideHelper.isModifIntoSignalObserveInterpretationDataCase(isEqual, operationEnEdition, lsModifiedSignalObserveRea);
         } else {
-            isEqual = ConstatRealiseHelper.areEmptyConstatReaValues(isEqual, lsModifiedConstatRea);
+            isEqual = SignalObserveValideHelper.areEmptySignalObserveReaValues(isEqual, lsModifiedSignalObserveRea);
         }
         return !isEqual;
     }
 
-    private boolean isModifIntoInterpretationDataInitAndMaterielCase(Boolean isEqual,
-            List<ConstatRealise> lsModifiedConstatRea) {
-        List<ConstatMaterielRealise> lsConstatMateriel = editedExam.getListeConstatMaterielRealise();
-        List<ConstatRealise> lsModifiedConstatReaBindedToMateriel = lsModifiedConstatRea.stream()
-                .filter(cst -> lsElemCstInterpOuLectureMateriel.contains(cst.getElementConstat())).collect(Collectors.toList());
-        areEqualGeneric = true;
-        lsModifiedConstatReaBindedToMateriel
-                .forEach(cstRea -> areEqualConstatMaterielAndConstatReaValues(cstRea, lsConstatMateriel));
-        List<ConstatRealise> lsModifiedNotBindedToMat = lsModifiedConstatRea.stream()
-                .filter(cst -> !lsElemCstInterpOuLectureMateriel.contains(cst.getElementConstat())).collect(Collectors.toList());
+    private boolean modificationDansSyntheseInitEtEquipement(Boolean isEqual,
+            List<SignalObserveValide> lsModifiedSignalObserveRea) {
+        List<SignalEquipementValide> lsSignalObserveMateriel = operationEnEdition.getListeSignalEquipementValide();
+        List<SignalObserveValide> lsModifiedSignalObserveReaBindedToMateriel = lsModifiedSignalObserveRea.stream()
+                .filter(cst -> elementsSignalSyntheseEquipement.contains(cst.getElementSignal())).collect(Collectors.toList());
+        sontEgauxGenerique = true;
+        lsModifiedSignalObserveReaBindedToMateriel
+                .forEach(cstRea -> signauxEquipementEtValidesEgaux(cstRea, lsSignalObserveMateriel));
+        List<SignalObserveValide> lsModifiedNotBindedToMat = lsModifiedSignalObserveRea.stream()
+                .filter(cst -> !elementsSignalSyntheseEquipement.contains(cst.getElementSignal())).collect(Collectors.toList());
         if (isEqual != null) {
-            return areEqualGeneric && ConstatRealiseHelper.areEmptyConstatReaValues(isEqual, lsModifiedNotBindedToMat);
+            return sontEgauxGenerique && SignalObserveValideHelper.areEmptySignalObserveReaValues(isEqual, lsModifiedNotBindedToMat);
         } else {
-            return areEqualGeneric;
+            return sontEgauxGenerique;
         }
     }
 
-    private boolean areEmptyInterpretationData(List<ConstatRealise> lsModifiedConstatRea) {
-        List<ConstatRealise> lsModifiedConstatInterp = lsModifiedConstatRea.stream()
-                .filter(cst -> lsElementsConstatInterpretation.contains(cst.getElementConstat()))
+    private boolean syntheseDonneesVides(List<SignalObserveValide> lsModifiedSignalObserveRea) {
+        List<SignalObserveValide> lsModifiedSignalObserveInterp = lsModifiedSignalObserveRea.stream()
+                .filter(cst -> elementsSignalInterpretation.contains(cst.getElementSignal()))
                 .collect(Collectors.toList());
         boolean isEquals = true;
-        return ConstatRealiseHelper.areEmptyConstatReaValues(isEquals, lsModifiedConstatInterp);
+        return SignalObserveValideHelper.areEmptySignalObserveReaValues(isEquals, lsModifiedSignalObserveInterp);
     }
 
-    private void areEqualConstatMaterielAndConstatReaValues(ConstatRealise constatRealise, List<ConstatMaterielRealise> lsConstatMaterielRealise) {
-        ElementConstat elementConstat = constatRealise.getElementConstat();
-        lsConstatMaterielRealise.stream()
-                .filter(cm -> cm.getIdConstatPublie().equals(elementConstat.getConstat().getId())).findFirst()
-                .ifPresent(beforeModifVal -> areEqualConstatMaterielAndConstatReaValueByType(beforeModifVal, constatRealise));
+    private void signauxEquipementEtValidesEgaux(SignalObserveValide constatRealise, List<SignalEquipementValide> lsSignalEquipementValide) {
+        ElementSignal elementSignalObserve = constatRealise.getElementSignal();
+        lsSignalEquipementValide.stream()
+                .filter(cm -> cm.getIdSignalDiffuse().equals(elementSignalObserve.getSignalObserve().getId())).findFirst()
+                .ifPresent(beforeModifVal -> signauxEquipementEtValidesEgauxParType(beforeModifVal, constatRealise));
     }
 
-    private void areEqualConstatMaterielAndConstatReaValueByType(ConstatMaterielRealise beforeModifVal, ConstatRealise constatRealise) {
-        ElementConstat elementConstat = constatRealise.getElementConstat();
-        if (isFormatEchangeHL7()) {
-            if (EnumListeFormatConstat.getEnumListeFormatConstatNumeric().contains(elementConstat.getConstat().getFormResult())) {
-                areEqualGeneric = areEqualGeneric
+    private void signauxEquipementEtValidesEgauxParType(SignalEquipementValide beforeModifVal, SignalObserveValide constatRealise) {
+        ElementSignal elementSignalObserve = constatRealise.getElementSignal();
+        if (estFormatEchangeStandard()) {
+            if (EnumListeFormatSignal.getEnumListeFormatSignalNumeric().contains(elementSignalObserve.getSignalObserve().getFormResult())) {
+                sontEgauxGenerique = sontEgauxGenerique
                         && ((beforeModifVal.getNumericValue() == null && constatRealise.getNumericValue() == null)
                                 || (beforeModifVal.getNumericValue().equals(constatRealise.getNumericValue())));
             } else {
-                areEqualGeneric = areEqualGeneric && Strings.nullToEmpty(beforeModifVal.getTextValue())
+                sontEgauxGenerique = sontEgauxGenerique && Strings.nullToEmpty(beforeModifVal.getTextValue())
                         .equals(Strings.nullToEmpty(constatRealise.getTextValue()));
             }
         } else {
-            String idInteroperabilite = elementConstat.getConstat().getIdInteroperabilite();
-            if (idInteroperabilite != null && EnumSpiroIOP.containsCode(idInteroperabilite)) {
-                areEqualGeneric = ConstatRealiseHelper.areEqualConstatMaterielSpiroCase(areEqualGeneric, beforeModifVal, constatRealise, elementConstat);
-            } else if (idInteroperabilite != null && EnumECGIOP.containsCode(idInteroperabilite)) {
-                areEqualGeneric = ConstatRealiseHelper.areEqualConstatMaterielECGCase(areEqualGeneric, beforeModifVal, constatRealise, elementConstat);
+            String idInteroperabilite = elementSignalObserve.getSignalObserve().getIdInteroperabilite();
+            if (idInteroperabilite != null && EnumSignalRespiratoireStandard.containsCode(idInteroperabilite)) {
+                sontEgauxGenerique = SignalObserveValideHelper.areEqualSignalObserveMaterielSpiroCase(sontEgauxGenerique, beforeModifVal, constatRealise, elementSignalObserve);
+            } else if (idInteroperabilite != null && EnumSignalCardiaqueStandard.containsCode(idInteroperabilite)) {
+                sontEgauxGenerique = SignalObserveValideHelper.areEqualSignalObserveMaterielEQUIPEMENT_SIGNAL_CARDIQUECase(sontEgauxGenerique, beforeModifVal, constatRealise, elementSignalObserve);
             } else {
-                areEqualGeneric = areEqualGeneric
+                sontEgauxGenerique = sontEgauxGenerique
                         && ((beforeModifVal.getNumericValue() == null && constatRealise.getNumericValue() == null)
                                 || (beforeModifVal.getNumericValue().equals(constatRealise.getNumericValue())));
             }
@@ -3053,160 +3053,160 @@ public class ExamenParacliniqueController extends AbstractExamenController {
     }
 
     @Override
-    protected MoteurRegleContext getMoteurRegleContextParaclinique() {
-        final MoteurRegleContext moteurRegleContext = getMoteurRegleContext();
-        initializeMoteurDeRegleContextFromLsElementsConstat(moteurRegleContext);
+    protected RegleContext getRegleContexttexte2() {
+        final RegleContext moteurRegleContext = getRegleContext();
+        initializeMoteurDeRegleContextFromLsElementsSignalObserve(moteurRegleContext);
         return moteurRegleContext;
     }
 
-    private void initializeMoteurDeRegleContextFromLsElementsConstat(MoteurRegleContext moteurRegleContext) {
-        List<ElementConstat> lsElementsConstatMatInterp = new ArrayList<>();
-        List<ElementConstat> lsElementsConstatBasiqInterp = new ArrayList<>();
-        if (!lsElementsConstatInterpretation.isEmpty()) {
-            lsElementsConstatMatInterp = lsElementsConstatInterpretation.stream()
-                    .filter(ec -> ec.getConstat().getAppareilConnecte() != null).collect(Collectors.toList());
-            lsElementsConstatBasiqInterp = lsElementsConstatInterpretation.stream()
-                    .filter(ec -> ec.getConstat().getAppareilConnecte() == null).collect(Collectors.toList());
+    private void initializeMoteurDeRegleContextFromLsElementsSignalObserve(RegleContext moteurRegleContext) {
+        List<ElementSignal> elementsSignalMatInterp = new ArrayList<>();
+        List<ElementSignal> elementsSignalBasiqInterp = new ArrayList<>();
+        if (!elementsSignalInterpretation.isEmpty()) {
+            elementsSignalMatInterp = elementsSignalInterpretation.stream()
+                    .filter(ec -> ec.getSignalObserve().getAppareilConnecte() != null).collect(Collectors.toList());
+            elementsSignalBasiqInterp = elementsSignalInterpretation.stream()
+                    .filter(ec -> ec.getSignalObserve().getAppareilConnecte() == null).collect(Collectors.toList());
         }
 
-        initConstatRealiseIntoMoteurRegleContext(moteurRegleContext, lsElementsConstatBasiqInterp);
+        initSignalObserveValideIntoRegleContext(moteurRegleContext, elementsSignalBasiqInterp);
 
-        initConstatMaterielRealiseIntoMoteurRegleContext(moteurRegleContext, lsElementsConstatMatInterp);
+        initSignalEquipementValideIntoRegleContext(moteurRegleContext, elementsSignalMatInterp);
     }
 
-    private void initConstatMaterielRealiseIntoMoteurRegleContext(MoteurRegleContext moteurRegleContext,
-            List<ElementConstat> lsElementsConstatMatInterp) {
-        List<ConstatMaterielRealise> lsConstatMaterielRealises = new ArrayList<>();
-        List<ElementConstat> lsElemConstatMateriel = new ArrayList<>();
-        if (!lsElementsConstatMateriel.isEmpty()) {
-            lsConstatMaterielRealises.addAll(getListeConstatMaterielRealiseExamen());
-            lsElemConstatMateriel.addAll(lsElementsConstatMateriel);
+    private void initSignalEquipementValideIntoRegleContext(RegleContext moteurRegleContext,
+            List<ElementSignal> elementsSignalMatInterp) {
+        List<SignalEquipementValide> lsSignalEquipementValides = new ArrayList<>();
+        List<ElementSignal> lsElemSignalObserveMateriel = new ArrayList<>();
+        if (!elementsSignalEquipement.isEmpty()) {
+            lsSignalEquipementValides.addAll(getListeSignalEquipementValideExamen());
+            lsElemSignalObserveMateriel.addAll(elementsSignalEquipement);
         }
 
-        if (!lsElementsConstatMatInterp.isEmpty()) {
-            lsConstatMaterielRealises.addAll(getListeConstatMaterielRealiseInterpretation(lsElementsConstatMatInterp));
-            lsElemConstatMateriel.addAll(lsElementsConstatMatInterp);
+        if (!elementsSignalMatInterp.isEmpty()) {
+            lsSignalEquipementValides.addAll(getListeSignalEquipementValideInterpretation(elementsSignalMatInterp));
+            lsElemSignalObserveMateriel.addAll(elementsSignalMatInterp);
         }
-        if (!lsElemConstatMateriel.isEmpty()) {
-            List<ConstatMaterielRealiseWithConstatLibelleCourtVo> lsConstatMaterielRealisesVO = lsConstatMaterielRealises
-                    .stream().map(cmr -> constatMaterielRealiseFac.buildConstatMaterielRealiseVo(cmr, lsElemConstatMateriel))
+        if (!lsElemSignalObserveMateriel.isEmpty()) {
+            List<SignalEquipementValideVo> lsSignalEquipementValidesVO = lsSignalEquipementValides
+                    .stream().map(cmr -> signalEquipementValideFactory.buildSignalEquipementValideVo(cmr, lsElemSignalObserveMateriel))
                     .collect(Collectors.toList());
-            moteurRegleContext.putConstatMaterielRealises(lsConstatMaterielRealisesVO);
+            moteurRegleContext.putSignalEquipementValides(lsSignalEquipementValidesVO);
         }
     }
 
-    private void initConstatRealiseIntoMoteurRegleContext(MoteurRegleContext moteurRegleContext,
-            List<ElementConstat> lsElementsConstatBasiqInterpretationOuLecture) {
-        List<ConstatRealise> lsConstatRealises = new ArrayList<>();
+    private void initSignalObserveValideIntoRegleContext(RegleContext moteurRegleContext,
+            List<ElementSignal> elementsSignalBasiqInterpretationOuLecture) {
+        List<SignalObserveValide> lsSignalObserveValides = new ArrayList<>();
 
-        if (!lsElementsConstatExamen.isEmpty()) {
-            lsConstatRealises.addAll(getListConstatRealiseExamen());
+        if (!elementsSignalExamen.isEmpty()) {
+            lsSignalObserveValides.addAll(getListSignalObserveValideExamen());
         }
 
-        if (!lsElementsConstatBasiqInterpretationOuLecture.isEmpty()) {
-            lsConstatRealises.addAll(getListConstatRealiseInterpretationOuLecture(lsElementsConstatBasiqInterpretationOuLecture));
+        if (!elementsSignalBasiqInterpretationOuLecture.isEmpty()) {
+            lsSignalObserveValides.addAll(getListSignalObserveValideInterpretationOuLecture(elementsSignalBasiqInterpretationOuLecture));
         }
 
-        if (!lsConstatRealises.isEmpty()) {
-            moteurRegleContext.putConstatRealises(lsConstatRealises);
+        if (!lsSignalObserveValides.isEmpty()) {
+            moteurRegleContext.putSignalObserveValides(lsSignalObserveValides);
         }
     }
 
-    private List<ConstatMaterielRealise> getListeConstatMaterielRealiseInterpretation(
-            List<ElementConstat> lsElemConstatMatInterp) {
-        final List<ConstatMaterielRealise> listeConstatMaterielRealise = new ArrayList<>();
+    private List<SignalEquipementValide> getListeSignalEquipementValideInterpretation(
+            List<ElementSignal> lsElemSignalObserveMatInterp) {
+        final List<SignalEquipementValide> listeSignalEquipementValide = new ArrayList<>();
 
-        if (selectedExamenParaclinique.isNotNull().get()) {
-            List<ConstatMaterielRealise> lsCstMatRea = selectedExamenParaclinique.get().getListeConstatMaterielRealise();
+        if (operationTransitSelectionnee.isNotNull().get()) {
+            List<SignalEquipementValide> lsCstMatRea = operationTransitSelectionnee.get().getListeSignalEquipementValide();
 
             if (CollectionUtils.isEmpty(lsCstMatRea)) {
-                listeConstatMaterielRealise.addAll(generateConstatMaterielInterpRealise(lsElemConstatMatInterp));
+                listeSignalEquipementValide.addAll(generateSignalObserveMaterielInterpRealise(lsElemSignalObserveMatInterp));
             } else {
-                if (isFormatEchangeHL7()) {
-                    List<String> lsCodeLoinc = lsElemConstatMatInterp.stream()
-                            .map(ecm -> ecm.getConstat().getCodeLOINC())
+                if (estFormatEchangeStandard()) {
+                    List<String> lsCodeLoinc = lsElemSignalObserveMatInterp.stream()
+                            .map(ecm -> ecm.getSignalObserve().getCodeLOINC())
                             .filter(Objects::nonNull)
                             .collect(Collectors.toList());
 
-                    listeConstatMaterielRealise
+                    listeSignalEquipementValide
                             .addAll(lsCstMatRea.stream().filter(cstMat -> lsCodeLoinc.contains(cstMat.getCodeLoinc())).collect(Collectors.toList()));
                 } else {
 
-                    List<String> lsIdIOP = lsElemConstatMatInterp.stream()
-                            .map(ecm -> ecm.getConstat().getIdInteroperabilite())
+                    List<String> lsIdIOP = lsElemSignalObserveMatInterp.stream()
+                            .map(ecm -> ecm.getSignalObserve().getIdInteroperabilite())
                             .filter(Objects::nonNull)
                             .collect(Collectors.toList());
 
-                    listeConstatMaterielRealise.addAll(lsCstMatRea.stream().filter(cstMat -> lsIdIOP.contains(cstMat.getIdIOP())).collect(Collectors.toList()));
+                    listeSignalEquipementValide.addAll(lsCstMatRea.stream().filter(cstMat -> lsIdIOP.contains(cstMat.getIdIOP())).collect(Collectors.toList()));
                 }
             }
         } else {
-            listeConstatMaterielRealise.addAll(generateConstatMaterielInterpRealise(lsElemConstatMatInterp));
+            listeSignalEquipementValide.addAll(generateSignalObserveMaterielInterpRealise(lsElemSignalObserveMatInterp));
         }
 
-        return listeConstatMaterielRealise;
+        return listeSignalEquipementValide;
     }
 
-    private List<ConstatMaterielRealise> getListeConstatMaterielRealiseExamen() {
-        final List<ConstatMaterielRealise> listeConstatMaterielRealise = new ArrayList<>();
-        if (selectedExamenParaclinique.isNotNull().get() && selectedExamenParaclinique.get().getListeConstatMaterielRealise() != null) {
-            List<Long> lsIdElementsConstatMat = lsElementsConstatMateriel.stream().map(ec -> ec.getConstat().getId())
+    private List<SignalEquipementValide> getListeSignalEquipementValideExamen() {
+        final List<SignalEquipementValide> listeSignalEquipementValide = new ArrayList<>();
+        if (operationTransitSelectionnee.isNotNull().get() && operationTransitSelectionnee.get().getListeSignalEquipementValide() != null) {
+            List<Long> lsIdElementsSignalObserveMat = elementsSignalEquipement.stream().map(ec -> ec.getSignalObserve().getId())
                     .collect(Collectors.toList());
-            List<ConstatMaterielRealise> lsCstMatRea = selectedExamenParaclinique.get().getListeConstatMaterielRealise()
-                    .stream().filter(cmr -> lsIdElementsConstatMat.contains(cmr.getIdConstatPublie()))
+            List<SignalEquipementValide> lsCstMatRea = operationTransitSelectionnee.get().getListeSignalEquipementValide()
+                    .stream().filter(cmr -> lsIdElementsSignalObserveMat.contains(cmr.getIdSignalDiffuse()))
                     .collect(Collectors.toList());
-            listeConstatMaterielRealise.addAll(!lsCstMatRea.isEmpty() ? lsCstMatRea : generateConstatMaterielRealise());
+            listeSignalEquipementValide.addAll(!lsCstMatRea.isEmpty() ? lsCstMatRea : generateSignalEquipementValide());
         } else {
-            listeConstatMaterielRealise.addAll(generateConstatMaterielRealise());
+            listeSignalEquipementValide.addAll(generateSignalEquipementValide());
         }
-        return listeConstatMaterielRealise;
+        return listeSignalEquipementValide;
     }
 
-    private List<ConstatMaterielRealise> generateConstatMaterielRealise() {
-        return lsElementsConstatMateriel.stream()
-                .map(elementConstat -> composantExamenPropertiesByElementId.generateConstatMaterielRealiseFromElementConstat(elementConstat))
+    private List<SignalEquipementValide> generateSignalEquipementValide() {
+        return elementsSignalEquipement.stream()
+                .map(elementSignalObserve -> composantOperationProprietesParIdElement.generateSignalEquipementValideFromElementSignal(elementSignalObserve))
                 .collect(Collectors.toList());
     }
 
-    private List<ConstatMaterielRealise> generateConstatMaterielInterpRealise(
-            List<ElementConstat> lsElemConstatMatInterp) {
-        return lsElemConstatMatInterp.stream()
-                .map(elementConstat -> composantInterpretationOuLecturePropertiesByElementId.generateConstatMaterielRealiseFromElementConstat(elementConstat))
+    private List<SignalEquipementValide> generateSignalObserveMaterielInterpRealise(
+            List<ElementSignal> lsElemSignalObserveMatInterp) {
+        return lsElemSignalObserveMatInterp.stream()
+                .map(elementSignalObserve -> composantSyntheseProprietesParIdElement.generateSignalEquipementValideFromElementSignal(elementSignalObserve))
                 .collect(Collectors.toList());
     }
 
-    private List<ConstatRealise> getListConstatRealiseInterpretationOuLecture(List<ElementConstat> lsElementConstatInterpretation) {
-        return lsElementConstatInterpretation.stream().map(elementConstat -> retrieveConstatRealise(elementConstat, true)).collect(Collectors.toList());
+    private List<SignalObserveValide> getListSignalObserveValideInterpretationOuLecture(List<ElementSignal> lsElementSignalInterpretation) {
+        return lsElementSignalInterpretation.stream().map(elementSignalObserve -> retrieveSignalObserveValide(elementSignalObserve, true)).collect(Collectors.toList());
     }
 
-    protected ConstatRealise retrieveConstatRealise(final ElementConstat elementConstat, boolean isInterpretationOuLecture) {
-        final ConstatRealise constatRealise;
-        final ElementConstatComposantProperties composantProperties;
-        constatRealise = generateCstReaFromGrilleType(elementConstat, isInterpretationOuLecture);
+    protected SignalObserveValide retrieveSignalObserveValide(final ElementSignal elementSignalObserve, boolean isInterpretationOuLecture) {
+        final SignalObserveValide constatRealise;
+        final ElementSignalPropriete composantProperties;
+        constatRealise = generateCstReaFromGrilleType(elementSignalObserve, isInterpretationOuLecture);
         composantProperties = isInterpretationOuLecture
-                ? (ElementConstatComposantProperties) composantInterpretationOuLecturePropertiesByElementId
-                        .get(elementConstat.getId())
-                : (ElementConstatComposantProperties) composantExamenPropertiesByElementId.get(elementConstat.getId());
-        final ConstatRealise constatRealiseInGrid = elementRealiseFactory
-                .buildConstatRealiseFromConstatElementConstatComposantProperties(constatRealise.getId(), elementConstat, composantProperties);
+                ? (ElementSignalPropriete) composantSyntheseProprietesParIdElement
+                        .get(elementSignalObserve.getId())
+                : (ElementSignalPropriete) composantOperationProprietesParIdElement.get(elementSignalObserve.getId());
+        final SignalObserveValide constatRealiseInGrid = elementSignalFactory
+                .buildSignalObserveValideFromSignalObserveElementSignalPropriete(constatRealise.getId(), elementSignalObserve, composantProperties);
         constatRealiseInGrid.setIdPrestationRealisee(constatRealise.getIdPrestationRealisee());
-        constatRealiseInGrid.setElementConstat(constatRealise.getElementConstat());
+        constatRealiseInGrid.setElementSignal(constatRealise.getElementSignal());
         return constatRealiseInGrid;
     }
 
     @Override
-    protected GrilleDynamiqueUi getComposantExamenUi() {
-        return composantExamenPropertiesByElementId;
+    protected GrilleTerminalUi getComposantExamenUi() {
+        return composantOperationProprietesParIdElement;
     }
 
     @Override
-    protected GrilleDynamiqueUi getComposantInterpretationOrLectureUi() {
-        return composantInterpretationOuLecturePropertiesByElementId;
+    protected GrilleTerminalUi getComposantInterpretationOrLectureUi() {
+        return composantSyntheseProprietesParIdElement;
     }
 
     @Override
-    protected boolean isEditedExam(ExamenParacliniqueRealise examen) {
-        return examen != null && examen.equals(editedExam);
+    protected boolean isEditedExam(OperationTransitFinalisee examen) {
+        return examen != null && examen.equals(operationEnEdition);
     }
 
     @Override
@@ -3215,30 +3215,30 @@ public class ExamenParacliniqueController extends AbstractExamenController {
     }
 
     @Override
-    protected ConstatRealise buildConstatRealise(Long prestationId, ElementConstat elementConstat) {
-        return constatRealiseFactory.buildConstatRealise(prestationId, elementConstat);
+    protected SignalObserveValide buildSignalObserveValide(Long prestationId, ElementSignal elementSignalObserve) {
+        return signalObserveValideFactory.buildSignalObserveValide(prestationId, elementSignalObserve);
     }
 
     @Override
-    protected ConstatRealise buildConstatRealise(ConstatRealise constatRealise) {
-        return constatRealiseFactory.buildConstatRealise(constatRealise);
+    protected SignalObserveValide buildSignalObserveValide(SignalObserveValide constatRealise) {
+        return signalObserveValideFactory.buildSignalObserveValide(constatRealise);
     }
 
     @Override
-    protected boolean isSoftwareLaunchOperation() {
-        return isSoftwareLaunchOperation;
+    protected boolean estLancementModule() {
+        return estLancementModule;
     }
 
-    public void refreshConstatRealise(final ConstatRealise constatRealise) {
-        ConstatRealiseWithOrigineInformationsVo constatRealiseWithOrigineInfos = ConstatRealiseWithOrigineInformationsVoFactory
-                .addOrigineInformationsToConstatRealise(constatRealise, getDisplayedInteractionRealiseeInteraction().getLibelleCourt(),
-                        UtilisateurVoFactory.buildUtilisateurVo(sessionContext.getConnectedUser()));
-        final List<ConstatRealiseWithOrigineInformationsVo> constatRealises = displayedPrestationRealiseeDonneesRealisees.getConstatRealises();
-        final Predicate<ConstatRealise> predicate = constatRea -> constatRea.getElementConstat().getConstat().getId()
-                .equals(constatRealise.getElementConstat().getConstat().getId());
-        final Optional<ConstatRealiseWithOrigineInformationsVo> optionalConstatRealise = constatRealises.stream().filter(predicate).findFirst();
-        if (optionalConstatRealise.isPresent()) {
-            final ConstatRealise constatRealise2 = optionalConstatRealise.get();
+    public void refreshSignalObserveValide(final SignalObserveValide constatRealise) {
+        SignalObserveValideVo constatRealiseWithOrigineInfos = SignalObserveValideVoFactory
+                .addOrigineInformationsToSignalObserveValide(constatRealise, getDisplayedInteractionRealiseeInteraction().getLibelleCourt(),
+                        OperateurVoFactory.buildOperateurVo(contexteSession.getConnectedUser()));
+        final List<SignalObserveValideVo> constatRealises = operationRealiseeDonneesFinalisees.getSignalObserveValides();
+        final Predicate<SignalObserveValide> predicate = constatRea -> constatRea.getElementSignal().getSignalObserve().getId()
+                .equals(constatRealise.getElementSignal().getSignalObserve().getId());
+        final Optional<SignalObserveValideVo> optionalSignalObserveValide = constatRealises.stream().filter(predicate).findFirst();
+        if (optionalSignalObserveValide.isPresent()) {
+            final SignalObserveValide constatRealise2 = optionalSignalObserveValide.get();
             constatRealise.setId(constatRealise2.getId());
             constatRealises.set(constatRealises.indexOf(constatRealise2), constatRealiseWithOrigineInfos);
         } else {
@@ -3247,51 +3247,51 @@ public class ExamenParacliniqueController extends AbstractExamenController {
     }
 
     @Override
-    protected void refreshConstatsWithMoteurRegleResult(final MoteurRegleResult moteurRegleResult) {
-        if (!lsElementsConstat.isEmpty()) {
-            lsElementsConstat.forEach(elementConstat -> composantExamenPropertiesByElementId.setConstatScore(elementConstat, moteurRegleResult));
+    protected void refreshSignalObservesWithRegleResultat(final RegleResultat moteurRegleResult) {
+        if (!elementsSignal.isEmpty()) {
+            elementsSignal.forEach(elementSignalObserve -> composantOperationProprietesParIdElement.setSignalObserveScore(elementSignalObserve, moteurRegleResult));
         }
-        if (!lsElementsConstatInterpretation.isEmpty()) {
-            lsElementsConstatInterpretation
-                    .forEach(elementConstat -> composantInterpretationOuLecturePropertiesByElementId.setConstatScore(elementConstat, moteurRegleResult));
+        if (!elementsSignalInterpretation.isEmpty()) {
+            elementsSignalInterpretation
+                    .forEach(elementSignalObserve -> composantSyntheseProprietesParIdElement.setSignalObserveScore(elementSignalObserve, moteurRegleResult));
         }
     }
 
     @Override
-    protected void refreshLibellesReglesAffichage(final MoteurRegleResult moteurRegleResult) {
-        reglesAffichageElementComposantPropertiesMap.entrySet()
-                .forEach(nodeRegleAffichage -> setReglesAffichagesVisibilites(moteurRegleResult, nodeRegleAffichage));
+    protected void refreshLibellesReglesAffichage(final RegleResultat moteurRegleResult) {
+        reglesAffichageProprietesComposantMap.entrySet()
+                .forEach(nodeRegleAffichage -> definirReglesAffichageVisibilite(moteurRegleResult, nodeRegleAffichage));
     }
 
     @Override
-    protected void onRowSelectionPreRefreshHook(ExamenParacliniqueRealise examen) {
-        lecturePrerequiseChcbx.setSelected(Boolean.TRUE.equals(examen.getIsLecturePrerequise()));
+    protected void surSelectionLignePreRafraichissement(OperationTransitFinalisee examen) {
+        caseCocherPreRequis.setSelected(Boolean.TRUE.equals(examen.getIsLecturePrerequise()));
     }
 
-    private void setReglesAffichagesVisibilites(final MoteurRegleResult moteurRegleResult,
-            final Entry<Long, ElementGrilleDynamiqueComposantProperties> nodeRegleAffichage) {
-        final Predicate<? super LibelleRegleAffichage> predicateLibelleRegleAffichage = libelleRegleAffichage -> libelleRegleAffichage
+    private void definirReglesAffichageVisibilite(final RegleResultat moteurRegleResult,
+            final Entry<Long, ElementGrilleTerminalPropriete> nodeRegleAffichage) {
+        final Predicate<? super LibelleRegleTerminal> predicateLibelleRegleTerminal = libelleRegleAffichage -> libelleRegleAffichage
                 .getId().equals(nodeRegleAffichage.getKey());
-        final Optional<LibelleRegleAffichage> optionalLibelleRegleAffichage = lsLibelleRegleAffichage.stream()
-                .filter(predicateLibelleRegleAffichage).findFirst();
-        optionalLibelleRegleAffichage.ifPresent(libelleRegleAffichage -> setLibelleRegleAffichageVisibility(moteurRegleResult, nodeRegleAffichage,
+        final Optional<LibelleRegleTerminal> optionalLibelleRegleTerminal = libellesRegleAffichage.stream()
+                .filter(predicateLibelleRegleTerminal).findFirst();
+        optionalLibelleRegleTerminal.ifPresent(libelleRegleAffichage -> definirVisibiliteLibelleRegleAffichage(moteurRegleResult, nodeRegleAffichage,
                 libelleRegleAffichage));
     }
 
-    private void setLibelleRegleAffichageVisibility(final MoteurRegleResult moteurRegleResult,
-            final Entry<Long, ElementGrilleDynamiqueComposantProperties> nodeRegleAffichage,
-            final LibelleRegleAffichage libelleRegleAffichage) {
+    private void definirVisibiliteLibelleRegleAffichage(final RegleResultat moteurRegleResult,
+            final Entry<Long, ElementGrilleTerminalPropriete> nodeRegleAffichage,
+            final LibelleRegleTerminal libelleRegleAffichage) {
         final String libelleCourt = libelleRegleAffichage.getRegleAffichage().getLibelleCourt();
         final Boolean booleanRuleResult = moteurRegleResult.getBooleanRuleResult(libelleCourt);
         nodeRegleAffichage.getValue().setVisible(booleanRuleResult != null && booleanRuleResult);
     }
 
-    public boolean isNotDisabledAcquisitionButton() {
-        return !epcAcquisitionResultatsBtn.isDisable();
+    public boolean boutonRecuperationActive() {
+        return !boutonRecupererResultats.isDisable();
     }
 
     @Override
-    protected void onValueChanged(ElementSaisieGrilleDynamiqueComposantProperties composantProperties, Object oldValue) {
-        checkUsableBeforeExecuteReglesAffichageEtCalcul(composantProperties, oldValue, true);
+    protected void surValeurChangee(ElementSaisieGrillePropriete composantProperties, Object oldValue) {
+        verifierUtilisableAvantExecutionRegles(composantProperties, oldValue, true);
     }
 }
